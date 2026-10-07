@@ -17,7 +17,7 @@ window.Run = (function () {
 
 window.Console = (function () {
   const NS = "http://www.w3.org/2000/svg";
-  let root, els = {}, clockBase = 0, edgesById = {}, nodesById = {};
+  let root, els = {}, clockBase = 0, edgesById = {}, nodesById = {}, nodeSpec = {}, clockPrev = {};
   /* ?fast skips the packet tween for screenshot QA. */
   const FAST = /[?&]fast\b/.test(location.search);
   if (FAST) document.documentElement.classList.add("qa");
@@ -40,6 +40,7 @@ window.Console = (function () {
         </div>
       </div>
       <div class="cx-caption" id="cxCaption"></div>
+      <div class="cx-narr" id="cxNarr"></div>
       <nav class="cx-tabs">
         ${["flow", "logs", "payload", "lineage", "monitor"].map((t) => `<button data-tab="${t}">${t[0].toUpperCase() + t.slice(1)}</button>`).join("")}
       </nav>
@@ -53,6 +54,7 @@ window.Console = (function () {
       <div class="cx-clock"></div>`;
     els = {
       caption: root.querySelector("#cxCaption"),
+      narr: root.querySelector("#cxNarr"),
       flow: root.querySelector(".cx-flow"),
       extra: root.querySelector(".cx-extra"),
       logs: root.querySelector(".cx-logs"),
@@ -71,10 +73,32 @@ window.Console = (function () {
   }
 
   function reset() {
-    ["flow", "extra", "logs", "payload", "lineage", "monitor", "clock", "caption"].forEach((k) => (els[k].innerHTML = ""));
+    ["flow", "extra", "logs", "payload", "lineage", "monitor", "clock", "caption", "narr"].forEach((k) => (els[k].innerHTML = ""));
     root.querySelectorAll(".cx-tabs button").forEach((b) => b.classList.remove("has"));
     edgesById = {};
     nodesById = {};
+    nodeSpec = {};
+    clockPrev = {};
+    narrN = 0;
+  }
+
+  /* ------------------------------------------------------------ narration: short technical lines, typed out */
+  let narrN = 0;
+  async function narrate(eng, exec, t) {
+    const row = document.createElement("div");
+    row.className = "nr" + (exec ? " has-ex" : "");
+    narrN += 1;
+    row.innerHTML = `<span class="nr-n">${String(narrN).padStart(2, "0")}</span><span class="nr-t"><span class="nr-raw"></span>${exec ? `<span class="nr-ex">${exec}</span>` : ""}</span>`;
+    els.narr.querySelectorAll(".nr").forEach((r) => r.classList.add("old"));
+    els.narr.appendChild(row);
+    while (els.narr.children.length > 3) els.narr.removeChild(els.narr.firstChild);
+    const target = row.querySelector(".nr-raw");
+    if (FAST || document.body.classList.contains("exec") && exec) { target.textContent = eng; return; }
+    for (let i = 0; i <= eng.length; i += 3) {
+      target.textContent = eng.slice(0, i);
+      await Run.sleep(12, t);
+    }
+    target.textContent = eng;
   }
 
   function mark(name) {
@@ -98,6 +122,10 @@ window.Console = (function () {
     const svg = document.createElementNS(NS, "svg");
     svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
     svg.classList.add("cx-graph");
+    if (spec.compact) svg.classList.add("compact");
+    nodesById = {};
+    edgesById = {};
+    nodeSpec = {};
     const defs = document.createElementNS(NS, "defs");
     defs.innerHTML = `<filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
       <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5d5a5b"/></marker>`;
@@ -146,7 +174,11 @@ window.Console = (function () {
         ${n.badge ? `<g class="nb"><rect x="${n.w - 56}" y="-9" width="62" height="18" rx="9"/><text x="${n.w - 25}" y="4" text-anchor="middle">${esc(n.badge)}</text></g>` : ""}`;
       svg.appendChild(g);
       nodesById[n.id] = g;
+      nodeSpec[n.id] = n;
     });
+    const fx = document.createElementNS(NS, "g");
+    fx.setAttribute("class", "cx-fx");
+    svg.appendChild(fx);
     els.flow.innerHTML = "";
     els.flow.appendChild(svg);
     if (spec.legend) {
@@ -176,46 +208,129 @@ window.Console = (function () {
     if (state) p.classList.add(state);
   }
 
+  /* opt.quiet: move the dot without touching node/edge state (ambient traffic). Reversed edges are traversed backwards. */
   async function packet(path, t, opt = {}) {
     const svg = els.flow.querySelector("svg");
     if (!svg) return;
     const dot = document.createElementNS(NS, "circle");
     dot.setAttribute("r", opt.r || 7);
     dot.setAttribute("class", "cx-packet " + (opt.kind || ""));
-    dot.setAttribute("filter", "url(#glow)");
+    if (!opt.quiet) dot.setAttribute("filter", "url(#glow)");
+    dot.setAttribute("cx", -50);
+    dot.setAttribute("cy", -50);
     svg.appendChild(dot);
+    const q = opt.quiet;
     try {
       for (let i = 0; i < path.length - 1; i++) {
         const a = path[i], b = path[i + 1];
-        const p = edgesById[a + ">" + b];
-        node(a, "active");
+        let p = edgesById[a + ">" + b], rev = false;
+        if (!p && edgesById[b + ">" + a]) { p = edgesById[b + ">" + a]; rev = true; }
+        if (!q) node(a, "active");
         if (!p) continue;
-        p.classList.add("hot");
+        if (!q) p.classList.add("hot");
         const len = p.getTotalLength();
         const dur = opt.dur || 650;
         const t0 = performance.now();
         if (FAST) await Run.sleep(dur, t);
         else await new Promise((resolve, reject) => {
           const tick = () => {
-            if (!Run.alive(t)) return reject(new Run.Cancelled());
+            if (!Run.alive(t) || !dot.isConnected) return reject(new Run.Cancelled());
             const k = Math.min(1, (performance.now() - t0) / dur);
             const e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
-            const pt = p.getPointAtLength(len * e);
+            const pt = p.getPointAtLength(len * (rev ? 1 - e : e));
             dot.setAttribute("cx", pt.x);
             dot.setAttribute("cy", pt.y);
             k < 1 ? setTimeout(tick, 16) : resolve();
           };
           tick();
         });
-        p.classList.remove("hot");
-        p.classList.add(opt.edgeState || "ok");
-        node(a, opt.trail || "ok");
+        if (!q) {
+          p.classList.remove("hot");
+          p.classList.add(opt.edgeState || "ok");
+          node(a, opt.trail || "ok");
+        }
         if (opt.onHop) await opt.onHop(b, t);
       }
-      node(path[path.length - 1], opt.finalState || "ok");
+      if (!q) node(path[path.length - 1], opt.finalState || "ok");
     } finally {
       dot.remove();
     }
+  }
+
+  /* Several packets down the same path, staggered. Resolves when the last one lands. */
+  async function burst(path, t, n = 5, opt = {}) {
+    const runs = [];
+    for (let i = 0; i < n; i++) {
+      runs.push(packet(path, t, { ...opt, r: opt.r || 5, quiet: i < n - 1 ? true : opt.quiet }).catch(() => {}));
+      await Run.sleep(opt.gap || 140, t);
+    }
+    await Promise.all(runs);
+    if (!Run.alive(t)) throw new Run.Cancelled();
+  }
+
+  /* Background traffic that keeps the graph alive until the step changes or stop() is called. */
+  function ambient(t, paths, opt = {}) {
+    const h = { on: true, paths, stop() { h.on = false; } };
+    (async () => {
+      let i = 0;
+      try {
+        await Run.sleep(opt.delay || 300, t);
+        while (h.on && Run.alive(t)) {
+          const p = h.paths[i++ % h.paths.length];
+          packet(p, t, { quiet: true, kind: opt.kind || "poll", r: opt.r || 3.5, dur: opt.dur || 900 }).catch(() => {});
+          await Run.sleep(opt.every || 650, t);
+        }
+      } catch (e) {}
+    })();
+    return h;
+  }
+
+  /* A label that floats up from a node: response codes, row counts, field renames. */
+  function tag(id, text, kind = "", opt = {}) {
+    const n = nodeSpec[id];
+    const fx = els.flow.querySelector(".cx-fx");
+    if (!n || !fx) return;
+    const w = Math.max(40, text.length * 6.6 + 16);
+    const vb = (els.flow.querySelector("svg")?.getAttribute("viewBox") || "0 0 9999 9999").split(/\s+/).map(Number);
+    const x = Math.max(vb[0] + 4, Math.min(vb[0] + vb[2] - w - 4, n.x + n.w / 2 - w / 2 + (opt.dx || 0)));
+    const y = Math.max(vb[1] + 2, n.y - 26 + (opt.dy || 0));
+    const slot = `${id}:${opt.dy || 0}`;
+    fx.querySelectorAll(`g[data-slot="${slot}"]`).forEach((g) => g.remove());
+    const outer = document.createElementNS(NS, "g");
+    outer.setAttribute("data-slot", slot);
+    outer.setAttribute("transform", `translate(${x},${y})`);
+    outer.innerHTML = `<g class="cx-tag ${kind} ${opt.stay ? "stay" : ""}"><rect width="${w}" height="20" rx="10"/><text x="${w / 2}" y="14" text-anchor="middle">${esc(text)}</text></g>`;
+    fx.appendChild(outer);
+    if (!opt.stay) setTimeout(() => outer.remove(), FAST ? 60000 : 2600);
+    return outer;
+  }
+
+  function ring(id, kind = "") {
+    const n = nodeSpec[id];
+    const fx = els.flow.querySelector(".cx-fx");
+    if (!n || !fx) return;
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("transform", `translate(${n.x},${n.y})`);
+    g.innerHTML = `<rect class="cx-ring ${kind}" width="${n.w}" height="${n.h}" rx="10"/>`;
+    fx.appendChild(g);
+    setTimeout(() => g.remove(), 1300);
+  }
+
+  /* Live DataWeave view: each source field transforms into its canonical field, one row at a time. */
+  async function transform(rows, t, opt = {}) {
+    const box = document.createElement("div");
+    box.className = "dw";
+    box.innerHTML = `<div class="dw-h"><span>DataWeave \u00b7 ${esc(opt.script || "transform")}</span><span class="dw-c">0 / ${rows.length} fields</span></div>
+      ${rows.map((r) => `<div class="dw-r"><code class="s">${esc(r[0])}</code><span class="sv">${esc(r[1])}</span><span class="ar">\u2192</span><code class="d">${esc(r[2])}</code><span class="dv">${esc(r[3])}</span></div>`).join("")}`;
+    (opt.into || els.extra).appendChild(box);
+    const els2 = box.querySelectorAll(".dw-r"), c = box.querySelector(".dw-c");
+    for (let i = 0; i < els2.length; i++) {
+      els2[i].classList.add("on");
+      c.textContent = `${i + 1} / ${rows.length} fields`;
+      await Run.sleep(opt.pace || 260, t);
+      els2[i].classList.add("done");
+    }
+    return box;
   }
 
   function extra(html) {
@@ -257,7 +372,7 @@ window.Console = (function () {
     row.className = `lg ${e.lvl || "info"}` + (e.exec ? "" : " eng-only");
     row.innerHTML = `<span class="lt">${fmtClock(clockBase)}</span><span class="lm"><span class="raw">${e.raw}</span>${e.exec ? `<span class="ex">${e.exec}</span>` : ""}</span>`;
     m.appendChild(row);
-    while (m.children.length > 5) m.removeChild(m.firstChild);
+    while (m.children.length > 3) m.removeChild(m.firstChild);
   }
 
   /* ------------------------------------------------------------ payload */
@@ -293,10 +408,28 @@ window.Console = (function () {
   function monitor(html) { mark("monitor"); els.monitor.innerHTML = html; return els.monitor; }
 
   /* ------------------------------------------------------------ clock strip */
+  /* Items with a numeric `n` count up from their previous value; `v` may contain {n} as the placeholder. */
   function clock(items) {
+    const fmt = (c, n) => (c.v || "{n}").replace("{n}", c.dec ? n.toFixed(c.dec) : Math.round(n).toLocaleString());
     els.clock.innerHTML = items
-      .map((c) => `<div class="ck ${c.state || ""}"><div class="ck-l">${c.l}</div><div class="ck-v">${c.v}</div>${c.s ? `<div class="ck-s">${c.s}</div>` : ""}</div>`)
+      .map((c, i) => `<div class="ck ${c.state || ""}"><div class="ck-l">${c.l}</div><div class="ck-v" data-i="${i}">${c.n != null ? fmt(c, clockPrev[c.l] != null ? clockPrev[c.l] : 0) : c.v}</div>${c.s ? `<div class="ck-s">${c.s}</div>` : ""}</div>`)
       .join("");
+    items.forEach((c, i) => {
+      if (c.n == null) return;
+      const el = els.clock.querySelector(`.ck-v[data-i="${i}"]`);
+      const from = clockPrev[c.l] != null ? clockPrev[c.l] : 0, to = c.n;
+      clockPrev[c.l] = to;
+      if (FAST || from === to) { el.textContent = fmt(c, to); return; }
+      el.parentElement.classList.add("tick");
+      const t0 = performance.now(), dur = c.dur || 900;
+      const step = () => {
+        if (!el.isConnected) return;
+        const k = Math.min(1, (performance.now() - t0) / dur);
+        el.textContent = fmt(c, from + (to - from) * (1 - Math.pow(1 - k, 3)));
+        if (k < 1) setTimeout(step, 30); else el.parentElement.classList.remove("tick");
+      };
+      step();
+    });
   }
 
   /* ------------------------------------------------------------ shared graph */
@@ -340,5 +473,5 @@ window.Console = (function () {
     };
   }
 
-  return { init, reset, tab, caption, graph, node, edge, packet, extra, setClock, log, payload, json, lineage, monitor, clock, baseGraph, esc };
+  return { init, reset, tab, caption, narrate, graph, node, edge, packet, burst, ambient, tag, ring, transform, extra, setClock, log, payload, json, lineage, monitor, clock, baseGraph, esc };
 })();

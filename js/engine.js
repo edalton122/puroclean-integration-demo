@@ -139,11 +139,12 @@
     stage.hidden = false;
     page.hidden = true;
     C.reset();
-    left.innerHTML = "";
+    left.innerHTML = `<div class="left-ui" id="leftUI"></div>${s.desc ? `<div class="left-desc"><span class="ld-k">What's happening</span>${esc(s.desc)}</div>` : ""}`;
+    const leftUI = $("leftUI");
     const ctx = {
       t,
       C,
-      left(html) { if (Run.alive(t)) { left.innerHTML = html; applyPulse(); } },
+      left(html) { if (Run.alive(t)) { leftUI.innerHTML = html; applyPulse(); } },
       tap: (names) => tap(names, t),
       sleep: (ms) => Run.sleep(ms, t),
     };
