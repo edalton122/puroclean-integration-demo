@@ -86,6 +86,14 @@
     left.querySelectorAll(".pulse").forEach((e) => e.classList.remove("pulse"));
     if (!state.pending) return;
     state.pending.names.forEach((n) => left.querySelectorAll(`[data-tap="${n}"]`).forEach((e) => e.classList.add("pulse")));
+    const first = left.querySelector(".pulse");
+    const desc = left.querySelector(".left-desc");
+    if (!first) return;
+    left.style.scrollPaddingBottom = `${(desc ? desc.offsetHeight : 0) + 16}px`;
+    const lr = left.getBoundingClientRect();
+    const r = first.getBoundingClientRect();
+    const covered = desc ? desc.getBoundingClientRect().top : lr.bottom;
+    if (r.bottom > covered || r.top < lr.top) first.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }
 
   const AUTO = /[?&]auto\b/.test(location.search);
@@ -139,7 +147,7 @@
     stage.hidden = false;
     page.hidden = true;
     C.reset();
-    left.innerHTML = `<div class="left-ui" id="leftUI"></div>${s.desc ? `<div class="left-desc"><span class="ld-k">What's happening</span>${esc(s.desc)}</div>` : ""}`;
+    left.innerHTML = `<div class="left-ui" id="leftUI"></div>${s.desc ? `<div class="left-desc"><div class="ld-h"><span class="ld-k">What's happening</span><span class="ld-s">Step ${esc(s.id)}</span></div><div class="ld-b"><p class="ld-m">${esc(s.desc)}</p>${s.why ? `<p class="ld-w"><b>Why it matters</b>${esc(s.why)}</p>` : ""}</div></div>` : ""}`;
     const leftUI = $("leftUI");
     const ctx = {
       t,

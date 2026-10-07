@@ -189,7 +189,7 @@ window.Acts = (function () {
     /* ---------- Act 1 */
     {
       id: "1.1", act: "1", title: "A new water loss, logged in Dash",
-      desc: "A franchise logs a new water job in its usual job app. Nothing changes for them; MuleSoft is already listening.",
+      desc: "A project manager at PuroClean Wichita East logs a new water-damage job in Dash, the job app they already use, and sets the dispatch and accepted times exactly as they do today.", why: "Franchises don't change tools or add steps. MuleSoft picks up the change on its own, which is what makes high adoption realistic.",
       say: "A franchise in Wichita logs a water loss in Dash, the way they do today. Nothing about their day changes. Watch the right side.",
       powered: ["Franchise's SPAR platform", "No change for the franchise"],
       async run(x) {
@@ -215,7 +215,7 @@ window.Acts = (function () {
     },
     {
       id: "1.2", act: "1", title: "MuleSoft picks it up and translates it",
-      desc: "MuleSoft picks up the new job and translates Dash's fields into PuroClean's standard job format.",
+      desc: "Within seconds, MuleSoft reads the new job from Dash and translates its field names, codes and time zones into PuroClean's standard job format, then attaches the franchise's region and account from FranConnect.", why: "The translation is built once, centrally. Corporate never re-keys or hand-cleans franchise data.",
       say: "One System API per platform speaks Dash. One Process API translates everything into PuroClean's language and attaches the franchise from FranConnect. That translation is built once.",
       powered: ["MuleSoft Anypoint", "System + Process APIs", "DataWeave", "FranConnect reference"],
       async run(x) {
@@ -247,7 +247,7 @@ window.Acts = (function () {
     },
     {
       id: "1.3", act: "1", title: "Into the 11:11 lake, and the SLA clock starts",
-      desc: "The job lands in PuroClean's data lake about 40 seconds after it was saved, and the 30-minute response clock starts.",
+      desc: "The finished record lands in PuroClean's 11:11 data lake about 40 seconds after the franchise hit save, and the 30-minute customer-contact clock starts automatically.", why: "If Dash sends the same job again, the record is updated, not duplicated. Corporate now sees the same job the franchise does.",
       say: "Forty seconds from the franchise's screen to the lake. It's an upsert, not an insert, so if Dash resends the job we update it rather than duplicate it.",
       powered: ["MuleSoft Database Connector", "11:11 SQL Server lake (Nick's environment)"],
       async run(x) {
@@ -277,7 +277,7 @@ window.Acts = (function () {
     /* ---------- Act 2 */
     {
       id: "2.1", act: "2", title: "Same job, four platforms, one language",
-      desc: "The same job, entered in four different platforms. Each platform names things differently; each becomes the same PuroClean record.",
+      desc: "The same job, entered in Dash, PSA, Albi and JobSite. Each platform names the milestones differently: 'arrive on site', 'first on site', 'job began'.", why: "All four map to the same 18 PuroLogic Dates that PuroClean defines. That shared language is what makes network-wide reporting possible.",
       say: "CJ called this the Rosetta Stone. 'Arrive on site,' 'first on site,' 'job began': all of them become PuroLogic's Started. These are PuroClean's own 18 Dates. Nick owns the definitions; MuleSoft enforces them.",
       powered: ["DataWeave", "PuroLogic canonical model", "Anypoint Exchange"],
       async run(x) {
@@ -312,7 +312,7 @@ window.Acts = (function () {
     },
     {
       id: "2.2", act: "2", title: "Add a fifth platform",
-      desc: "Adding a fifth platform means building one new connector. Everything behind it is reused as is.",
+      desc: "A franchise wants to use a fifth job platform. PuroClean adds one new connector for it; the translation rules, quality checks, data lake and dashboards stay exactly as they are.", why: "Each new platform becomes a small, predictable piece of work instead of a new integration project.",
       say: "Adding a platform means one new System API. Everything downstream is reused. That's the difference between a feed and a platform.",
       powered: ["Anypoint Exchange", "API-led connectivity"],
       async run(x) {
@@ -347,7 +347,7 @@ window.Acts = (function () {
     /* ---------- Act 3 */
     {
       id: "3.1", act: "3", title: "Two lanes: near-real-time and daily",
-      desc: "Time-critical milestones sync every five minutes. Everything else syncs once a night.",
+      desc: "Not every field needs to be live. The four milestones tied to customer-response SLAs sync every five minutes; everything else, like royalties and closures, syncs once a night.", why: "Real-time effort goes only where the SLA needs it, which keeps the integration fast and inexpensive to run.",
       say: "Only four things need to be as live as possible, CJ's words. We spend real-time effort only where the SLA needs it; everything else runs once a day. We'll confirm which four with CJ.",
       powered: ["MuleSoft Scheduler + Batch", "Watermark incremental sync"],
       async run(x) {
@@ -370,7 +370,7 @@ window.Acts = (function () {
     },
     {
       id: "3.2", act: "3", title: "A missed SLA reaches the RD in time",
-      desc: "A job in Sacramento misses its 30-minute contact window. The right regional director is alerted while it can still be fixed.",
+      desc: "A Sacramento job passes 30 minutes without a customer contact. The West regional director gets a push alert on their phone and opens the job directly.", why: "Today this shows up in next week's report. Here, the RD can call the franchise while the customer is still waiting.",
       say: "The RD finds out while it can still be fixed, not on next week's report.",
       powered: ["MuleSoft notification API", "FranConnect region mapping"],
       async run(x) {
@@ -402,7 +402,7 @@ window.Acts = (function () {
     /* ---------- Act 4 */
     {
       id: "4.1", act: "4", title: "Duplicate and incomplete records",
-      desc: "A duplicate job is merged and an incomplete one is held back, so bad data never reaches reporting.",
+      desc: "A multi-location franchise resubmits a job it already sent, and another job arrives with no loss type. The duplicate is merged into the existing record; the incomplete one is held in quarantine with a reason.", why: "Bad records never reach the dashboards, and nothing is silently thrown away. Each held record can be fixed and re-sent.",
       say: "Robert put it best: we're not passing garbage to the data lake. Bad records are held back with a reason, not silently loaded.",
       powered: ["DataWeave validation", "MuleSoft error handling", "Quarantine table in 11:11"],
       async run(x) {
@@ -433,7 +433,7 @@ window.Acts = (function () {
     },
     {
       id: "4.2", act: "4", title: "Data health, CJ's own KPI",
-      desc: "CJ watches the share of franchises with usable data climb, and sees exactly why records are held back.",
+      desc: "CJ's data health dashboard shows the share of franchises with usable data, how many records are being held back, and the top reasons they were held.", why: "Usable data climbs from under 20% as each wave goes live, and CJ can see exactly what to fix next.",
       say: "Under 20% usable today. This is how we watch that number move, franchise by franchise.",
       powered: ["Tableau", "11:11 curated views"],
       async run(x) {
@@ -460,7 +460,7 @@ window.Acts = (function () {
     /* ---------- Act 5 */
     {
       id: "5.1", act: "5", title: "CJ's Tuesday afternoon: network to one job",
-      desc: "CJ drills from the whole network down to a single job in four clicks, on data that's minutes old.",
+      desc: "CJ starts at the whole network and clicks down through Kansas and Wichita to a single job and its milestone history. Each click queries live data that's minutes old.", why: "An answer that takes a regional director two hours of spreadsheets today takes CJ four clicks.",
       say: "CJ can do this in two minutes today; an RD takes two hours. Here it's four clicks for anyone with access, on data that's minutes old, from all four platforms.",
       powered: ["Tableau", "Semantic model, certified metrics", "Live connection to 11:11"],
       async run(x) {
@@ -488,7 +488,7 @@ window.Acts = (function () {
     },
     {
       id: "5.2", act: "5", title: "Same dashboard, the regional director's view",
-      desc: "A regional director opens the same dashboard and sees only their own region. No copies, no exports.",
+      desc: "A regional director opens the exact same dashboard. Row-level security filters it to their own region automatically.", why: "One dashboard serves corporate and every region: no copies, no exports, and no one sees data they shouldn't.",
       say: "Twelve or thirteen RDs, one dashboard. Each sees their own region. No copies, no exports.",
       powered: ["Tableau row-level security", "FranConnect region reference"],
       async run(x) {
@@ -509,7 +509,7 @@ window.Acts = (function () {
     },
     {
       id: "5.3", act: "5", title: "Benchmarking against the network",
-      desc: "One franchise compared with the network average, on the KPIs from CJ's list.",
+      desc: "One franchise compared with the network average on the KPIs from CJ's list, side by side on one screen.", why: "Owners and RDs see where a location stands against its peers, using the same certified definitions as corporate.",
       say: "Benchmarking was on CJ's list. Financials come later with QuickBooks; we're showing where they'll land.",
       powered: ["Tableau"],
       async run(x) {
@@ -529,7 +529,7 @@ window.Acts = (function () {
     },
     {
       id: "5.4", act: "5", title: "KPI lineage: where does this number come from?",
-      desc: "Every number on the dashboard traces back to the platform and field it came from.",
+      desc: "CJ asks where the on-time completion number comes from. The right side traces it back through Tableau and MuleSoft to the exact field in each job platform.", why: "When someone asks 'is this number right?', there's a precise answer instead of a debate.",
       say: "Every number on CJ's screen traces back to a field, in a specific platform, through a specific API. When someone asks 'is this right?', this is the answer.",
       powered: ["Tableau semantic model", "MuleSoft API catalog in Exchange"],
       async run(x) {
@@ -573,7 +573,7 @@ window.Acts = (function () {
     /* ---------- Act 6 */
     {
       id: "6.1", act: "6", title: "From 50 locations to 900",
-      desc: "The network grows from 50 locations to 900, and a storm quadruples volume. The design doesn't change; capacity does.",
+      desc: "The network grows from 50 locations to 430 and then 900, and a hailstorm quadruples job volume for an afternoon. MuleSoft adds processing capacity; the design stays the same.", why: "Growth and storm surges are handled by scaling, not rebuilding. Spikes are queued and drained, so nothing is dropped.",
       say: "CJ's planning for 900. The integration doesn't change shape; it adds capacity. A hailstorm in Ohio is a busy afternoon, not an outage.",
       powered: ["MuleSoft on CloudHub", "Horizontal scaling", "Persistent queues"],
       async run(x) {
@@ -612,7 +612,7 @@ window.Acts = (function () {
     },
     {
       id: "6.2", act: "6", title: "Onboarding a franchise is configuration, not code",
-      desc: "Connecting a new franchise is a short form, not a project. Its jobs start flowing on the next cycle.",
+      desc: "PuroClean corporate connects a new franchise by filling in a short form: franchise ID, platform and credential reference. Its open jobs start flowing on the next sync cycle.", why: "Onboarding is configuration, not a development project, so growing to 900 locations doesn't require a bigger team.",
       say: "This is the 'bazooka' question. You don't start with the bazooka. Wave 1 is Dash and FranConnect. Every franchise after that is a form, not a project.",
       powered: ["MuleSoft configuration properties", "FranConnect reference data"],
       async run(x) {
@@ -640,7 +640,7 @@ window.Acts = (function () {
     /* ---------- Act 7 */
     {
       id: "7.1", act: "7", title: "PSA goes down",
-      desc: "One of the job platforms goes down. Monitoring catches it within a minute, and incoming jobs are held safely.",
+      desc: "PSA, one of the job platforms, starts failing. Monitoring detects it within a minute, MuleSoft stops calling it, and new jobs are queued safely.", why: "CJ's dashboard shows the problem before any franchise or customer calls about it.",
       say: "Vendors will have bad days. The question is whether you find out from a monitor or from CJ.",
       powered: ["Anypoint Monitoring", "Functional Monitoring", "Visualizer", "Retry + circuit breaker"],
       async run(x) {
@@ -675,7 +675,7 @@ window.Acts = (function () {
     },
     {
       id: "7.2", act: "7", title: "The alert, the trace and the recovery",
-      desc: "The on-call owner gets the alert, sees exactly what failed, and the system recovers on its own with nothing lost.",
+      desc: "The integration owner gets an alert, opens the trace and sees exactly which call failed and why. When PSA recovers, the 1,284 queued events replay automatically, in order.", why: "Seventeen minutes of outage, zero data lost, and no manual cleanup afterwards.",
       say: "Seventeen minutes, zero data lost, and nobody had to be watching. The fix knowledge lives in the runbook and the platform, not in one person's head.",
       powered: ["Anypoint Monitoring alerts", "Dashboards", "Tracing"],
       async run(x) {
@@ -723,7 +723,7 @@ window.Acts = (function () {
     },
     {
       id: "7.3", act: "7", title: "Security: Nick's gating item",
-      desc: "Every request passes through the same security checks at the gateway, under independently certified controls.",
+      desc: "Every request from a job platform passes the same gateway checks: identity, authorization, payload inspection, rate limits and tokenization of sensitive fields. A malformed request is blocked before it reaches anything.", why: "The platform is independently certified, and PuroClean keeps control of its own policies, users and credentials.",
       say: "SOC 2 was the gate. It's there, alongside ISO 27001 and the rest. And control stays with you: MuleSoft runs the platform, PuroClean owns the policies, the credentials and the definitions.",
       powered: ["Anypoint API Manager", "Anypoint Security", "MuleSoft Trust Center"],
       async run(x) {
@@ -750,7 +750,7 @@ window.Acts = (function () {
     },
     {
       id: "7.4", act: "7", title: "\"If you win the lottery, what happens?\"",
-      desc: "The whole connection layer is documented and monitored, so keeping it running doesn't depend on one person.",
+      desc: "The whole connection layer is documented, versioned and monitored on one platform, with a runbook for each kind of failure.", why: "Keeping it running doesn't depend on any one person's knowledge.",
       say: "CJ asked the question: if you win the lottery, what happens? With this, the knowledge stays with PuroClean. Nick's still the architect. He just isn't the only one who can keep it running.",
       powered: ["Anypoint Exchange", "Anypoint Monitoring"],
       async run(x) {
@@ -770,7 +770,7 @@ window.Acts = (function () {
     /* ---------- Act 8 */
     {
       id: "8.1", act: "8", title: "Tableau Pulse: the dashboard comes to CJ",
-      desc: "Tableau Pulse sends CJ a morning digest of what changed, without opening a dashboard.",
+      desc: "Each morning, Tableau Pulse sends CJ a short digest of the metrics that changed, like a 38% jump in open water jobs in Ohio after Tuesday's storms.", why: "CJ hears about what matters without having to go looking for it.",
       say: "CJ wants to be proactive, not reactive. This is the first step: the dashboard comes to you.",
       powered: ["Tableau Pulse"],
       async run(x) {
@@ -796,7 +796,7 @@ window.Acts = (function () {
     },
     {
       id: "8.2", act: "8", title: "What's next, when the data is trusted",
-      desc: "What becomes possible once the data is trusted. None of it is part of Stage 1.",
+      desc: "Once the data is trusted, PuroClean can add weather overlays, AI agents for outreach and triage, and a unified franchise and customer view in Data Cloud.", why: "None of this is part of Stage 1. It's what the trusted foundation makes possible next.",
       say: "Dashboards first, with an AI proactive mindset. Weather, agents and Data Cloud come once the data is trusted. None of it is Stage 1.",
       powered: ["Roadmap only"],
       async run(x) {
