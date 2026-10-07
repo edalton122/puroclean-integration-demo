@@ -324,115 +324,112 @@
 
   const PAGES = {
     hero: () => {
-      /* Ordered columns: Today comparison page + 8 numbered chapters */
-      const FLOW_COLS = [
-        { id: "today", n: "", label: "Today vs.", isToday: true },
-        ...A.chapters.filter((c) => c.n).map((c) => ({
-          id: c.id, n: c.n, label: c.title,
-          time: (CLOCKS[c.n + ".1"] || "").replace(/^(Tue|Wed) /, ""),
-          question: c.question,
-        })),
-      ];
+      /* The 8 numbered story chapters. */
+      const CHAPTERS = A.chapters.filter((c) => c.n);
 
-      /* What each persona does in each chapter (beat label + whether it's on the Short path) */
+      /* What each persona does in each chapter they appear in. */
       const BEATS = {
-        pm: {
-          "1": { a: "Job created in Dash", b: "MuleSoft picks it up \u00b7 4 min", s: true },
-        },
-        rd: {
-          "2": { a: "SLA alert \u00b7 seconds", b: "Job link in Tableau Mobile", s: true },
-          "4": { a: "West region view", b: "Subscribe + data-driven alert", s: false },
-        },
-        cj: {
-          "today": { a: "Today vs. API-led", b: "Why scale \u2260 more custom code", s: true },
-          "3":     { a: "Certified data source", b: "DQ warning \u00b7 data health KPI", s: true },
-          "4":     { a: "US network map", b: "Tableau Agent \u00b7 web authoring", s: true },
-          "8":     { a: "Pulse digest", b: "Explain Data on Ohio", s: true },
-        },
-        it: {
-          "5": { a: "Runtime Manager", b: "50 \u2192 900 locations \u00b7 same config", s: true },
-          "6": { a: "PSA outage \u00b7 2:14 PM", b: "Watermark recovery \u00b7 2:31 PM", s: true },
-          "7": { a: "API Manager \u00b7 4 policies", b: "Exchange catalog \u00b7 9 assets", s: true },
-        },
+        pm: { "1": { a: "Job created in Dash",         b: "MuleSoft picks it up \u00b7 4 min",   s: true  } },
+        rd: { "2": { a: "SLA alert \u00b7 seconds",    b: "Job link in Tableau Mobile",            s: true  },
+              "4": { a: "West region view",             b: "Subscribe + data-driven alert",         s: false } },
+        cj: { "3": { a: "Certified data source",       b: "DQ warning \u00b7 data health KPI",     s: true  },
+              "4": { a: "Network map \u00b7 Tableau Agent", b: "Self-service web authoring",        s: true  },
+              "8": { a: "Pulse digest",                 b: "Explain Data on Ohio",                  s: true  } },
+        it: { "5": { a: "Runtime Manager",             b: "50 \u2192 900 locations \u00b7 same config", s: true },
+              "6": { a: "PSA outage \u00b7 2:14 PM",   b: "Recovery \u00b7 2:31 PM",               s: true  },
+              "7": { a: "API Manager \u00b7 4 policies", b: "Exchange catalog \u00b7 9 assets",     s: true  } },
       };
 
-      const chHdr = (col) => {
-        const hasShort = col.isToday || ALL.some((s) => s.act === col.id && s.short);
-        return `<div class="df-ch${col.isToday ? " df-ch-today" : ""}${hasShort ? " df-short" : ""}" data-go="${col.id}">
-          <div class="df-cn${col.isToday ? " df-cn-vs" : ""}">${col.n || (col.isToday ? "vs." : "")}</div>
-          <div class="df-ct">${esc(col.label)}</div>
-          ${col.time ? `<div class="df-ctime">${esc(col.time)}</div>` : ""}
-        </div>`;
-      };
+      const headRow = `<div class="jmap-head">
+        <div class="jmh-corner"></div>
+        ${CHAPTERS.map((c) => {
+          const time = (CLOCKS[c.n + ".1"] || "").replace(/^(Tue|Wed) /, "");
+          return `<div class="jmh-ch" data-go="${c.id}" title="${esc(c.question)}">
+            <div class="jmh-n">${c.n}</div>
+            <div class="jmh-t">${esc(c.title)}</div>
+            ${time ? `<div class="jmh-time">${esc(time)}</div>` : ""}
+          </div>`;
+        }).join("")}
+      </div>`;
 
-      const personaRow = (p) => {
+      const personaRows = D.personas.map((p) => {
         const beats = BEATS[p.id] || {};
-        const cells = FLOW_COLS.map((col) => {
-          const b = beats[col.id];
-          if (b) {
-            return `<div class="df-cell df-active${b.s ? " df-s" : ""}" style="--pc:${p.color}" data-go="${col.id}">
-              <div class="dfc-a">${b.a}</div>
-              <div class="dfc-b">${b.b}</div>
-              ${b.s ? '<span class="dfc-star">\u2605</span>' : ""}
-            </div>`;
-          }
-          return `<div class="df-cell df-empty"></div>`;
+        const cells = CHAPTERS.map((c) => {
+          const b = beats[c.id];
+          if (b) return `<div class="jmap-cell">
+            <div class="jmap-box${b.s ? " jmap-box-s" : ""}" style="--pc:${p.color}" data-go="${c.id}">
+              ${b.s ? '<span class="jmb-star">\u2605</span>' : ""}
+              <div class="jmb-a">${b.a}</div>
+              <div class="jmb-b">${b.b}</div>
+            </div>
+          </div>`;
+          return `<div class="jmap-cell jmap-cell-empty"></div>`;
         }).join("");
-        return `
-          <div class="df-who" style="--pc:${p.color}">
-            <div class="df-av">${esc(p.initials)}</div>
-            <div class="df-inf">
-              <div class="df-nm">${esc(p.name)}</div>
-              <div class="df-rl">${esc(p.role)}</div>
-              <div class="df-og">${esc(p.org)}</div>
+        return `<div class="jmap-row" style="--pc:${p.color}">
+          <div class="jmap-who">
+            <div class="jmw-av" style="background:${p.color}">${esc(p.initials)}</div>
+            <div class="jmw-inf">
+              <div class="jmw-nm">${esc(p.name)}</div>
+              <div class="jmw-rl">${esc(p.role)}</div>
+              <div class="jmw-og">${esc(p.org)}</div>
             </div>
           </div>
-          ${cells}`;
-      };
-
-      /* Question row: 2 spacers (corner + today) + 8 chapter questions */
-      const qrow = `
-        <div class="df-qsp"></div>
-        <div class="df-qsp"></div>
-        ${A.chapters.filter((c) => c.n).map((c) =>
-          `<div class="df-q">\u201c${esc(c.question)}\u201d</div>`
-        ).join("")}`;
-
-      return `
-        <div class="hero hero-flow">
-          <div class="hf-top">
-            <div class="hf-brand">
-              <img src="assets/pc-logo-white.png" alt="PuroClean" class="hero-logo hf-logo"/>
-              <div>
-                <div class="hero-eyebrow">MuleSoft + Tableau \u00b7 Stage 1</div>
-                <h1 class="hf-h1">${esc(D.meta.title)}</h1>
-                <p class="hf-lead">${esc(D.meta.northStar)}</p>
-              </div>
-            </div>
-            <div class="hf-actions">
-              <button class="primary hf-btn" data-path="short">\u2605 Short path<span class="hf-sub">~14 min \u00b7 13 stops</span></button>
-              <button class="ghost-light hf-btn" data-path="full">Full run<span class="hf-sub">~30 min \u00b7 all stops</span></button>
-            </div>
-          </div>
-
-          <div class="demo-flow">
-            <div class="df-lbl">Demo journey \u00b7 Tuesday Feb 16 through Wednesday morning \u00b7 \u2605 = Short path stop</div>
-            <div class="df-grid">
-              <div class="df-corner"></div>
-              ${FLOW_COLS.map(chHdr).join("")}
-              ${D.personas.map(personaRow).join("")}
-              ${qrow}
-            </div>
-          </div>
-
-          <div class="hf-foot">
-            <div>
-              <button class="ghost hf-link" data-go="today">Today vs. MuleSoft \u2192</button>
-              <button class="ghost hf-link" data-go="arch">Architecture \u2192</button>
-            </div>
-            <p class="hero-fine">${esc(D.meta.preparedFor)} \u00b7 Presented by ${esc(D.meta.presenter)}<br/><span class="tag">The Paramedics of Property Damage\u00ae</span></p>
-          </div>
+          ${cells}
         </div>`;
+      }).join("");
+
+      const castCards = D.personas.map((p) => `
+        <div class="cast-card" style="--pc:${p.color}" data-go="${p.chapters[0]}">
+          <div class="cast-av" style="background:${p.color}">${esc(p.initials)}</div>
+          <div class="cast-inf">
+            <div class="cast-nm">${esc(p.name)}</div>
+            <div class="cast-rl">${esc(p.role)}</div>
+            <div class="cast-og">${esc(p.org)}</div>
+            <div class="cast-q">\u201c${esc(p.question)}\u201d</div>
+          </div>
+        </div>`).join("");
+
+      return `<div class="hero hv2">
+        <div class="hv2-band">
+          <div class="hv2-brand">
+            <img src="assets/pc-logo-white.png" alt="PuroClean" class="hv2-logo"/>
+            <div>
+              <div class="hv2-ey">MuleSoft + Tableau \u00b7 Stage 1</div>
+              <h1 class="hv2-h1">${esc(D.meta.title)}</h1>
+            </div>
+          </div>
+          <div class="hv2-btns">
+            <button class="primary hv2-btn" data-path="short">\u2605 Short path <span class="hv2-sub">~14 min \u00b7 13 stops</span></button>
+            <button class="ghost-light hv2-btn" data-path="full">Full run <span class="hv2-sub">~30 min \u00b7 all stops</span></button>
+          </div>
+        </div>
+
+        <div class="hv2-cast-wrap">
+          <div class="hv2-cast-h">Meet the people in the story</div>
+          <div class="hv2-cast">${castCards}</div>
+        </div>
+
+        <div class="hv2-journey">
+          <div class="hv2-jh">
+            <span class="hv2-jlbl">The demo journey</span>
+            <span class="hv2-jdate">Tuesday Feb 16 through Wednesday morning \u00b7 \u2605 = Short path</span>
+          </div>
+          ${headRow}
+          ${personaRows}
+          <div class="jmap-bts">
+            <div class="jmbt-lbl">Behind the scenes</div>
+            <div class="jmbt-body">MuleSoft Anypoint Platform \u00b7 CloudHub 2.0 runtime \u00b7 Anypoint MQ \u00b7 DataWeave \u00b7 Tableau Cloud \u00b7 11:11 SQL Server lake \u00b7 Tableau REST API</div>
+          </div>
+        </div>
+
+        <div class="hv2-foot">
+          <div>
+            <button class="ghost hv2-flink" data-go="today">Today vs. MuleSoft \u2192</button>
+            <button class="ghost hv2-flink" data-go="arch">Architecture \u2192</button>
+          </div>
+          <p class="hero-fine">${esc(D.meta.preparedFor)} \u00b7 Presented by ${esc(D.meta.presenter)}<br/><span class="tag">The Paramedics of Property Damage\u00ae</span></p>
+        </div>
+      </div>`;
     },
 
     today: () => `
