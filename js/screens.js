@@ -333,32 +333,38 @@ window.Screens = (function () {
   const sheet = (title, body, opt = {}) =>
     `<div class="tv-sh ${opt.cls || ""}"><div class="tv-sh-h"><b>${title}</b>${opt.right ? `<small>${opt.right}</small>` : ""}</div>${body}</div>`;
 
-  function tileMap(opt = {}) {
-    const S = 30, SH = 23, G = 3, P = S + G, PH = SH + G, W = 11 * P - G, H = 8 * PH - G, max = 97;
+  /* Tableau filled map: lower-48 state outlines from js/usmap.js, shaded by open jobs. */
+  function stateMap(opt = {}) {
+    const M = window.US_MAP, max = 97;
+    const [vx, vy, W, H] = M.vb;
     let tip = "";
-    const cells = D.tiles
-      .map(([st, c, r]) => {
-        const v = D.openJobs[st] || 0;
-        const dim = opt.only && !opt.only.includes(st);
-        const bi = Math.min(BLUE.length - 1, Math.floor((v / max) * BLUE.length));
-        const fill = dim ? "#eef0f3" : BLUE[bi];
-        const txt = dim ? "#c3c6cb" : bi >= 3 ? "#fff" : "#1d4c80";
-        const x = c * P, y = r * PH;
-        const tap = opt.tap === st;
-        const sel = opt.sel === st || tap;
-        const fade = opt.sel && opt.sel !== st;
-        if (opt.tip === st) {
-          const k = st === "KS" ? D.kansas : null;
-          const top = k ? `${k.byLoss[0].k} (${k.byLoss[0].v})` : "Water";
-          tip = `<div class="tv-tip" style="left:${(((x + S + 6) / W) * 100).toFixed(1)}%;top:${((y / H) * 100).toFixed(1)}%">
-            <div><span>State</span><b>${st === "KS" ? "Kansas" : st}</b></div><div><span>Open jobs</span><b>${v}</b></div><div><span>Top loss type</span><b>${top}</b></div><div><span>Franchises</span><b>${st === "KS" ? 6 : "\u2014"}</b></div>
-            ${tap ? "<em>Click to drill down \u203a</em>" : ""}</div>`;
-        }
-        return `<g class="tv-tile ${tap ? "tap" : ""} ${fade ? "fade" : ""}" ${tap ? `data-tap="${st}"` : ""}><rect x="${x}" y="${y}" width="${S}" height="${SH}" rx="3" fill="${fill}"/>${sel ? `<rect x="${x - 1.5}" y="${y - 1.5}" width="${S + 3}" height="${SH + 3}" rx="4" fill="none" stroke="#1b1b1b" stroke-width="2"/>` : ""}<text x="${x + S / 2}" y="${y + 10}" text-anchor="middle" fill="${txt}" class="tl">${st}</text>${dim ? "" : `<text x="${x + S / 2}" y="${y + 20}" text-anchor="middle" fill="${txt}" class="tv">${v}</text>`}</g>`;
-      })
-      .join("");
+    const marks = [], front = [], labels = [];
+    Object.entries(M.states).forEach(([st, s]) => {
+      const v = D.openJobs[st] || 0;
+      const dim = opt.only && !opt.only.includes(st);
+      const bi = Math.min(BLUE.length - 1, Math.floor((v / max) * BLUE.length));
+      const fill = dim ? "#e6e8eb" : BLUE[bi];
+      const txt = bi >= 3 ? "#fff" : "#1d4c80";
+      const tap = opt.tap === st;
+      const sel = opt.sel === st || tap;
+      const fade = opt.sel && opt.sel !== st;
+      const [lx, ly, r] = s.l;
+      const mark = `<g class="tv-st ${dim ? "base" : ""} ${tap ? "tap" : ""} ${sel ? "sel" : ""} ${fade ? "fade" : ""}" ${tap ? `data-tap="${st}"` : ""}><path d="${s.d}" fill="${fill}"/></g>`;
+      (sel ? front : marks).push(mark);
+      if (!dim && r >= 14) {
+        const two = r >= 24;
+        labels.push(`<g class="${fade ? "fade" : ""}"><text x="${lx}" y="${two ? ly - 2 : ly + 7}" fill="${txt}" class="sl">${st}</text>${two ? `<text x="${lx}" y="${ly + 18}" fill="${txt}" class="sv">${v}</text>` : ""}</g>`);
+      }
+      if (opt.tip === st) {
+        const k = st === "KS" ? D.kansas : null;
+        const top = k ? `${k.byLoss[0].k} (${k.byLoss[0].v})` : "Water";
+        tip = `<div class="tv-tip" style="left:${(((lx - vx + r + 14) / W) * 100).toFixed(1)}%;top:${(((ly - vy) / H) * 100).toFixed(1)}%">
+          <div><span>State</span><b>${s.n}</b></div><div><span>Open jobs</span><b>${v}</b></div><div><span>Top loss type</span><b>${top}</b></div><div><span>Franchises</span><b>${st === "KS" ? 6 : "\u2014"}</b></div>
+          ${tap ? "<em>Click to drill down \u203a</em>" : ""}</div>`;
+      }
+    });
     const legend = `<div class="tv-legend"><b>Open jobs</b><span>0</span><i style="background:linear-gradient(90deg,${BLUE.join(",")})"></i><span>${max - 1}</span></div>`;
-    return `<div class="tv-map"><svg class="tv-tiles" viewBox="0 0 ${W} ${H}">${cells}</svg>${tip}</div>${opt.legend === false ? "" : legend}`;
+    return `<div class="tv-map"><svg class="tv-usmap" viewBox="${vx} ${vy} ${W} ${H}">${marks.join("")}${front.join("")}<g class="tv-sl">${labels.join("")}</g></svg>${tip}<span class="tv-attr">\u00a9 Mapbox \u00a9 OpenStreetMap</span></div>${opt.legend === false ? "" : legend}`;
   }
 
   function donut(parts, opt = {}) {
@@ -467,7 +473,7 @@ window.Screens = (function () {
     if (view === "network") {
       return tabShell("Network Operations", ["All franchises"], `${bans(D.kpis)}
         <div class="tv-g g-map">
-          ${sheet("Open jobs by state", tileMap({ tap: opt.tap ? "KS" : null, tip: opt.tap ? "KS" : null }), { right: opt.tap ? "Click a state to drill down" : "All four SPAR platforms" })}
+          ${sheet("Open jobs by state", stateMap({ tap: opt.tap ? "KS" : null, tip: opt.tap ? "KS" : null }), { right: opt.tap ? "Click a state to drill down" : "All four SPAR platforms" })}
           <div class="tv-col">
             ${sheet("Open jobs by loss type", donut(NET_LOSS, { center: "1,712", sub: "open jobs" }))}
             ${sheet("Open jobs \u00b7 last 13 weeks", area(SERIES["Open jobs"].s, { w: 210, h: 64, min: 1560, max: 1720, ticks: [1600, 1700], xl: [[0, "Nov"], [6, "Dec"], [12, "Feb"]], lastL: "1,712" }))}
@@ -488,7 +494,7 @@ window.Screens = (function () {
           { k: "Cycle time", v: "9.0 days", d: "\u22120.4 vs Jan", s: [9.8, 9.7, 9.7, 9.6, 9.5, 9.5, 9.4, 9.3, 9.3, 9.2, 9.1, 9.1, 9.0], tone: "good" },
         ])}
         <div class="tv-g g-map">
-          ${sheet("Open jobs by state", tileMap({ sel: "KS", tip: "KS" }), { right: "Kansas selected" })}
+          ${sheet("Open jobs by state", stateMap({ sel: "KS", tip: "KS" }), { right: "Kansas selected" })}
           <div class="tv-col">
             ${sheet(`Kansas \u00b7 open jobs by loss type`, hbars(K.byLoss.map((x) => ({ k: x.k, v: x.v, c: x.c, ico: icon(x.k), tap: opt.tap && x.k === "Water" ? "Water" : null }))), { right: opt.tap ? "Click Water" : "" })}
             ${sheet("By metro area", hbars(metros))}
@@ -531,7 +537,7 @@ window.Screens = (function () {
       const rows = D.west.map((s) => ({ k: { CA: "California", OR: "Oregon", WA: "Washington", NV: "Nevada" }[s], v: D.openJobs[s], c: "#346fa9" })).sort((a, b) => b.v - a.v);
       return tabShell("Network Operations", ["West Region"], `${bans(D.kpisWest)}
         <div class="tv-g g-map">
-          ${sheet("Open jobs by state", tileMap({ only: D.west, legend: false }), { right: "Only West Region rows returned" })}
+          ${sheet("Open jobs by state", stateMap({ only: D.west, legend: false }), { right: "Only West Region rows returned" })}
           <div class="tv-col">
             ${sheet("West Region \u00b7 open jobs by state", hbars(rows))}
             ${sheet("On-time completion \u00b7 13 weeks", area([79, 80, 80, 81, 81, 82, 82, 83, 82, 83, 84, 84, 84], { w: 210, h: 64, min: 76, max: 86, ticks: [78, 84], fmt: (v) => v + "%", ref: 82, refL: "Network 82%", lastL: "84%" }))}
