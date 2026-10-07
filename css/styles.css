@@ -1402,3 +1402,188 @@ polyline.draw { stroke-dasharray: 600; stroke-dashoffset: 600; animation: draw 1
   .tk-say { font-size: 13.5px; }
   .cx-graph { max-height: 46vh; }
 }
+
+/* ============================================================
+   Hero flow – swim-lane presentation slide
+   ============================================================ */
+
+/* Full dark background when hero-flow is showing */
+.page:has(.hero-flow) { background: #1A1818; }
+
+.hero-flow {
+  background: #1A1818;
+  color: #fff;
+  margin: 0;
+  max-width: none;
+  min-height: 100%;
+  padding: 26px 36px 18px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Top row: branding left, action buttons right */
+.hf-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  flex-shrink: 0;
+}
+
+.hf-brand {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.hf-logo { height: 34px; flex-shrink: 0; }
+.hf-h1 { font-size: 26px; font-weight: 700; margin: 4px 0 0; color: #fff; line-height: 1.15; }
+.hf-lead { font-size: 13px; color: rgba(255,255,255,.55); margin: 4px 0 0; max-width: 520px; line-height: 1.4; }
+
+.hf-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+  min-width: 210px;
+}
+
+.hf-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 18px;
+  font-size: 14px;
+  border-radius: 8px;
+  white-space: nowrap;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.hf-sub {
+  font-size: 11px;
+  font-weight: 400;
+  opacity: .72;
+}
+
+/* Demo journey section */
+.demo-flow { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+
+.df-lbl {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: rgba(255,255,255,.38);
+}
+
+/* 10-col grid: persona-label + today + chapters 1–8 */
+.df-grid {
+  display: grid;
+  grid-template-columns: 148px 1fr repeat(8, 1fr);
+  gap: 3px;
+  background: rgba(255,255,255,.07);
+  border-radius: 10px;
+  padding: 3px;
+  flex: 1;
+}
+
+/* Top-left corner placeholder */
+.df-corner {
+  background: rgba(255,255,255,.03);
+  border-radius: 7px;
+}
+
+/* Chapter column header cells */
+.df-ch {
+  background: rgba(255,255,255,.06);
+  border-radius: 7px;
+  padding: 10px 8px 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: background .15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-height: 64px;
+}
+.df-ch:hover { background: rgba(255,255,255,.14); }
+.df-ch.df-short { border-top: 2.5px solid rgba(255,210,0,.6); }
+.df-ch.df-ch-today {
+  background: rgba(255,255,255,.03);
+  border-top: 2.5px solid rgba(255,210,0,.6);
+  cursor: default;
+}
+.df-cn { font-size: 20px; font-weight: 800; color: #fff; line-height: 1; }
+.df-cn.df-cn-vs { font-size: 12px; font-weight: 400; color: rgba(255,255,255,.35); margin-top: 6px; }
+.df-ct { font-size: 10px; font-weight: 700; color: rgba(255,255,255,.8); text-transform: uppercase; letter-spacing: .05em; line-height: 1.2; }
+.df-ctime { font-size: 9px; color: rgba(255,255,255,.38); font-variant-numeric: tabular-nums; margin-top: 2px; }
+
+/* Persona label cells (left column of each lane row) */
+.df-who {
+  background: rgba(255,255,255,.05);
+  border-radius: 7px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-left: 3px solid var(--pc, #555);
+}
+.df-av {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--pc, #555); color: #fff;
+  font-size: 9px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; letter-spacing: .02em;
+}
+.df-inf { min-width: 0; }
+.df-nm { font-size: 11.5px; font-weight: 700; color: rgba(255,255,255,.95); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.df-rl { font-size: 9.5px; color: rgba(255,255,255,.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.df-og { font-size: 8.5px; color: rgba(255,255,255,.32); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Activity cells (9 per persona row) */
+.df-cell {
+  border-radius: 7px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 8px 10px;
+  position: relative;
+  min-height: 64px;
+}
+.df-empty { background: rgba(255,255,255,.02); }
+.df-active {
+  background: color-mix(in srgb, var(--pc) 78%, #000 22%);
+  cursor: pointer;
+  transition: filter .15s, transform .12s;
+}
+.df-active:hover { filter: brightness(1.22); transform: scale(1.03); z-index: 1; }
+.df-active.df-s { box-shadow: inset 0 0 0 1.5px rgba(255,210,0,.5); }
+.dfc-a { font-size: 11px; font-weight: 700; color: #fff; line-height: 1.25; }
+.dfc-b { font-size: 9.5px; color: rgba(255,255,255,.72); margin-top: 2px; line-height: 1.25; }
+.dfc-star { position: absolute; top: 4px; right: 6px; font-size: 9px; color: rgba(255,210,0,.9); }
+
+/* Chapter question row (bottom of grid) */
+.df-qsp { /* empty spacer for corner + today columns */ }
+.df-q {
+  padding: 5px 6px 4px;
+  font-size: 9px;
+  color: rgba(255,255,255,.32);
+  font-style: italic;
+  line-height: 1.35;
+  text-align: center;
+}
+
+/* Footer row */
+.hf-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-shrink: 0;
+}
+.hf-foot .hero-fine { margin: 0; text-align: right; font-size: 11px; }
+.hf-link { font-size: 12px; padding: 5px 12px; margin-right: 6px; }
