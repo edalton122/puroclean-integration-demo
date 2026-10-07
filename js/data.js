@@ -6,7 +6,7 @@ window.PC = (function () {
       "One connected view of every franchise, so PuroClean can see, trust, and act on its data \u2014 no matter which approved platform franchisees use day to day.",
     preparedFor: "Prepared for PuroClean \u00b7 October 12, 2026",
     presenter: "Eric Dalton, Solutions Engineer",
-    disclaimer: "Illustrative data and simulated screens. Prepared for PuroClean. Salesforce confidential.",
+    disclaimer: "Product screens shown with PuroClean sample data; vendor apps simulated. Prepared for PuroClean. Salesforce confidential.",
     stats: [
       { v: "430", l: "franchises" },
       { v: "4", l: "SPAR platforms" },
@@ -234,5 +234,64 @@ window.PC = (function () {
     ],
   };
 
-  return { meta, roles, franchise, job, milestones, vendors, canonical, openJobs, west, kansas, kpis, kpisWest, benchmark, scale, outage, security, scope };
+  /* Four personas: who is in the room, what they need to hear. */
+  const personas = [
+    {
+      id: "pm",
+      name: "Alex",
+      role: "Project Manager",
+      org: "PuroClean Wichita East",
+      question: "Will franchises have to change anything?",
+      need: "Keep using Dash exactly as today",
+      chapters: ["1"],
+      color: "#C50A1D",
+      initials: "PM",
+    },
+    {
+      id: "rd",
+      name: "Jordan",
+      role: "Regional Director",
+      org: "West Region · CA, OR, WA, NV",
+      question: "Will I know before my customer complains?",
+      need: "Live SLA alerts routed by region, in Tableau Mobile",
+      chapters: ["2", "4"],
+      color: "#00346D",
+      initials: "RD",
+    },
+    {
+      id: "cj",
+      name: "CJ Bailey",
+      role: "VP, Software Management",
+      org: "PuroClean Corporate",
+      question: "Can I trust the numbers, and see the whole network?",
+      need: "Trusted KPIs, network drilldown, self-service analytics",
+      chapters: ["3", "4", "5", "8"],
+      color: "#00346D",
+      initials: "CJ",
+    },
+    {
+      id: "it",
+      name: "Nick's IT team",
+      role: "PuroClean IT",
+      org: "Platform & Security",
+      question: "Is it secure and maintainable without a dedicated team?",
+      need: "Security policies, runbooks, monitoring, no single point of failure",
+      chapters: ["6", "7"],
+      color: "#373536",
+      initials: "IT",
+    },
+  ];
+
+  /* Journey stops for the ribbon on the entry page */
+  const journeyRibbon = [
+    { time: "6:21 AM",  label: "Job in Dash",      chapter: "1", persona: "pm" },
+    { time: "6:25 AM",  label: "MuleSoft picks up", chapter: "1", persona: "pm" },
+    { time: "10:02 AM", label: "SLA alert",         chapter: "2", persona: "rd" },
+    { time: "2:00 PM",  label: "CJ's network view", chapter: "4", persona: "cj" },
+    { time: "2:14 PM",  label: "PSA outage",        chapter: "6", persona: "it" },
+    { time: "2:31 PM",  label: "Recovered",         chapter: "6", persona: "it" },
+    { time: "Wed 7:30 AM", label: "Pulse digest",   chapter: "8", persona: "cj" },
+  ];
+
+  return { meta, roles, franchise, job, milestones, vendors, canonical, openJobs, west, kansas, kpis, kpisWest, benchmark, scale, outage, security, scope, personas, journeyRibbon };
 })();

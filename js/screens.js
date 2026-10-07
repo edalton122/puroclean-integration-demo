@@ -43,19 +43,19 @@ window.Screens = (function () {
     const brand =
       kind === "tableau"
         ? `<span class="lx-brand">${TLOGO}<b>Tableau Cloud</b><em>PuroClean</em></span>`
+        : kind === "anypoint"
+        ? `<span class="lx-brand">${APLOGO}<b>Anypoint Platform</b><em>${esc(app)}</em></span>`
         : kind === "admin"
         ? `<span class="lx-brand"><img class="lx-logo" src="assets/puroclean-logo.svg" alt="PuroClean"/><b>${esc(app)}</b>${opt.tag ? `<em>${esc(opt.tag)}</em>` : ""}</span>`
         : `<span class="lx-brand"><span class="vx-mark">${esc(app[0])}</span><b>${esc(app)}</b>${opt.tag ? `<em>${esc(opt.tag)}</em>` : ""}</span>`;
-    const search = kind === "tableau" ? "Search views, metrics and data sources" : "Search...";
+    const search = kind === "tableau" ? "Search views, metrics and data sources" : kind === "anypoint" ? "Search Anypoint Platform" : "Search...";
     return `<div class="lx ${kind}">
       <div class="lx-gh">
         ${brand}
         <div class="lx-search">${SVG.search}<span>${search}</span></div>
-        <div class="lx-ghi"><i>${SVG.help}</i>${kind === "tableau" ? "" : `<i>${SVG.gear}</i>`}<i class="bell ${opt.bell ? "on" : ""}">${SVG.bell}</i><span class="lx-av">${opt.avatar || "CB"}</span></div>
+        <div class="lx-ghi"><i>${SVG.help}</i>${kind === "tableau" || kind === "anypoint" ? "" : `<i>${SVG.gear}</i>`}<i class="bell ${opt.bell ? "on" : ""}">${SVG.bell}</i><span class="lx-av">${opt.avatar || "CB"}</span></div>
       </div>
-      <div class="lx-nav">
-        ${tabs.map((t) => `<span class="lx-tab ${t === active ? "on" : ""}">${esc(t)}</span>`).join("")}
-      </div>
+      ${kind === "anypoint" ? `<div class="ap-env-bar"><span class="ap-env-sel">Production <i>\u25be</i></span>${(tabs || []).map((t) => `<span class="lx-tab ${t === active ? "on" : ""}">${esc(t)}</span>`).join("")}</div>` : `<div class="lx-nav">${(tabs || []).map((t) => `<span class="lx-tab ${t === active ? "on" : ""}">${esc(t)}</span>`).join("")}</div>`}
       <div class="lx-body">${opt.toast || ""}${body}</div>
     </div>`;
   }
@@ -215,16 +215,246 @@ window.Screens = (function () {
   }
 
   function whatsNext() {
-    const body = `
-      ${pageHead("#9050E9", SVG.viz.replace("currentColor", "#fff"), "Roadmap", "What's next, when the data is trusted")}
-      <div class="lx-3col">
-        ${card("Weather overlays", "Storm and hail layers on job volume", { icon: "#9050E9" })}
-        ${card("AI agents", "Proactive customer outreach", { icon: "#9050E9" })}
-        ${card("Unified view", "One franchise and customer view across systems", { icon: "#9050E9" })}
+    return `<div class="roadmap-card">
+      <div class="rm-h">Stage roadmap</div>
+      <div class="rm-stages">
+        <div class="rm-s on"><div class="rm-n">Stage 1</div><div class="rm-t">Visibility &amp; adoption</div><div class="rm-d">Every job, one record, Tableau. This project.</div></div>
+        <div class="rm-s"><div class="rm-n">Stage 2</div><div class="rm-t">Compliance</div><div class="rm-d">Jobs moving on time. Nothing stuck in limbo.</div></div>
+        <div class="rm-s"><div class="rm-n">Stage 3</div><div class="rm-t">Profitability</div><div class="rm-d">QuickBooks Online. Margin by job and franchise.</div></div>
       </div>
-      <blockquote>"Dashboards first with an AI proactive mindset."<span>CJ, Sep 28</span></blockquote>
-      <p class="lx-note">Roadmap only. Not part of Stage 1.</p>`;
-    return frame("cj", lx("Stage roadmap", ["Roadmap"], "Roadmap", body, { kind: "admin", tag: "illustrative" }), { clock: "7:35 AM" });
+      <div class="rm-extras">
+        <div class="rm-ex"><div class="rm-et">Weather overlays</div><small>Storm and hail layers on job volume</small></div>
+        <div class="rm-ex"><div class="rm-et">AI agents</div><small>Proactive customer outreach</small></div>
+        <div class="rm-ex"><div class="rm-et">Unified view</div><small>Franchise and customer, one screen</small></div>
+      </div>
+      <blockquote class="rm-q">&ldquo;Dashboards first with an AI proactive mindset.&rdquo;<span>CJ, Sep 28</span></blockquote>
+      <p class="rm-note">Roadmap only &middot; not part of Stage 1.</p>
+    </div>`;
+  }
+
+  /* ------------------------------------------------------------ Tableau Mobile */
+  function tableauMobile() {
+    return phone(
+      "rdPhone",
+      `<div class="m-app">
+        <div class="m-head"><i>${SVG.back}</i><b>${TLOGO} Tableau Mobile</b><i>${SVG.gear}</i></div>
+        <div class="m-body tm">
+          <div class="tm-banner">Network Operations · West Region</div>
+          <div class="tm-job">
+            <div class="tm-row"><span>Job</span><b>JOB-CA-11902</b></div>
+            <div class="tm-row"><span>Franchise</span><b>PuroClean Sacramento North</b></div>
+            <div class="tm-row"><span>Loss type</span><b>Water</b></div>
+            <div class="tm-row sla"><span>Contact SLA</span><b class="err">34 min &nbsp;·&nbsp; MISSED (30 min)</b></div>
+            <div class="tm-row"><span>Received/Accepted</span><b>10:28 AM PT</b></div>
+            <div class="tm-row"><span>Contacted</span><b class="mut">— (not yet)</b></div>
+          </div>
+          <div class="tm-ml"><div class="tm-mlh">Milestones</div>
+            ${["Date of Loss", "Dispatch", "Received/Accepted", "Contacted"].map((m, i) => {
+              const done = i < 3;
+              return `<div class="tm-mi ${done ? "done" : "open"}"><i>${done ? SVG.check : ""}</i><span>${m}</span>${done ? "" : "<b class='err'>SLA missed</b>"}</div>`;
+            }).join("")}
+          </div>
+          <div class="tm-foot"><span class="cert">&#9998; Certified data source</span><small>Live via Tableau Bridge</small></div>
+        </div></div>`,
+      "10:02"
+    );
+  }
+
+  /* ------------------------------------------------------------ Tableau Pulse metric detail */
+  function pulseDetail() {
+    const ohio = [41, 44, 42, 45, 43, 46, 44, 45, 47, 46, 52, 57, 61];
+    const avg = 44.2;
+    const W = 230, H = 64, P = 4, mn = 36, mx = 64;
+    const X = (i) => P + (i * (W - 2 * P)) / (ohio.length - 1);
+    const Y = (v) => H - P - ((v - mn) / (mx - mn)) * (H - 2 * P);
+    const line = ohio.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(" ");
+    const chart = `<svg class="pz-chart" viewBox="0 0 ${W} ${H}">
+      <rect x="${X(9)}" y="0" width="${W - X(9)}" height="${H}" fill="#fdecec"/>
+      <line x1="0" x2="${W}" y1="${Y(avg)}" y2="${Y(avg)}" stroke="#8a8a8a" stroke-dasharray="3 3"/>
+      <text x="4" y="${Y(avg) - 4}" class="pz-ax">4-wk avg 44</text>
+      <polygon points="${X(0)},${H} ${line} ${X(12)},${H}" fill="#0176D3" opacity=".12"/>
+      <polyline points="${line}" fill="none" stroke="#0176D3" stroke-width="2.4" class="draw"/>
+      <circle cx="${X(12)}" cy="${Y(61)}" r="4" fill="#C23934" stroke="#fff" stroke-width="2"/></svg>`;
+    const contribs = [
+      { metro: "Columbus", delta: "+9", note: "seasonal increase" },
+      { metro: "Dayton", delta: "+6", note: "OH-0731 connected Tuesday · first 23 jobs" },
+      { metro: "Cincinnati", delta: "+2", note: "" },
+    ];
+    return phone(
+      "cjPhone",
+      `<div class="m-app">
+        ${mHead("Tableau Pulse")}
+        <div class="m-body pz">
+          <div class="pz-back"><i>${SVG.back}</i><span>Open water jobs · Ohio</span></div>
+          <div class="pz-metric-h">
+            <div class="pz-mv">61</div>
+            <div class="pz-md up">&#9650; 38% vs 4-week avg · unexpected</div>
+            <div class="pz-ms">Expected range: 38–52 (based on 12 weeks)</div>
+          </div>
+          ${chart}
+          <div class="pz-sec">Top contributors this week</div>
+          ${contribs.map((c) => `<div class="pz-contrib"><div class="pz-ck">${c.metro}</div><div class="pz-cd warn">${c.delta} vs expected</div>${c.note ? `<div class="pz-cn">${c.note}</div>` : ""}</div>`).join("")}
+          <div class="pz-follow"><button class="sbtn brand xs">Follow this metric</button></div>
+        </div></div>`,
+      "7:30"
+    );
+  }
+
+  /* ------------------------------------------------------------ Anypoint Runtime Manager (step 5.1) */
+  function anypointRM(idx, surge) {
+    const s = D.scale[idx];
+    const reps = surge ? s.surge : s.replicas;
+    const autoscaled = surge && s.surge > s.replicas;
+    const mqDepth = surge ? 78 : 4 + idx * 3;
+    const workers = Array.from({ length: reps }, (_, i) => {
+      const extra = i >= s.replicas;
+      return `<div class="ap-worker ${extra ? "new" : ""}">
+        <div class="ap-wh"><span class="ap-dot ok"></span> Worker ${i + 1}${extra ? " <em>autoscaled</em>" : ""}</div>
+        <div class="ap-wm"><span style="width:${30 + Math.round(Math.random() * 8)}%"></span><small>CPU ${31 + i + (surge ? 18 : 0)}%</small></div>
+        <div class="ap-wm"><span style="width:${55 + Math.round(Math.random() * 6)}%"></span><small>Mem 412 MB / 512 MB</small></div>
+      </div>`;
+    }).join("");
+    const body = `
+      <div class="ap-page-h">
+        <div class="ap-ph-l"><i>${SVG.back}</i><div><b>job-sync-papi</b><small>v2.0.4 · CloudHub 2.0 · us-east-1</small></div></div>
+        <div class="ap-ph-r"><span class="ap-badge ok">Running</span></div>
+      </div>
+      <div class="ap-grid">
+        <div class="ap-sect">
+          <div class="ap-sh">Workers (${reps}${autoscaled ? " · autoscaled" : ""})</div>
+          <div class="ap-workers">${workers}</div>
+          <div class="ap-as"><span class="ap-ash">Autoscaling</span><span class="ap-ast">Min 2 · Max 4</span><span class="ap-badge ${autoscaled ? "warn" : "ok"}">${autoscaled ? "Scaling out" : "Enabled"}</span></div>
+        </div>
+        <div class="ap-sect">
+          <div class="ap-sh">Anypoint MQ · puroclean-job-updates</div>
+          <div class="ap-mq">
+            <div><small>Messages in queue</small><b class="${mqDepth > 50 ? "warn" : ""}">${surge ? "2,840" : (mqDepth).toString()}</b></div>
+            <div><small>In-flight</small><b>${surge ? "78" : "2"}</b></div>
+            <div><small>Throughput</small><b>${surge ? "High · draining" : "Normal"}</b></div>
+          </div>
+          <div class="ap-mq-bar"><span style="width:${Math.min(100, mqDepth)}%" class="${mqDepth > 50 ? "warn" : ""}"></span></div>
+        </div>
+      </div>`;
+    return lx("Runtime Manager", ["Applications", "Alerts", "Servers"], "Applications", body, { kind: "anypoint", avatar: "PC" });
+  }
+
+  function anypointScale(idx, surge) {
+    const s = D.scale[idx];
+    const ctrl = `<div class="demo-ctrl">
+      <div class="dc-label">Demo control · network size</div>
+      <div class="sbtn-group wide">${D.scale.map((x, i) => `<button class="${i === idx ? "on" : ""}" data-tap="sc-${i}">${x.label}</button>`).join("")}</div>
+      <label class="lx-toggle ${surge ? "on" : ""}" data-tap="surge"><span class="sw"></span> Storm surge (4× volume)</label>
+    </div>`;
+    return ctrl + frame("it", anypointRM(idx, surge), { clock: "2:05 PM" });
+  }
+
+  /* ------------------------------------------------------------ Anypoint Runtime Manager (step 5.2) */
+  function anypointOnboard(done) {
+    const body = `
+      <div class="ap-page-h">
+        <div class="ap-ph-l"><i>${SVG.back}</i><div><b>Franchise connections</b><small>Platform account map · config table in 11:11</small></div></div>
+        <div class="ap-ph-r">${done ? "" : `<button class="sbtn brand" data-tap="golive">+ Connect franchise</button>`}</div>
+      </div>
+      ${done ? `<div class="ap-toast ok">${SVG.check} <b>OH-0731 connected</b> · First jobs flow on the next 5-minute cycle · no deployment needed</div>` : ""}
+      <div class="ap-sect">
+        <div class="ap-sh">Franchise · ${done ? "431" : "430"} connected</div>
+        <table class="ap-tbl"><thead><tr><th>Franchise ID</th><th>Name</th><th>Platform</th><th>Account</th><th>Status</th></tr></thead>
+        <tbody>
+          ${done ? `<tr class="new"><td>OH-0731</td><td>PuroClean Dayton North</td><td>PSA</td><td>PSA-T-55120</td><td><span class="ap-badge ok">Live</span></td></tr>` : ""}
+          <tr><td>KS-0412</td><td>PuroClean Wichita East</td><td>Dash</td><td>DASH-M-0412</td><td><span class="ap-badge ok">Live</span></td></tr>
+          <tr><td>CA-0219</td><td>PuroClean Sacramento North</td><td>PSA</td><td>PSA-T-22190</td><td><span class="ap-badge ok">Live</span></td></tr>
+          <tr class="mut"><td colspan="5">· · · ${done ? "431" : "430"} franchises total</td></tr>
+        </tbody></table>
+      </div>
+      <div class="ap-sect">
+        <div class="ap-sh">No deployment required · adding a row triggers the next poll cycle</div>
+      </div>`;
+    return frame("it", lx("Runtime Manager", ["Applications", "Alerts", "Franchises"], "Franchises", body, { kind: "anypoint", avatar: "PC" }), { clock: "2:08 PM" });
+  }
+
+  /* ------------------------------------------------------------ Anypoint Exchange (step 5.3) */
+  function anypointExchange(added) {
+    const assets = [
+      { n: "dash-sapi", t: "REST API", v: "1.4" },
+      { n: "psa-sapi", t: "REST API", v: "1.2" },
+      { n: "albi-sapi", t: "REST API", v: "1.1" },
+      { n: "jobsite-sapi", t: "REST API", v: "1.3" },
+      { n: "franconnect-sapi", t: "REST API", v: "2.0" },
+      { n: "job-sync-papi", t: "REST API", v: "2.0" },
+      { n: "notification-api", t: "REST API", v: "1.0" },
+      { n: "puroclean-canonical-job", t: "DataWeave", v: "1.3" },
+      { n: "dq-rules-restoration", t: "DataWeave", v: "1.1" },
+    ];
+    const body = `
+      <div class="ap-page-h">
+        <div class="ap-ph-l"><div><b>Exchange · PuroClean</b><small>${added ? "10" : "9"} assets · spar-system-api template available</small></div></div>
+        <div class="ap-ph-r">${added ? "" : `<button class="sbtn brand" data-tap="add">+ From template</button>`}</div>
+      </div>
+      ${added ? `<div class="ap-toast ok">${SVG.check} <b>new-sapi deployed to sandbox</b> · canonical model, Process API, quality rules, 11:11 and Tableau: 0 changes</div>` : ""}
+      <div class="ex-grid">
+        ${added ? `<div class="ex-asset new"><div class="ex-an">new-sapi</div><div class="ex-at">REST API · v1.0 · In test</div><div class="ex-ad">from spar-system-api template · new mapping</div></div>` : ""}
+        ${assets.map((a) => `<div class="ex-asset"><div class="ex-an">${a.n}</div><div class="ex-at">${a.t} · v${a.v}</div><div class="ex-ad">spec · owner · runbook</div></div>`).join("")}
+      </div>`;
+    return frame("it", lx("Exchange", [], "", body, { kind: "anypoint", avatar: "PC" }), { clock: "2:10 PM" });
+  }
+
+  /* ------------------------------------------------------------ Anypoint API Manager (step 7.1) */
+  function anypointAPIManager() {
+    const policies = D.security.policies;
+    const body = `
+      <div class="ap-page-h">
+        <div class="ap-ph-l"><i>${SVG.back}</i><div><b>psa-sapi v2.0</b><small>REST API · Production · all inbound calls</small></div></div>
+        <div class="ap-ph-r"><span class="ap-badge ok">Active</span></div>
+      </div>
+      <div class="ap-sect">
+        <div class="ap-sh">Applied policies (${policies.length})</div>
+        <div class="ap-policies">
+          ${policies.map((p, i) => `<div class="ap-pol">
+            <div class="ap-pol-n"><span class="ap-badge ok">${i + 1}</span> <b>${p}</b></div>
+            <div class="ap-pol-s">API Manager · enforced at the gateway · no code changes</div>
+          </div>`).join("")}
+        </div>
+      </div>
+      <div class="ap-sect">
+        <div class="ap-sh">Contracts</div>
+        <table class="ap-tbl"><thead><tr><th>Consumer</th><th>Status</th><th>Since</th></tr></thead>
+        <tbody>
+          <tr><td>psa-webhook-service</td><td><span class="ap-badge ok">Active</span></td><td>Jan 2027</td></tr>
+          <tr><td>job-sync-papi (outbound poller)</td><td><span class="ap-badge ok">Active</span></td><td>Jan 2027</td></tr>
+        </tbody></table>
+      </div>
+      <div class="ap-note">Outbound polls: TLS 1.2+ · vendor credentials in Anypoint Secrets Manager · response schema validated per System API.</div>`;
+    return frame("it", lx("API Manager", ["APIs", "Contracts", "Alerts"], "APIs", body, { kind: "anypoint", avatar: "PC" }), { clock: "2:40 PM" });
+  }
+
+  /* ------------------------------------------------------------ Anypoint Exchange catalog (step 7.2) */
+  function anypointExchangeCatalog() {
+    const assets = [
+      { n: "dash-sapi", t: "REST API", v: "1.4", doc: "spec · account map · runbook RB-DASH-01" },
+      { n: "psa-sapi", t: "REST API", v: "1.2", doc: "spec · webhook config · runbook RB-PSA-01" },
+      { n: "albi-sapi", t: "REST API", v: "1.1", doc: "spec · OAuth setup · runbook RB-ALBI-01" },
+      { n: "jobsite-sapi", t: "REST API", v: "1.3", doc: "spec · cursor pagination · runbook RB-JS-01" },
+      { n: "franconnect-sapi", t: "REST API", v: "2.0", doc: "spec · cache config · runbook RB-FC-01" },
+      { n: "job-sync-papi", t: "REST API", v: "2.0", doc: "spec · SLA lane · DQ rules · runbook RB-SYNC-01" },
+      { n: "notification-api", t: "REST API", v: "1.0", doc: "spec · routing config · runbook RB-NOTIF-01" },
+      { n: "puroclean-canonical-job", t: "DataWeave", v: "1.3", doc: "18 PuroLogic Dates · canonical spec · owner" },
+      { n: "dq-rules-restoration", t: "DataWeave", v: "1.1", doc: "14 rules · reason codes · quarantine logic" },
+    ];
+    const body = `
+      <div class="ap-page-h">
+        <div class="ap-ph-l"><div><b>Exchange · PuroClean organization</b><small>9 assets · all documented · all monitored</small></div></div>
+      </div>
+      <div class="ap-sect">
+        <div class="ap-sh">Assets (9 / 9 documented)</div>
+        <table class="ap-tbl wide"><thead><tr><th>Asset</th><th>Type</th><th>Version</th><th>Documentation</th></tr></thead>
+        <tbody>${assets.map((a) => `<tr><td class="lnk">${a.n}</td><td class="mut">${a.t}</td><td class="mut">v${a.v}</td><td class="mut">${a.doc}</td></tr>`).join("")}
+        </tbody></table>
+      </div>
+      <div class="ap-sect">
+        <div class="ap-sh">Monitoring coverage (5 functional monitors · one per connection)</div>
+        <div class="ap-mon-row">${["Dash", "PSA", "Albi", "JobSite", "FranConnect"].map((n) => `<div class="ap-mon ok"><span class="ap-dot ok"></span>${n}<small>every 5 min</small></div>`).join("")}</div>
+      </div>`;
+    return frame("it", lx("Exchange", ["Browse", "My assets"], "Browse", body, { kind: "anypoint", avatar: "PC" }), { clock: "2:42 PM" });
   }
 
   /* ------------------------------------------------------------ phone */
@@ -307,6 +537,7 @@ window.Screens = (function () {
   const BLUE = ["#dce9f5", "#b5cfe8", "#87b0d8", "#5a8fc4", "#346fa9", "#1d4c80"];
   const plus = (x, y, l, t, c) => `<rect x="${x - l / 2}" y="${y - t / 2}" width="${l}" height="${t}" fill="${c}"/><rect x="${x - t / 2}" y="${y - l / 2}" width="${t}" height="${l}" fill="${c}"/>`;
   const TLOGO = `<svg class="tv-logo" viewBox="0 0 24 24">${plus(12, 12, 9, 2.2, "#E8762D")}${plus(12, 3.4, 5, 1.5, "#C72037")}${plus(12, 20.6, 5, 1.5, "#5B879B")}${plus(3.4, 12, 5, 1.5, "#1F457E")}${plus(20.6, 12, 5, 1.5, "#EB912B")}${plus(5.8, 5.8, 3.4, 1.1, "#59879B")}${plus(18.2, 5.8, 3.4, 1.1, "#1F457E")}${plus(5.8, 18.2, 3.4, 1.1, "#C72037")}${plus(18.2, 18.2, 3.4, 1.1, "#59879B")}</svg>`;
+  const APLOGO = `<svg class="ap-logo-ico" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#FF4040"/><path d="M16 7l7 4.5v9L16 25l-7-4.5v-9z" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"/><circle cx="16" cy="16" r="3" fill="#fff"/></svg>`;
 
   /* 13 weekly periods, illustrative */
   const SERIES = {
@@ -550,8 +781,16 @@ window.Screens = (function () {
         <div class="tv-foot">Source: Dash via MuleSoft (dash-sapi \u2192 job-sync-papi) \u00b7 11:11 curated.job_milestone \u00b7 Target Completion Feb 19</div>`,
         { sheet: "Jobs", filters: [["Job", D.job.id, true], ["Franchise", "Wichita East", true]] });
     }
-    if (view === "rd") {
+    if (view === "rd" || view === "rd-subscribe") {
       const rows = D.west.map((s) => ({ k: { CA: "California", OR: "Oregon", WA: "Washington", NV: "Nevada" }[s], v: D.openJobs[s], c: "#346fa9" })).sort((a, b) => b.v - a.v);
+      const subscribeDialog = view === "rd-subscribe" ? `<div class="tv-dialog">
+        <div class="tv-dh">Subscribe to this view</div>
+        <div class="tv-drow"><label>Frequency</label><select><option>Weekly &#9660;</option></select></div>
+        <div class="tv-drow"><label>Day &amp; time</label><select><option>Mondays, 7:00 AM PT &#9660;</option></select></div>
+        <div class="tv-drow"><label>Send by</label><div class="sbtn-group"><button class="on">Email</button><button>Tableau Mobile</button></div></div>
+        <div class="tv-dalert"><b>Also create a data-driven alert</b><br/><small>On-time completion (West) falls below</small> <span class="tv-thres">80%</span> <small>&#8594; email me</small></div>
+        <div class="tv-dbtns"><button class="sbtn neutral">Cancel</button><button class="sbtn brand">Subscribe &amp; create alert</button></div>
+      </div>` : "";
       return tabShell("Network Operations", ["West Region"], `${bans(D.kpisWest)}
         <div class="tv-g g-map">
           ${sheet("Open jobs by state", stateMap({ only: D.west, legend: false }), { right: "Only West Region rows returned" })}
@@ -559,7 +798,7 @@ window.Screens = (function () {
             ${sheet("West Region \u00b7 open jobs by state", hbars(rows))}
             ${sheet("On-time completion \u00b7 13 weeks", area([79, 80, 80, 81, 81, 82, 82, 83, 82, 83, 84, 84, 84], { w: 210, h: 64, min: 76, max: 86, ticks: [78, 84], fmt: (v) => v + "%", ref: 82, refL: "Network 82%", lastL: "84%" }))}
           </div>
-        </div>`, { role: "rd", clock: "12:03 PM", viewAs: "Regional Director, West", sheet: "Regions", filters: [["Region", "West", true], ["Loss type", "All"], ["Period", "Last 13 weeks"]] });
+        </div>${subscribeDialog}`, { role: "rd", clock: "12:03 PM", viewAs: "Regional Director, West", sheet: "Regions", filters: [["Region", "West", true], ["Loss type", "All"], ["Period", "Last 13 weeks"]] });
     }
     if (view === "bench") {
       const rows = D.benchmark
@@ -618,8 +857,69 @@ window.Screens = (function () {
           ${sheet("Top reasons records are held", hbars([["Missing loss type", 52], ["Dates out of order", 27], ["Unknown account", 14], ["Bad date format", 7]].map(([k, v]) => ({ k, v, l: v + "%", c: "#e15759" })), { max: 56 }))}
         </div>`, { sheet: "Data Health", clock: opt.clock || (amber ? "2:14 PM" : "2:13 PM"), fresh: amber ? "PSA delayed since 2:14 PM" : undefined });
     }
+    if (view === "agent") {
+      const step = opt.step || 0;
+      const fields = ["Abc Franchise", "Abc Region", "Abc Loss type", "# Days to contacted", "# Cycle time", "# Estimate"].map((f) => `<div class="we-f">${f}</div>`).join("");
+      const shelves = [
+        ["Columns", "Avg days to first contact"],
+        ["Rows", "Franchise"],
+        ["Color", step >= 3 ? "Loss type" : "—"],
+        ["Filters", "Region = West, Last month"],
+      ];
+      const bars = ["CA-0219 Sacramento N.", "CA-0714 Riverside", "CA-0881 Long Beach", "NV-0220 Las Vegas", "OR-0312 Portland", "WA-0115 Seattle"].map((f, i) => {
+        const v = [14.2, 12.8, 11.4, 10.9, 9.6, 8.1][i];
+        const c = step >= 3 ? ["#4e79a7", "#4e79a7", "#e15759", "#e15759", "#59a14f", "#59a14f"][i] : "#4e79a7";
+        return `<div class="we-br"><span class="we-bk">${f}</span><span class="we-bt"><span style="width:${(v / 16) * 100}%;background:${c}"></span></span><b>${v}d</b></div>`;
+      }).join("");
+      const agentPanel = `<div class="we-agent ${step >= 1 ? "open" : ""}">
+        <div class="we-ah">${TLOGO} Tableau Agent <span class="chip-new">Tableau+</span></div>
+        ${step === 0 ? `<div class="we-ai"><input placeholder="Ask a question about your data…" data-tap="agent-ask" class="we-inp"/></div>` : ""}
+        ${step >= 1 ? `<div class="we-aq">"Which West franchises were slowest to first contact last month?"</div>` : ""}
+        ${step === 1 ? `<div class="we-ar">Building your view&hellip; <span class="we-spin"></span></div>` : ""}
+        ${step >= 2 ? `<div class="we-ar ok">View built &bull; 14 franchises &bull; Avg days to first contact &bull; Region = West</div>` : ""}
+        ${step >= 2 && step < 3 ? `<div class="we-hint">Drag &ldquo;Loss type&rdquo; onto Color to split by loss type <button class="sbtn neutral xs" data-tap="agent-drag">Do it</button></div>` : ""}
+        ${step === 3 ? `<div class="we-hint">Loss type added to Color. <button class="sbtn brand xs" data-tap="agent-save">Save view</button></div>` : ""}
+        ${step >= 4 ? `<div class="we-ar ok">&#10003; Saved &bull; "West franchise contact speed" &bull; published on certified data source</div>` : ""}
+      </div>`;
+      const certBadge = `<div class="we-cert">&#10003; Certified data source &bull; curated.job_milestone &bull; RLS applied</div>`;
+      const body = `<div class="we-layout">
+        <div class="we-left">
+          <div class="we-lh">Data</div>
+          <div class="we-src">curated.job_milestone <span class="cert">&#10003;</span></div>
+          <div class="we-fields">${fields}</div>
+        </div>
+        <div class="we-main">
+          ${certBadge}
+          ${agentPanel}
+          ${step >= 2 ? `<div class="we-viz">${bars}</div>` : ""}
+        </div>
+        <div class="we-shelves">
+          ${shelves.map(([l, v]) => `<div class="we-sh"><div class="we-shl">${l}</div><div class="we-shv">${v}</div></div>`).join("")}
+        </div>
+      </div>`;
+      const viewTitle = step >= 4 ? "West franchise contact speed (saved)" : "Web authoring · curated.job_milestone";
+      return tabShell(viewTitle, ["All franchises", "Web edit"], `<div class="lx-card tv-wrap we-wrap">${body}</div>`, { sheet: "Overview", fresh: "Certified data source · live via Bridge" });
+    }
+
+    if (view === "explain-data") {
+      const ohJobs = { ...D.openJobs, OH: 61 };
+      const explainPane = `<div class="tv-explain"><div class="ex-head">${TLOGO} Explain Data &nbsp; <small>Ohio · open water jobs</small></div>
+        <div class="ex-val"><b>61</b><span class="warn">Above expected (38–52)</span></div>
+        <div class="ex-sect">Top contributing dimensions</div>
+        <div class="ex-dim"><div class="ex-dk">Columbus metro</div><div class="ex-dv warn">+9 above expected</div><div class="ex-dd">Seasonal increase vs prior 12-week average</div></div>
+        <div class="ex-dim"><div class="ex-dk">Dayton metro</div><div class="ex-dv warn">+6 above expected</div><div class="ex-dd">OH-0731 (Dayton North) connected Tuesday · first 23 jobs now visible</div></div>
+        <div class="ex-dim"><div class="ex-dk">Cincinnati metro</div><div class="ex-dv">+2</div><div class="ex-dd">Within historical range</div></div>
+        <div class="ex-src">Tableau analysis · curated.v_open_jobs · illustrative</div>
+      </div>`;
+      return tabShell("Network Operations", ["All franchises"], `${bans(D.kpis)}
+        <div class="tv-g g-explain">
+          ${sheet("Open jobs by state · Ohio highlighted", stateMap({ sel: "OH", tip: "OH" }))}
+          ${explainPane}
+        </div>`, { sheet: "Overview" });
+    }
+
     return "";
   }
 
-  return { frame, jobApp, dashJobs, addPlatform, slaAlert, failAlert, pulse, tableau, scale, onboard, security, compare, whatsNext, money, icon };
+  return { frame, jobApp, dashJobs, addPlatform, slaAlert, failAlert, pulse, pulseDetail, tableauMobile, tableau, scale, anypointScale, anypointOnboard, anypointExchange, anypointAPIManager, anypointExchangeCatalog, onboard, security, compare, whatsNext, money, icon };
 })();
