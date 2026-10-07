@@ -435,7 +435,7 @@ window.Console = (function () {
   /* ------------------------------------------------------------ shared graph */
   function baseGraph(over = {}) {
     const src = (id, label, y, sub) => ({ id, label, sub, x: 14, y, w: 118, h: 46, kind: "src" });
-    const sys = (id, label, y) => ({ id, label, sub: "System API", x: 186, y, w: 150, h: 46, kind: "sys" });
+    const sys = (id, label, y) => ({ id, label, sub: "System API \u00b7 mapping", x: 186, y, w: 150, h: 46, kind: "sys" });
     const nodes = [
       src("dash", "Dash", 30, "SPAR platform"),
       src("psa", "PSA", 96, "SPAR platform"),
@@ -447,12 +447,12 @@ window.Console = (function () {
       sys("s-albi", "albi-sapi", 162),
       sys("s-jobsite", "jobsite-sapi", 228),
       sys("s-fran", "franconnect-sapi", 318),
-      { id: "proc", label: "Job Sync", sub: "Process API \u00b7 DataWeave", x: 392, y: 126, w: 160, h: 64, kind: "proc" },
+      { id: "proc", label: "job-sync-papi", sub: "Process API \u00b7 enrich \u00b7 route", x: 392, y: 126, w: 160, h: 64, kind: "proc" },
       { id: "dq", label: "Data quality", sub: "dedupe \u00b7 rules", x: 598, y: 132, w: 132, h: 52, kind: "proc" },
       { id: "quar", label: "quarantine.job", sub: "held, with reason", x: 598, y: 30, w: 132, h: 46, kind: "store dim" },
-      { id: "lake", label: "11:11 SQL Server", sub: "staging \u2192 curated", x: 780, y: 112, w: 200, h: 92, kind: "store" },
-      { id: "tab", label: "Tableau", sub: "semantic model \u00b7 RLS", x: 800, y: 268, w: 160, h: 56, kind: "viz" },
-      { id: "notify", label: "Notification API", sub: "alerts by region", x: 598, y: 268, w: 132, h: 52, kind: "proc dim" },
+      { id: "lake", label: "11:11 SQL Server", sub: "private link \u00b7 curated", x: 780, y: 112, w: 200, h: 92, kind: "store" },
+      { id: "tab", label: "Tableau Cloud", sub: "via Bridge \u00b7 RLS", x: 800, y: 268, w: 160, h: 56, kind: "viz" },
+      { id: "notify", label: "notification-api", sub: "Experience API \u00b7 alerts", x: 598, y: 268, w: 132, h: 52, kind: "proc dim" },
       { id: "mon", label: "Anypoint Monitoring", sub: "health \u00b7 alerts", x: 392, y: 372, w: 160, h: 48, kind: "ops" },
     ];
     const edges = [

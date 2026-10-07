@@ -1,8 +1,10 @@
-/* Left pane: what PuroClean sees, styled after Salesforce Lightning (SLDS 2 / Cosmos). Every function returns an HTML string. */
+/* Left pane: what each person sees. Every function returns an HTML string.
+   Shells: "vendor" is a neutral stand-in for a franchise's job platform (not the vendor's real UI),
+   "admin" is an illustrative PuroClean admin console, "tableau" is Tableau Cloud. */
 window.Screens = (function () {
   const D = window.PC;
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-  const money = (v) => "$" + (v >= 1000 ? (v / 1000).toFixed(1).replace(/\.0$/, "") + "K" : v.toLocaleString());
+  const money = (v) => "$" + (v >= 1000 ? (Math.round(v / 100) / 10).toFixed(1).replace(/\.0$/, "") + "K" : v.toLocaleString());
   const icon = (k) => `<img class="ico" src="assets/icons/${{ Water: "water", Fire: "fire", Mold: "mold", Biohazard: "biohazard" }[k] || "house"}.svg" alt=""/>`;
 
   const SVG = {
@@ -16,6 +18,7 @@ window.Screens = (function () {
     back: '<svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
     cloud: '<svg viewBox="0 0 64 44"><path d="M26 6a12 12 0 0 1 19 3 10 10 0 0 1 14 9 10 10 0 0 1-6 18H13A11 11 0 0 1 9 15a12 12 0 0 1 17-9z" fill="#fff"/></svg>',
     viz: '<svg viewBox="0 0 24 24"><path d="M11 2h2v5h-2zM11 17h2v5h-2zM2 11h5v2H2zM17 11h5v2h-5zM6 6h1.5v3H6zM16.5 15H18v3h-1.5z" fill="currentColor"/></svg>',
+    mail: '<svg viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M4 7.5l8 6 8-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>',
   };
 
   /* ------------------------------------------------------------ device frame + role badge */
@@ -34,17 +37,23 @@ window.Screens = (function () {
       </div>`;
   }
 
-  /* ------------------------------------------------------------ Lightning desktop shell */
+  /* ------------------------------------------------------------ app shell */
   function lx(app, tabs, active, body, opt = {}) {
-    return `<div class="lx">
+    const kind = opt.kind || "admin";
+    const brand =
+      kind === "tableau"
+        ? `<span class="lx-brand">${TLOGO}<b>Tableau Cloud</b><em>PuroClean</em></span>`
+        : kind === "admin"
+        ? `<span class="lx-brand"><img class="lx-logo" src="assets/puroclean-logo.svg" alt="PuroClean"/><b>${esc(app)}</b>${opt.tag ? `<em>${esc(opt.tag)}</em>` : ""}</span>`
+        : `<span class="lx-brand"><span class="vx-mark">${esc(app[0])}</span><b>${esc(app)}</b>${opt.tag ? `<em>${esc(opt.tag)}</em>` : ""}</span>`;
+    const search = kind === "tableau" ? "Search views, metrics and data sources" : "Search...";
+    return `<div class="lx ${kind}">
       <div class="lx-gh">
-        <img class="lx-logo" src="assets/puroclean-logo.svg" alt="PuroClean"/>
-        <div class="lx-search">${SVG.search}<span>Search...</span></div>
-        <div class="lx-ghi"><i>${SVG.plus}</i><i>${SVG.help}</i><i>${SVG.gear}</i><i class="bell ${opt.bell ? "on" : ""}">${SVG.bell}</i><span class="lx-av">${opt.avatar || "CB"}</span></div>
+        ${brand}
+        <div class="lx-search">${SVG.search}<span>${search}</span></div>
+        <div class="lx-ghi"><i>${SVG.help}</i>${kind === "tableau" ? "" : `<i>${SVG.gear}</i>`}<i class="bell ${opt.bell ? "on" : ""}">${SVG.bell}</i><span class="lx-av">${opt.avatar || "CB"}</span></div>
       </div>
       <div class="lx-nav">
-        <span class="lx-waffle">${"<b></b>".repeat(9)}</span>
-        <span class="lx-app">${esc(app)}</span>
         ${tabs.map((t) => `<span class="lx-tab ${t === active ? "on" : ""}">${esc(t)}</span>`).join("")}
       </div>
       <div class="lx-body">${opt.toast || ""}${body}</div>
@@ -72,7 +81,7 @@ window.Screens = (function () {
   const bldgSvg = '<img src="assets/icons/building.svg" alt="" class="oi-img"/>';
   const secSvg = '<img src="assets/icons/security.svg" alt="" class="oi-img"/>';
 
-  /* ------------------------------------------------------------ franchise job record (Lightning record page) */
+  /* ------------------------------------------------------------ franchise job record (neutral stand-in for the vendor app) */
   const PATH_FIELDS = ["date_of_loss", "dispatch", "received_accepted", "contacted", "inspected", "started", "target_completion"];
 
   function path(set, vKey) {
@@ -93,11 +102,11 @@ window.Screens = (function () {
     const v = D.vendors[vKey];
     const J = D.job;
     const set = st.dates || {};
-    const ref = st.isNew ? "pending" : v.payload.job_no || v.payload.JobNumber || v.payload.projectId || v.payload.id;
+    const ref = v.payload.job_no || v.payload.JobNumber || v.payload.projectId || v.payload.id;
     const switcher = st.switcher
       ? `<div class="lx-switch"><span>Source platform</span><div class="sbtn-group">${Object.entries(D.vendors)
           .map(([k, x]) => `<button class="${k === vKey ? "on" : ""}" data-tap="v-${k}">${x.name}</button>`)
-          .join("")}</div><em>simulated screens</em></div>`
+          .join("")}</div><em>simulated screens \u00b7 vendor labels illustrative</em></div>`
       : "";
     const fields = D.milestones
       .filter((m) => PATH_FIELDS.includes(m.field))
@@ -105,97 +114,104 @@ window.Screens = (function () {
         const lbl = (v.labels && v.labels[m.field]) || m.label;
         const val = set[m.field];
         const setBtn = st.tapDate === m.field ? `<button class="sbtn brand xs" data-tap="d-${m.field}">Set now</button>` : "";
-        return `<div class="lx-f ${st.flash === m.field ? "flash" : ""}"><label>${esc(lbl)}${m.sla ? '<i class="sla-tag" title="SLA lane (illustrative)">SLA</i>' : ""}</label>
+        return `<div class="lx-f ${st.flash === m.field ? "flash" : ""}"><label>${esc(lbl)}</label>
           <div class="lx-fv">${val ? esc(val) : setBtn || '<span class="mut">\u2014</span>'}</div></div>`;
       })
       .join("");
-    const actions = (st.actions || []).map((a) => btn(a.label, a.tap, a.kind === "ghost" ? "neutral" : "brand")).join("") || btn("Edit") + btn("Clone");
-    const toastHtml = st.synced ? toast("success", "Job synced to PuroClean data lake", `${st.synced} \u00b7 via MuleSoft`) : "";
+    const actions = (st.actions || []).map((a) => btn(a.label, a.tap, a.kind === "ghost" ? "neutral" : "brand")).join("") || btn("Edit");
     const body = `
-      ${pageHead("#F49756", houseSvg, "Job", st.isNew ? "New Job" : J.id, actions, `${v.name} ref ${esc(ref)}`)}
+      ${pageHead("#5f7480", houseSvg, `${v.name} job`, st.isNew ? "New job" : ref, actions)}
       <div class="lx-hl">
-        <div><small>Franchise</small><b class="lnk">${esc(D.franchise.name)}</b></div>
+        <div><small>Franchise</small><b class="lnk">${esc(st.franchise || D.franchise.name)}</b></div>
         <div><small>Loss type</small><b>${icon(J.loss)} ${J.loss}</b></div>
         <div><small>Category</small><b>${J.category.split(" \u00b7 ")[0]}</b></div>
-        <div><small>Estimate</small><b>$${J.estimate.toLocaleString()}</b></div>
+        <div><small>Address</small><b>${esc(J.address.split(",")[0])}</b></div>
       </div>
       ${switcher}
       ${path(set, vKey)}
-      ${card("Job Dates", `<div class="lx-fields">${fields}</div>`, { icon: "#F49756", right: `${J.carrier} \u00b7 ${J.claim}` })}`;
-    return frame("pm", lx(`${v.name} (simulated)`, ["Jobs", "Schedule", "Estimates"], "Jobs", body, { toast: toastHtml, avatar: "PM" }), { clock: st.clock || "6:12 AM" });
+      ${card("Job dates", `<div class="lx-fields">${fields}</div>`, { right: `${J.carrier} \u00b7 ${J.claim}` })}`;
+    return frame(st.role || "pm", lx(v.name, ["Jobs", "Schedule", "Estimates"], "Jobs", body, { kind: "vendor", tag: "simulated", avatar: "PM" }), { clock: st.clock || "6:21 AM" });
   }
 
-  function syncQueue() {
+  /* Recent changes on a Dash multi-location account, as the franchise sees them. */
+  function dashJobs() {
     const rows = [
-      ["JOB-KS-24817", "DASH-M-0412/03", "Resubmitted", "warn", "same address, date of loss and claim"],
-      ["D-889301", "DASH-M-0412/01", "New \u00b7 loss type blank", "err", "required field missing"],
-      ["D-889297", "DASH-M-0412/02", "Updated", "ok", "Inspected date set"],
+      ["D-889305", "/01 Derby", "2417 N Rock Rd", "Water", "Created 10:12 AM"],
+      ["D-889301", "/01 Derby", "1180 S Webb Rd", "\u2014", "Created 10:09 AM"],
+      ["D-889297", "/03 Andover", "905 E Central Ave", "Fire", "Inspected set 10:04 AM"],
     ];
     const body = `
-      ${pageHead("#F49756", houseSvg, "Jobs", "Pending sync \u00b7 Dash multi-location", btn("Sync now", "sync", "brand"))}
-      ${card("3 items \u00b7 sorted by Last Modified", `<table class="lx-dt"><thead><tr><th>Job</th><th>Account</th><th>Change</th><th>Note</th></tr></thead><tbody>${rows
-        .map((r) => `<tr><td class="lnk">${r[0]}</td><td>${r[1]}</td><td><span class="lx-badge ${r[3]}">${r[2]}</span></td><td class="mut">${r[4]}</td></tr>`)
-        .join("")}</tbody></table>`)}`;
-    return frame("sync", lx("Dash (simulated)", ["Jobs", "Sync Queue", "Accounts"], "Sync Queue", body, { avatar: "PM" }), { clock: "9:12 AM" });
+      ${pageHead("#5f7480", houseSvg, "Dash jobs", "Recently changed", btn("New job"), "Account DASH-M-0412 \u00b7 3 locations")}
+      ${card("3 jobs \u00b7 sorted by last modified", `<table class="lx-dt"><thead><tr><th>Job</th><th>Location</th><th>Address</th><th>Loss type</th><th>Last change</th></tr></thead><tbody>${rows
+        .map((r) => `<tr><td class="lnk">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td class="mut">${r[4]}</td></tr>`)
+        .join("")}</tbody></table>`)}
+      <p class="lx-note">D-889305 repeats the address, date of loss and claim of D-889214, logged earlier at the main office. D-889301 was saved without a loss type.</p>`;
+    return frame("sync", lx("Dash", ["Jobs", "Schedule", "Estimates"], "Jobs", body, { kind: "vendor", tag: "simulated", avatar: "PM" }), { clock: "10:15 AM" });
   }
 
-  /* ------------------------------------------------------------ corporate admin (Integration Hub app) */
-  const HUB_TABS = ["Home", "Platforms", "Franchises", "Monitoring"];
+  /* ------------------------------------------------------------ PuroClean integration admin (illustrative) */
+  const HUB_TABS = ["Home", "Platforms", "Franchises", "Monitoring", "Security"];
+  const admin = (role, active, body, clock, opt = {}) =>
+    frame(role, lx("Integration Admin", HUB_TABS, active, body, { kind: "admin", tag: "illustrative", avatar: "PC", ...opt }), { clock });
 
   function addPlatform(added) {
-    const tile = (p, cls, sub, tap) => `<div class="lx-tile ${cls}" ${tap ? `data-tap="${tap}"` : ""}><span class="lx-oi sm" style="background:${cls.includes("add") ? "#c9c9c9" : "#0176D3"}">${bldgSvg}</span><div><b>${p}</b><small>${sub}</small></div>${cls.includes("on") ? '<span class="lx-badge ok">Live</span>' : ""}</div>`;
+    const tile = (p, cls, sub, tap) => `<div class="lx-tile ${cls}" ${tap ? `data-tap="${tap}"` : ""}><span class="lx-oi sm" style="background:${cls.includes("add") ? "#c9c9c9" : "var(--sf)"}">${bldgSvg}</span><div><b>${p}</b><small>${sub}</small></div>${cls.includes("new") ? '<span class="lx-badge warn">In test</span>' : cls.includes("on") ? '<span class="lx-badge ok">Live</span>' : ""}</div>`;
     const body = `
-      ${pageHead("#0176D3", bldgSvg, "SPAR Platforms", "Connected platforms", btn("New", added ? null : "add", "brand"))}
+      ${pageHead("var(--sf)", bldgSvg, "SPAR platforms", "Connected platforms", added ? "" : btn("New platform", "add", "brand"))}
       ${card("Platforms (" + (added ? 5 : 4) + ")", `<div class="lx-tiles">
-        ${["Dash", "PSA", "Albi", "JobSite"].map((p) => tile(p, "on", "1 System API")).join("")}
-        ${added ? tile("New SPAR platform", "on new", "1 new System API \u00b7 rest reused") : tile("+ Add platform", "add", "e.g. Salesforce Field Service", "add")}
+        ${["Dash", "PSA", "Albi", "JobSite"].map((p) => tile(p, "on", "System API + mapping")).join("")}
+        ${added ? tile("New SPAR platform", "on new", "new System API + mapping") : tile("+ Add platform", "add", "once PuroClean approves it", "add")}
       </div>`)}
-      <p class="lx-note">One new System API per platform. The canonical model, data-quality rules, 11:11 tables and Tableau are reused.</p>`;
-    return frame("corp", lx("Integration Hub", HUB_TABS, "Platforms", body, { avatar: "PC", toast: added ? toast("success", "Platform added", "new-sapi deployed \u00b7 0 downstream changes") : "" }), { clock: "9:10 AM" });
+      <p class="lx-note">Each platform gets one System API with its own mapping, typically a few weeks of build and test. The Process API, quality rules, 11:11 tables and Tableau are reused as they are.</p>`;
+    return admin("corp", "Platforms", body, "9:10 AM", { toast: added ? toast("success", "new-sapi deployed to test", "0 changes downstream") : "" });
   }
 
   function scale(idx, surge) {
     const s = D.scale[idx];
+    const reps = surge ? s.surge : s.replicas;
     const body = `
-      ${pageHead("#0176D3", bldgSvg, "Capacity", "Locations live on the platform")}
+      ${pageHead("var(--sf)", bldgSvg, "Capacity", "Franchise locations connected")}
       ${card("Network size", `
         <div class="sbtn-group wide">${D.scale.map((x, i) => `<button class="${i === idx ? "on" : ""}" data-tap="sc-${i}">${x.label}</button>`).join("")}</div>
         <div class="lx-slider"><span style="width:${(s.loc / 900) * 100}%"></span><i style="left:${(s.loc / 900) * 100}%"></i></div>
         <label class="lx-toggle ${surge ? "on" : ""}" data-tap="surge"><span class="sw"></span> Storm surge (4x volume)</label>
-        <div class="lx-stats"><div><small>Jobs / day</small><b>${s.jobs.toLocaleString()}</b></div><div><small>Milestone events / day</small><b>${(surge ? s.peak : s.events).toLocaleString()}</b></div><div><small>SLA-lane latency</small><b>${s.latency}</b></div></div>
-        <p class="lx-note">Volumes illustrative.</p>`)}`;
-    return frame("corp", lx("Integration Hub", HUB_TABS, "Home", body, { avatar: "PC" }), { clock: "10:00 AM" });
+        <div class="lx-stats"><div><small>Jobs / day</small><b>${s.jobs.toLocaleString()}</b></div><div><small>Job updates / day</small><b>${(surge ? s.peak : s.events).toLocaleString()}</b></div><div><small>Replicas</small><b>${reps}${reps > s.replicas ? ` <small>autoscaled</small>` : ""}</b></div><div><small>SLA-lane pickup</small><b>${s.latency}</b></div></div>
+        <p class="lx-note">Volumes illustrative: 11.6 jobs per franchise a month, about 40 tracked updates per job.</p>`)}`;
+    return admin("corp", "Home", body, "2:05 PM");
   }
 
   function onboard(done) {
     const f = (l, v) => `<div class="lx-in"><label>${l}</label><div>${esc(v)}</div></div>`;
     const body = `
-      ${pageHead("#3BA755", bldgSvg, "Franchise", done ? "PuroClean Dayton North" : "New Franchise Connection", done ? '<span class="lx-badge ok">Live</span>' : btn("Cancel") + btn("Go live", "golive", "brand"))}
-      ${card("Connection details", `<div class="lx-form">
+      ${pageHead("#3BA755", bldgSvg, "Franchise", "PuroClean Dayton North", done ? '<span class="lx-badge ok">Connected</span>' : btn("Cancel") + btn("Connect", "golive", "brand"), "OH-0731 (fictional)")}
+      ${card("From FranConnect", `<div class="lx-form">
         ${f("Franchise ID", "OH-0731")}${f("Franchise name", "PuroClean Dayton North (fictional)")}
-        ${f("SPAR platform", "PSA")}${f("Platform account ID", "P-ACCT-55120")}
-        ${f("Credential reference", "vault://spar/psa/OH-0731")}${f("Region", "Central")}
+        ${f("Region", "Central")}${f("Status", "Open")}
+      </div>`)}
+      ${card("Platform account mapping", `<div class="lx-form">
+        ${f("SPAR platform", "PSA")}${f("Platform account", "PSA-T-55120")}
+        ${f("Access", "PuroClean's corporate PSA integration (per vendor, to confirm)")}${f("Sync lanes", "SLA every 5 min \u00b7 nightly 2:00 AM")}
       </div>`)}`;
-    return frame("corp", lx("Integration Hub", HUB_TABS, "Franchises", body, { avatar: "PC", toast: done ? toast("success", "OH-0731 is live", "First jobs flow on the next 5-minute cycle \u00b7 0 deployments") : "" }), { clock: "10:05 AM" });
+    return admin("corp", "Franchises", body, "2:08 PM", { toast: done ? toast("success", "OH-0731 connected", "First jobs flow on the next 5-minute cycle \u00b7 no deployment") : "" });
   }
 
   function security() {
     const S = D.security;
     const body = `
       ${pageHead("#032D60", secSvg, "Trust", "Security & compliance")}
-      ${card("Certifications", `<div class="certs">${S.certs.map((c) => `<span class="cert">${c}</span>`).join("")}</div>`, { icon: "#032D60" })}
-      ${card("Platform controls", `<ul class="ticks">${S.controls.map((c) => `<li>${c}</li>`).join("")}</ul><p class="lx-note">Source: MuleSoft Trust Center and Anypoint Security.</p>`, { icon: "#032D60" })}`;
-    return frame("platform", lx("Integration Hub", HUB_TABS, "Monitoring", body, { avatar: "PC" }), { clock: "2:40 PM" });
+      ${card("Certifications", `<div class="certs">${S.certs.map((c) => `<span class="cert">${c}</span>`).join("")}</div><p class="lx-note">Supports customer compliance with ${S.supports.join(" and ")}.</p>`, { icon: "#032D60" })}
+      ${card("Platform controls", `<ul class="ticks">${S.controls.map((c) => `<li>${c}</li>`).join("")}</ul><p class="lx-note">Source: MuleSoft Trust Center, Anypoint Security and the MuleSoft security capabilities overview.</p>`, { icon: "#032D60" })}`;
+    return admin("platform", "Security", body, "2:40 PM");
   }
 
   function compare() {
     const body = `
-      ${pageHead("#0176D3", bldgSvg, "Operating model", "\u201cIf you win the lottery, what happens?\u201d")}
+      ${pageHead("var(--sf)", bldgSvg, "Operating model", "Keeping it running doesn't depend on one person")}
       <div class="lx-2col">
         ${card("Today", `<ul class="lx-ul"><li>Hand-coded point-to-point Dash feed</li><li>Built in about a week</li><li>Syncs every couple of hours</li><li>Under 2 hrs / week upkeep</li></ul><p class="lx-note">It works, for one feed.</p>`)}
-        ${card("Stage 1 and beyond", `<ul class="lx-ul"><li>5 sources, 430 \u2192 900 locations</li><li>30-minute SLA lane</li><li>Monitoring, alerts and replay</li><li>Every API documented in Exchange</li></ul><p class="lx-note">Nick is still the architect. He just isn't the only one who can keep it running.</p>`, { cls: "accent" })}
+        ${card("Stage 1 and beyond", `<ul class="lx-ul"><li>5 sources, 430 \u2192 900 locations</li><li>5-minute lane for 30-minute SLAs</li><li>Monitoring, alerts and catch-up</li><li>Every API documented in Exchange</li></ul><p class="lx-note">PuroClean's IT team stays in charge of the design. Running it doesn't depend on any one person.</p>`, { cls: "accent" })}
       </div>`;
-    return frame("platform", lx("Integration Hub", HUB_TABS, "Home", body, { avatar: "PC" }), { clock: "2:45 PM" });
+    return admin("platform", "Home", body, "2:45 PM");
   }
 
   function whatsNext() {
@@ -203,31 +219,31 @@ window.Screens = (function () {
       ${pageHead("#9050E9", SVG.viz.replace("currentColor", "#fff"), "Roadmap", "What's next, when the data is trusted")}
       <div class="lx-3col">
         ${card("Weather overlays", "Storm and hail layers on job volume", { icon: "#9050E9" })}
-        ${card("AI agents", "Proactive outreach and triage", { icon: "#9050E9" })}
-        ${card("Data Cloud", "Unified franchise and customer view", { icon: "#9050E9" })}
+        ${card("AI agents", "Proactive customer outreach", { icon: "#9050E9" })}
+        ${card("Unified view", "One franchise and customer view across systems", { icon: "#9050E9" })}
       </div>
       <blockquote>"Dashboards first with an AI proactive mindset."<span>CJ, Sep 28</span></blockquote>
       <p class="lx-note">Roadmap only. Not part of Stage 1.</p>`;
-    return frame("cj", lx("PuroClean Ops", ["Home", "Franchises", "Jobs", "Network Operations"], "Home", body), { clock: "7:35 AM" });
+    return frame("cj", lx("Stage roadmap", ["Roadmap"], "Roadmap", body, { kind: "admin", tag: "illustrative" }), { clock: "7:35 AM" });
   }
 
-  /* ------------------------------------------------------------ Salesforce mobile */
+  /* ------------------------------------------------------------ phone */
   function phone(roleKey, inner, clock) {
     return frame(roleKey, `<div class="ph">${inner}</div>`, { device: "phone", clock });
   }
-  const sfApp = '<span class="sf-app">' + SVG.cloud + "</span>";
+  const mailApp = `<span class="ml-app">${SVG.mail}</span>`;
   const mHead = (title) => `<div class="m-head"><i>${SVG.back}</i><b>${esc(title)}</b><i>${SVG.bell}</i></div>`;
 
   function slaAlert(tappable) {
     return phone(
       "rdPhone",
-      `<div class="ph-lock"><div class="ph-time">7:02</div><div class="ph-date">Tuesday, February 16</div>
+      `<div class="ph-lock"><div class="ph-time">8:02</div><div class="ph-date">Tuesday, February 16</div>
         <div class="notif" ${tappable ? 'data-tap="open"' : ""}>
-          <div class="nt-h">${sfApp}<span>SALESFORCE \u00b7 now</span></div>
-          <b>SLA risk: JOB-CA-11902</b>
-          <p>PuroClean Sacramento North \u00b7 not Contacted 34 min after Received/Accepted. SLA 30 min <em>(illustrative)</em>.</p>
+          <div class="nt-h">${mailApp}<span>MAIL \u00b7 now</span></div>
+          <b>SLA alert: JOB-CA-11902</b>
+          <p>PuroClean Sacramento North \u00b7 not Contacted 34 min after Received/Accepted (7:28 AM). SLA 30 min <em>(illustrative)</em>. Open in Tableau \u203a</p>
         </div></div>`,
-      "7:02"
+      "8:02"
     );
   }
 
@@ -236,21 +252,21 @@ window.Screens = (function () {
     return phone(
       "oncall",
       open
-        ? `<div class="m-app">${mHead("Alert")}
+        ? `<div class="m-app">${mHead("Alert email")}
             <div class="m-body">
-              <div class="m-card err"><span class="lx-badge err">Critical</span><b>psa-sapi \u00b7 503 Service Unavailable</b><p>Since ${O.start} \u00b7 ${O.franchises} franchises affected</p><p>${O.queued.toLocaleString()} events queued \u00b7 <b>0 lost</b></p></div>
-              <div class="m-card"><small>Automatic handling</small><div>1. Retries 2s / 8s / 32s exhausted</div><div>2. Circuit breaker open (10 min)</div><div>3. Auto-replay when PSA recovers</div></div>
+              <div class="m-card err"><span class="lx-badge err">Critical</span><b>psa-sapi \u00b7 polls failing (503)</b><p>Since ${O.start} \u00b7 ${O.franchises} franchises on PSA</p><p>Jobs wait in PSA \u00b7 watermark held at ${O.watermark} \u00b7 <b>0 lost</b></p></div>
+              <div class="m-card"><small>Automatic handling</small><div>1. 3 retries, 10 s apart</div><div>2. PSA polls paused (circuit-breaker pattern)</div><div>3. Catch-up from the watermark when PSA recovers</div></div>
               <button class="sbtn brand block" data-tap="trace">View trace</button>
-              <a class="m-link">Runbook: PSA outage \u203a</a>
+              <a class="m-link">Runbook RB-PSA-01: PSA outage \u203a</a>
             </div></div>`
         : `<div class="ph-lock"><div class="ph-time">2:15</div><div class="ph-date">Tuesday, February 16</div>
-            <div class="notif" data-tap="openAlert"><div class="nt-h"><span class="nt-mule">M</span><span>ANYPOINT MONITORING \u00b7 now</span></div>
-            <b>psa-sapi: 503 errors since ${O.start}</b><p>${O.franchises} franchises affected. Events queued, none lost. Runbook \u203a</p></div></div>`,
+            <div class="notif" data-tap="openAlert"><div class="nt-h">${mailApp}<span>MAIL \u00b7 now</span></div>
+            <b>Anypoint alert: psa-sapi failing since ${O.start}</b><p>${O.franchises} franchises on PSA. Watermark held at ${O.watermark}, nothing lost. Runbook \u203a</p></div></div>`,
       "2:15"
     );
   }
 
-  /* ------------------------------------------------------------ Tableau Pulse (Salesforce mobile) */
+  /* ------------------------------------------------------------ Tableau Pulse (Tableau Mobile) */
   function pulse() {
     const ohio = [41, 44, 42, 45, 43, 46, 44, 45, 47, 46, 52, 57, 61];
     const avg = 44.2;
@@ -269,13 +285,13 @@ window.Screens = (function () {
       "cjPhone",
       `<div class="m-app">${mHead("Tableau Pulse")}
         <div class="m-body pz">
-          <div class="pz-hi"><b>Good morning, CJ</b><small>Tuesday digest \u00b7 3 metrics you follow</small></div>
-          <div class="pz-sum"><div class="pz-sk"><i>\u2726</i> Insights summary</div><p>Open water jobs in Ohio are <b>up 38%</b> against the 4-week average, driven by Columbus and Dayton after Tuesday's storms. Your other metrics are on track.</p></div>
+          <div class="pz-hi"><b>Good morning, CJ</b><small>Wednesday digest \u00b7 3 metrics you follow</small></div>
+          <div class="pz-sum"><div class="pz-sk"><i>\u2726</i> Insights summary</div><p>Open water jobs in Ohio are <b>up 38%</b> against the 4-week average, driven by Columbus and Dayton (Dayton includes a franchise connected Tuesday). Your other metrics are on track.</p></div>
           <div class="pz-card hot">
             <div class="pz-k">Open water jobs <span>Ohio \u00b7 daily</span></div>
             <div class="pz-v">61 <span class="pz-d up">\u25b2 38% vs 4-wk avg</span></div>
             ${chart}
-            <div class="pz-ins"><b>Unusual change</b> Columbus +14 \u00b7 Dayton +9 \u00b7 Cincinnati +3</div>
+            <div class="pz-ins"><b>Above expected range (38\u201352)</b> Columbus +9 \u00b7 Dayton +6 \u00b7 Cincinnati +2</div>
           </div>
           <div class="pz-card"><div class="pz-k">On-time completion <span>Network</span></div><div class="pz-v sm">82% <span class="pz-d ok">\u25cf On track</span></div>${spark([76, 77, 77, 78, 78, 79, 79, 80, 80, 81, 81, 82, 82], { c: "#0176D3", w: 230, h: 22 })}</div>
           <div class="pz-card"><div class="pz-k">Integrations working <span>MuleSoft</span></div><div class="pz-v sm">5 / 5 <span class="pz-d ok">\u25cf All syncing</span></div></div>
@@ -284,8 +300,8 @@ window.Screens = (function () {
     );
   }
 
-  /* ------------------------------------------------------------ Tableau view embedded in a Lightning page */
-  const OPS_TABS = ["Home", "Franchises", "Jobs", "Network Operations", "Reports"];
+  /* ------------------------------------------------------------ Tableau Cloud views */
+  const OPS_TABS = ["Home", "Explore", "Favorites", "Pulse", "Data Guide"];
   const SHEETS = ["Overview", "Regions", "Jobs", "Benchmarks", "Data Health"];
   const T10 = { Water: "#4e79a7", Fire: "#e15759", Mold: "#59a14f", Biohazard: "#f28e2b" };
   const BLUE = ["#dce9f5", "#b5cfe8", "#87b0d8", "#5a8fc4", "#346fa9", "#1d4c80"];
@@ -335,7 +351,7 @@ window.Screens = (function () {
 
   /* Tableau filled map: lower-48 state outlines from js/usmap.js, shaded by open jobs. */
   function stateMap(opt = {}) {
-    const M = window.US_MAP, max = 97;
+    const M = window.US_MAP, max = Math.max(...Object.values(D.openJobs)) + 1;
     const [vx, vy, W, H] = M.vb;
     let tip = "";
     const marks = [], front = [], labels = [];
@@ -364,7 +380,7 @@ window.Screens = (function () {
       }
     });
     const legend = `<div class="tv-legend"><b>Open jobs</b><span>0</span><i style="background:linear-gradient(90deg,${BLUE.join(",")})"></i><span>${max - 1}</span></div>`;
-    return `<div class="tv-map"><svg class="tv-usmap" viewBox="${vx} ${vy} ${W} ${H}">${marks.join("")}${front.join("")}<g class="tv-sl">${labels.join("")}</g></svg>${tip}<span class="tv-attr">\u00a9 Mapbox \u00a9 OpenStreetMap</span></div>${opt.legend === false ? "" : legend}`;
+    return `<div class="tv-map"><svg class="tv-usmap" viewBox="${vx} ${vy} ${W} ${H}">${marks.join("")}${front.join("")}<g class="tv-sl">${labels.join("")}</g></svg>${tip}<span class="tv-attr">Lower 48 shown \u00b7 \u00a9 Mapbox \u00a9 OpenStreetMap</span></div>${opt.legend === false ? "" : legend}`;
   }
 
   function donut(parts, opt = {}) {
@@ -395,8 +411,8 @@ window.Screens = (function () {
     const ticks = opt.ticks || [mn, (mn + mx) / 2, mx];
     const grid = ticks.map((t) => `<line x1="${L}" x2="${W - R}" y1="${Y(t).toFixed(1)}" y2="${Y(t).toFixed(1)}" class="gl"/><text x="${L - 5}" y="${(Y(t) + 3).toFixed(1)}" text-anchor="end" class="ax">${fmt(t)}</text>`).join("");
     const xl = (opt.xl || []).map(([i, t]) => `<text x="${X(i).toFixed(1)}" y="${H - 3}" text-anchor="middle" class="ax">${t}</text>`).join("");
-    const ann = (opt.ann || []).map(([i, t]) => `<line x1="${X(i).toFixed(1)}" x2="${X(i).toFixed(1)}" y1="${T - 4}" y2="${H - B}" class="an"/><text x="${(X(i) + 3).toFixed(1)}" y="${T + 4}" class="anl">${t}</text>`).join("");
-    const ref = opt.ref != null ? `<line x1="${L}" x2="${W - R}" y1="${Y(opt.ref).toFixed(1)}" y2="${Y(opt.ref).toFixed(1)}" class="ref"/><text x="${W - R}" y="${(Y(opt.ref) - 3).toFixed(1)}" text-anchor="end" class="refl">${opt.refL || ""}</text>` : "";
+    const ann = (opt.ann || []).map(([i, t]) => `<line x1="${X(i).toFixed(1)}" x2="${X(i).toFixed(1)}" y1="${T - 4}" y2="${H - B}" class="an"/><text x="${(X(i) - 3).toFixed(1)}" y="${T + 4}" text-anchor="end" class="anl">${t}</text>`).join("");
+    const ref = opt.ref != null ? `<line x1="${L}" x2="${W - R}" y1="${Y(opt.ref).toFixed(1)}" y2="${Y(opt.ref).toFixed(1)}" class="ref"/><text x="${L + 3}" y="${(Y(opt.ref) - 3).toFixed(1)}" class="refl">${opt.refL || ""}</text>` : "";
     const c = opt.c || "#4e79a7";
     const n = s.length - 1;
     return `<svg class="tv-area" viewBox="0 0 ${W} ${H}">${grid}${ann}<polygon points="${L},${H - B} ${line} ${X(n).toFixed(1)},${H - B}" fill="${c}" opacity=".14"/><polyline points="${line}" fill="none" stroke="${c}" stroke-width="2.2" stroke-linejoin="round" class="draw"/>${ref}${xl}<circle cx="${X(n).toFixed(1)}" cy="${Y(s[n]).toFixed(1)}" r="3.4" fill="${c}" stroke="#fff" stroke-width="1.6"/>${opt.lastL ? `<text x="${(X(n) - 6).toFixed(1)}" y="${(Y(s[n]) - 7).toFixed(1)}" text-anchor="end" class="lbl">${opt.lastL}</text>` : ""}</svg>`;
@@ -415,19 +431,19 @@ window.Screens = (function () {
       .join("");
     const viz = `
       <div class="lx-card tv-wrap">
-        <div class="tv-cmp">${TLOGO}<b>${esc(title)}</b><span class="tv-src">Tableau Cloud</span><span class="fresh">\u25cf ${opt.fresh || "Live \u00b7 4 min ago"}</span>${btn("Subscribe", "", "neutral xs")}</div>
+        <div class="tv-cmp">${TLOGO}<b>${esc(title)}</b><span class="tv-src">Live via Tableau Bridge</span><span class="fresh">\u25cf ${opt.fresh || "SLA data 4 min ago \u00b7 rest as of 2:00 AM"}</span></div>
         <div class="tv-tabs">${SHEETS.map((s) => `<span class="${s === (opt.sheet || "Overview") ? "on" : ""}">${s}</span>`).join("")}</div>
         <div class="tv-dash">
           <div class="tv-top">
             <div class="tv-crumbs">${crumbs.map((c, i) => `<span class="${i === crumbs.length - 1 ? "on" : ""}">${esc(c)}</span>`).join("<i>\u203a</i>")}</div>
             <div class="tv-filters">${filters}</div>
           </div>
-          ${opt.viewAs ? `<div class="tv-rls"><b>Row-level security</b> Viewing as ${esc(opt.viewAs)} \u00b7 filter Region = West from the user's Salesforce attributes</div>` : ""}
+          ${opt.viewAs ? `<div class="tv-rls"><b>Row-level security</b> Viewing as ${esc(opt.viewAs)} \u00b7 Region = West from the entitlement table ref.user_region, matched on USERNAME()</div>` : ""}
           ${body}
         </div>
         <div class="tb-bar"><span>\u21b6</span><span>\u21b7</span><span>\u27f2 Revert</span><span>\u21bb Refresh</span><span>\u25f7 Pause</span><span class="r">\u2913 Download</span><span>\u2922 Full screen</span><b>${TLOGO}Tableau</b></div>
       </div>`;
-    return frame(opt.role || "cj", lx("PuroClean Ops", OPS_TABS, "Network Operations", viz, { avatar: opt.role === "rd" ? "RD" : "CB" }), { device: "laptop", clock: opt.clock || "2:00 PM" });
+    return frame(opt.role || "cj", lx("Tableau Cloud", OPS_TABS, "Explore", viz, { kind: "tableau", avatar: opt.role === "rd" ? "RD" : "CB" }), { device: "laptop", clock: opt.clock || "2:00 PM" });
   }
 
   const NET_LOSS = [
@@ -444,7 +460,8 @@ window.Screens = (function () {
   };
 
   function jobGantt() {
-    const ms = D.milestones.filter((m) => !["target_start", "target_completion", "started"].includes(m.field)).slice(0, 8);
+    const ms = D.milestones.filter((m) => m.value && !["target_start", "target_completion"].includes(m.field)).sort((a, b) => toMin(a.value) - toMin(b.value));
+    ms.push(D.milestones.find((m) => m.field === "estimate_approved"));
     const W = 420, rowH = 17, L = 104, R = 30, T = 16;
     const t0 = 6 * 60, t1 = 12 * 60;
     const X = (m) => L + ((m - t0) / (t1 - t0)) * (W - L - R);
@@ -476,7 +493,7 @@ window.Screens = (function () {
           ${sheet("Open jobs by state", stateMap({ tap: opt.tap ? "KS" : null, tip: opt.tap ? "KS" : null }), { right: opt.tap ? "Click a state to drill down" : "All four SPAR platforms" })}
           <div class="tv-col">
             ${sheet("Open jobs by loss type", donut(NET_LOSS, { center: "1,712", sub: "open jobs" }))}
-            ${sheet("Open jobs \u00b7 last 13 weeks", area(SERIES["Open jobs"].s, { w: 210, h: 64, min: 1560, max: 1720, ticks: [1600, 1700], xl: [[0, "Nov"], [6, "Dec"], [12, "Feb"]], lastL: "1,712" }))}
+            ${sheet("Open jobs \u00b7 last 13 weeks", area(SERIES["Open jobs"].s, { w: 210, h: 64, min: 1560, max: 1720, ticks: [1600, 1700], xl: [[0, "Nov"], [6, "Jan"], [12, "Feb"]], lastL: "1,712" }))}
           </div>
         </div>`);
     }
@@ -488,18 +505,18 @@ window.Screens = (function () {
         { k: "Other", v: 7 },
       ];
       return tabShell("Network Operations", ["All franchises", "Kansas"], `${bans([
-          { k: "Open jobs \u00b7 Kansas", v: "47", d: "+3 vs last week", s: [38, 40, 39, 41, 42, 41, 43, 44, 43, 45, 44, 46, 47] },
+          { k: "Open jobs \u00b7 Kansas", v: "47", d: "+3 vs last week", s: [38, 40, 39, 41, 42, 41, 43, 44, 43, 45, 44, 44, 47] },
           { k: "Water jobs", v: "31", d: "66% of open", s: [22, 23, 23, 24, 25, 24, 26, 27, 27, 28, 29, 30, 31], sc: T10.Water },
-          { k: "Estimated value", v: "$338K", d: "+$21K vs last week", s: [290, 295, 298, 301, 300, 306, 311, 315, 314, 322, 327, 331, 338] },
-          { k: "Cycle time", v: "9.0 days", d: "\u22120.4 vs Jan", s: [9.8, 9.7, 9.7, 9.6, 9.5, 9.5, 9.4, 9.3, 9.3, 9.2, 9.1, 9.1, 9.0], tone: "good" },
+          { k: "Estimated value", v: "$338K", d: "+$21K vs last week", s: [290, 295, 298, 301, 300, 306, 311, 315, 314, 322, 316, 317, 338] },
+          { k: "Cycle time", v: "9.0 days", d: "\u22120.8 since Nov", s: [9.8, 9.7, 9.7, 9.6, 9.5, 9.5, 9.4, 9.3, 9.3, 9.2, 9.1, 9.1, 9.0], tone: "good" },
         ])}
         <div class="tv-g g-map">
           ${sheet("Open jobs by state", stateMap({ sel: "KS", tip: "KS" }), { right: "Kansas selected" })}
           <div class="tv-col">
-            ${sheet(`Kansas \u00b7 open jobs by loss type`, hbars(K.byLoss.map((x) => ({ k: x.k, v: x.v, c: x.c, ico: icon(x.k), tap: opt.tap && x.k === "Water" ? "Water" : null }))), { right: opt.tap ? "Click Water" : "" })}
+            ${sheet(`Kansas \u00b7 open jobs by loss type`, hbars(K.byLoss.map((x) => ({ k: x.k, v: x.v, c: x.c, ico: icon(x.k), tap: opt.tap && (x.k === "Water" || x.k === "Fire") ? "Water" : null }))), { right: opt.tap ? "Select Water + Fire" : "" })}
             ${sheet("By metro area", hbars(metros))}
           </div>
-        </div>`, { filters: [["Region", "Kansas", true], ["Loss type", "All"], ["Period", "Last 13 weeks"]] });
+        </div>`, { filters: [["State", "Kansas", true], ["Loss type", "All"], ["Period", "Last 13 weeks"]] });
     }
     if (view === "wichita") {
       const max = Math.max(...K.wichita.list.map((j) => j.est));
@@ -513,24 +530,24 @@ window.Screens = (function () {
         })
         .join("");
       return tabShell("Network Operations", ["All franchises", "Kansas", "Water + Fire", "Wichita area"], `${bans([
-          { k: "Open water + fire jobs", v: String(K.wichita.jobs), d: "+2 vs last week", s: [7, 8, 8, 8, 9, 9, 9, 10, 9, 10, 10, 11, 11] },
-          { k: "Estimated value", v: money(K.wichita.est), d: "+$9.6K vs last week", s: [61, 63, 64, 66, 65, 68, 70, 71, 72, 74, 75, 78, 80] },
+          { k: "Open water + fire jobs", v: String(K.wichita.jobs), d: "+2 vs last week", s: [7, 8, 8, 8, 9, 9, 9, 10, 9, 10, 10, 9, 11] },
+          { k: "Estimated value", v: money(K.wichita.est), d: "+$9.6K vs last week", s: [61, 63, 64, 66, 65, 68, 70, 71, 72, 74, 72, 70.8, 80.4] },
           { k: "Franchises", v: "2", d: "Wichita East, West" },
-          { k: "Avg job age", v: "2.3 days", d: "\u22120.5 vs Jan", tone: "good", s: [3.1, 3.0, 3.0, 2.9, 2.8, 2.8, 2.7, 2.6, 2.6, 2.5, 2.4, 2.4, 2.3] },
+          { k: "Avg job age", v: "2.3 days", d: "\u22120.8 since Nov", tone: "good", s: [3.1, 3.0, 3.0, 2.9, 2.8, 2.8, 2.7, 2.6, 2.6, 2.5, 2.4, 2.4, 2.3] },
         ])}
-        ${sheet("Wichita area \u00b7 open jobs", `<table class="tv-table"><thead><tr><th>Job</th><th>Franchise</th><th>Loss</th><th>Estimate</th><th>Current milestone (of 18)</th></tr></thead><tbody>${rows}</tbody></table>`, { right: opt.tap ? `Click ${D.job.id}` : "Sorted by last update" })}`,
-        { sheet: "Jobs", filters: [["Region", "Kansas", true], ["Loss type", "Water, Fire", true], ["Metro", "Wichita", true]] });
+        ${sheet(`Wichita area \u00b7 open jobs \u00b7 top 5 of ${K.wichita.jobs}`, `<table class="tv-table"><thead><tr><th>Job</th><th>Franchise</th><th>Loss</th><th>Estimate</th><th>Current milestone (of 18)</th></tr></thead><tbody>${rows}</tbody></table>`, { right: opt.tap ? `Click ${D.job.id}` : "Sorted by last update" })}`,
+        { sheet: "Jobs", filters: [["State", "Kansas", true], ["Loss type", "Water, Fire", true], ["Metro", "Wichita", true]] });
     }
     if (view === "job") {
-      const reached = D.milestones.filter((m) => m.value && !["target_start", "target_completion", "started"].includes(m.field)).length;
+      const reached = D.milestones.filter((m) => m.value && !["target_start", "target_completion"].includes(m.field)).length;
       return tabShell("Job detail", ["All franchises", "Kansas", "Wichita area", D.job.id], `${bans([
           { k: "Milestones reached", v: `${reached} / 18`, d: "PuroLogic Dates" },
-          { k: "SLA milestones", v: "4 / 4 met", d: "Dispatch \u2192 Inspected", cls: "ok" },
+          { k: "SLA milestones", v: "4 / 4 met", d: "Dispatch \u2192 Inspected (illustrative)", cls: "ok" },
           { k: "Elapsed", v: "5h 28m", d: "loss to estimate sent" },
           { k: "Estimate", v: `$${D.job.estimate.toLocaleString()}`, d: `${D.job.loss}, ${D.job.category}` },
         ])}
         ${sheet(`${D.job.id} \u00b7 ${D.franchise.name} \u00b7 milestone timeline`, jobGantt(), { right: "<i class=\"dot\" style=\"background:#4e79a7\"></i>SLA milestone <i class=\"dot\" style=\"background:#76b7b2\"></i>Other <i class=\"dot sq\"></i>30-min contact window" })}
-        <div class="tv-foot">Source: Dash via MuleSoft job-sync \u00b7 11:11 curated.job_milestone \u00b7 Target Completion Feb 19</div>`,
+        <div class="tv-foot">Source: Dash via MuleSoft (dash-sapi \u2192 job-sync-papi) \u00b7 11:11 curated.job_milestone \u00b7 Target Completion Feb 19</div>`,
         { sheet: "Jobs", filters: [["Job", D.job.id, true], ["Franchise", "Wichita East", true]] });
     }
     if (view === "rd") {
@@ -542,7 +559,7 @@ window.Screens = (function () {
             ${sheet("West Region \u00b7 open jobs by state", hbars(rows))}
             ${sheet("On-time completion \u00b7 13 weeks", area([79, 80, 80, 81, 81, 82, 82, 83, 82, 83, 84, 84, 84], { w: 210, h: 64, min: 76, max: 86, ticks: [78, 84], fmt: (v) => v + "%", ref: 82, refL: "Network 82%", lastL: "84%" }))}
           </div>
-        </div>`, { role: "rd", viewAs: "Regional Director, West", sheet: "Regions", filters: [["Region", "West", true], ["Loss type", "All"], ["Period", "Last 13 weeks"]] });
+        </div>`, { role: "rd", clock: "12:03 PM", viewAs: "Regional Director, West", sheet: "Regions", filters: [["Region", "West", true], ["Loss type", "All"], ["Period", "Last 13 weeks"]] });
     }
     if (view === "bench") {
       const rows = D.benchmark
@@ -556,20 +573,20 @@ window.Screens = (function () {
         })
         .join("");
       return tabShell("Franchise benchmarking", ["All franchises", "Kansas", D.franchise.name], `
-        ${sheet(`${D.franchise.name} vs network average`, `<div class="bu-lg"><span><i class="bu-sw good"></i>Franchise</span><span><i class="bu-sw ref"></i>Network average</span><span><i class="bu-sw band"></i>0 to network average</span></div>${rows}`, { right: "Certified KPIs from CJ's list" })}
+        ${sheet(`${D.franchise.name} vs network average`, `<div class="bu-lg"><span><i class="bu-sw good"></i>Franchise</span><span><i class="bu-sw ref"></i>Network average</span><span><i class="bu-sw band"></i>0 to network average</span></div>${rows}`, { right: "KPIs from CJ's Data Collection sheet" })}
         <div class="tv-later"><b>Financial benchmarks</b> Revenue, gross margin, labor and material %, growth trend <span>Stage 3, with QuickBooks Online</span></div>`,
         { sheet: "Benchmarks", filters: [["Franchise", D.franchise.name, true], ["Compare to", "Network average", true], ["Period", "Last 13 weeks"]] });
     }
     if (view === "lineage") {
       const guide = `<div class="tv-guide"><div class="tg-h">Data Guide</div>
-        <div class="tg-i"><small>Metric</small><b>On-Time Completion % <span class="cert">\u2714 Certified</span></b></div>
-        <div class="tg-i"><small>Definition</small><span>Completed jobs where Majority Completion \u2264 Target Completion, \u00f7 completed jobs</span></div>
-        <div class="tg-i"><small>Data source</small><span><code>curated.job_milestone</code> \u00b7 11:11 SQL Server \u00b7 live</span></div>
-        <div class="tg-i"><small>Upstream</small><span>MuleSoft job-sync-papi \u00b7 4 SPAR platforms</span></div>
-        <div class="tg-i"><small>Owner</small><span>PuroClean IT (Nick)</span></div></div>`;
+        <div class="tg-i"><small>Metric</small><b>On-Time Completion % <span class="cert">\u2714 Certified data source</span></b></div>
+        <div class="tg-i"><small>Definition <em>(illustrative)</em></small><span>Completed jobs where Majority Completion \u2264 Target Completion, \u00f7 completed jobs</span></div>
+        <div class="tg-i"><small>Data source</small><span><code>curated.job_milestone</code> \u00b7 11:11 SQL Server \u00b7 live via Bridge</span></div>
+        <div class="tg-i"><small>Upstream (documented)</small><span>MuleSoft job-sync-papi \u00b7 4 SPAR System APIs</span></div>
+        <div class="tg-i"><small>Owner</small><span>PuroClean (owner to be agreed)</span></div></div>`;
       return tabShell("Network Operations", ["All franchises"], `${bans(D.kpis, { tapLineage: opt.tap, hl: opt.tap ? null : "On-time completion" })}
         <div class="tv-g g-lin">
-          ${sheet("On-time completion \u00b7 last 13 weeks", area(SERIES["On-time completion"].s, { w: 250, h: 112, min: 74, max: 84, ticks: [76, 80, 84], fmt: (v) => v + "%", c: opt.tap ? "#4e79a7" : "#C23934", xl: [[0, "Nov"], [6, "Dec"], [12, "Feb"]], ref: 80, refL: "Target 80%", lastL: "82%" }), { right: opt.tap ? "Click the On-time completion tile" : "Traced on the right" })}
+          ${sheet("On-time completion \u00b7 last 13 weeks", area(SERIES["On-time completion"].s, { w: 250, h: 112, min: 74, max: 84, ticks: [76, 80, 84], fmt: (v) => v + "%", c: opt.tap ? "#4e79a7" : "#C23934", xl: [[0, "Nov"], [6, "Jan"], [12, "Feb"]], lastL: "82%" }), { right: opt.tap ? "Click the On-time completion tile" : "Traced on the right" })}
           ${guide}
         </div>`);
     }
@@ -577,7 +594,7 @@ window.Screens = (function () {
       const amber = view === "health-amber";
       const plats = [
         ["Dash", "1 min ago", [42, 45, 44, 47, 46, 48, 50, 49]],
-        ["PSA", amber ? "delayed \u00b7 events queued" : "2 min ago", amber ? [38, 40, 39, 41, 0, 0, 0, 0] : [38, 40, 39, 41, 42, 40, 43, 44]],
+        ["PSA", amber ? "delayed \u00b7 polls paused" : "2 min ago", amber ? [38, 40, 39, 41, 0, 0, 0, 0] : [38, 40, 39, 41, 42, 40, 43, 44]],
         ["Albi", "3 min ago", [21, 22, 21, 23, 24, 23, 25, 24]],
         ["JobSite", "1 min ago", [30, 31, 29, 32, 33, 31, 34, 35]],
         ["FranConnect", "nightly \u00b7 2:00 AM", [5, 5, 5, 5, 5, 5, 5, 5]],
@@ -588,19 +605,21 @@ window.Screens = (function () {
           return `<div class="ti ${bad ? "amber" : ""}"><div class="ti-h"><i></i><b>${n}</b></div><small>${t}</small>${spark(s, { c: bad ? "#d97a00" : "#59a14f", w: 90, h: 18 })}</div>`;
         })
         .join("")}</div>`;
+      const usable = [19, 19, 20, 20, 21, 21, 22, 22, 34, 45, 52, 59, 64];
       return tabShell("Data Health & Integrations", ["All franchises"], `${bans([
-          { k: "Franchises with usable data", v: "64%", d: "+45 pts since Wave 1", tone: "good", s: [19, 19, 21, 24, 30, 37, 43, 48, 52, 56, 59, 62, 64] },
-          { k: "Integrations working", v: amber ? "4 / 5" : "5 / 5", d: amber ? "PSA delayed \u00b7 events queued" : "all platforms syncing", cls: amber ? "amber" : "ok" },
-          { k: "Records quarantined \u00b7 7 days", v: "312", d: "\u22120.2 pts \u00b7 0.4% of volume", tone: "good", s: [0.9, 0.85, 0.8, 0.8, 0.7, 0.66, 0.6, 0.58, 0.55, 0.5, 0.46, 0.42, 0.4] },
+          { k: "Franchises with usable data", v: "64%", d: "+45 pts since Nov", tone: "good", s: usable },
+          { k: "Integrations working", v: amber ? "4 / 5" : "5 / 5", d: amber ? "PSA delayed \u00b7 catch-up when back" : "all platforms syncing", cls: amber ? "amber" : "ok" },
+          { k: "Records held \u00b7 7 days", v: "192", d: "0.4% of updates", tone: "good", s: [0.9, 0.85, 0.8, 0.8, 0.7, 0.66, 0.6, 0.58, 0.55, 0.5, 0.46, 0.42, 0.4] },
+          { k: "Duplicates merged \u00b7 7 days", v: "146", d: "never double-counted" },
         ])}
         ${strip}
         <div class="tv-g g-half">
-          ${sheet("Usable data, % of franchises", area([19, 19, 21, 24, 30, 37, 43, 48, 52, 56, 59, 62, 64], { w: 230, h: 84, min: 0, max: 100, ticks: [0, 50, 100], fmt: (v) => v + "%", c: "#59a14f", ann: [[3, "Wave 1"], [7, "Wave 2"]], ref: 95, refL: "Target 95%", lastL: "64%" }))}
-          ${sheet("Top quarantine reasons", hbars([["Missing loss type", 41], ["Duplicate job", 33], ["Dates out of order", 17], ["Unknown franchise", 9]].map(([k, v]) => ({ k, v, l: v + "%", c: "#e15759" })), { max: 45 }))}
-        </div>`, { sheet: "Data Health", clock: amber ? "2:16 PM" : "2:00 PM", fresh: amber ? "PSA 2 min delayed" : "Live \u00b7 4 min ago" });
+          ${sheet("Usable data, % of franchises", area(usable, { w: 230, h: 84, min: 0, max: 100, ticks: [0, 50, 100], fmt: (v) => v + "%", c: "#59a14f", ann: [[8, "Wave 1"], [11, "Wave 2"]], ref: 90, refL: "Goal 90% (illustrative)", lastL: "64%" }))}
+          ${sheet("Top reasons records are held", hbars([["Missing loss type", 52], ["Dates out of order", 27], ["Unknown account", 14], ["Bad date format", 7]].map(([k, v]) => ({ k, v, l: v + "%", c: "#e15759" })), { max: 56 }))}
+        </div>`, { sheet: "Data Health", clock: opt.clock || (amber ? "2:14 PM" : "2:13 PM"), fresh: amber ? "PSA delayed since 2:14 PM" : undefined });
     }
     return "";
   }
 
-  return { frame, jobApp, syncQueue, addPlatform, slaAlert, failAlert, pulse, tableau, scale, onboard, security, compare, whatsNext, money, icon };
+  return { frame, jobApp, dashJobs, addPlatform, slaAlert, failAlert, pulse, tableau, scale, onboard, security, compare, whatsNext, money, icon };
 })();

@@ -3,7 +3,7 @@ window.PC = (function () {
   const meta = {
     title: "Every franchise job, one trusted record.",
     northStar:
-      "One connected view of every franchise, so PuroClean can see, trust, and act on its data \u2014 no matter which tools franchisees use day to day.",
+      "One connected view of every franchise, so PuroClean can see, trust, and act on its data \u2014 no matter which approved platform franchisees use day to day.",
     preparedFor: "Prepared for PuroClean \u00b7 October 12, 2026",
     presenter: "Eric Dalton, Solutions Engineer",
     disclaimer: "Illustrative data and simulated screens. Prepared for PuroClean. Salesforce confidential.",
@@ -12,8 +12,8 @@ window.PC = (function () {
       { v: "4", l: "SPAR platforms" },
       { v: "8\u201310", l: "apps to support" },
       { v: "<20%", l: "usable data today" },
-      { v: "95%", l: "adoption expected after Jan 1" },
-      { v: "2 min vs 2 hrs", l: "CJ vs an RD, today" },
+      { v: "95%", l: "on an approved platform by Jan 1" },
+      { v: "2 min vs 2 hrs", l: "SLA report today: CJ vs an RD" },
     ],
   };
 
@@ -22,11 +22,11 @@ window.PC = (function () {
     cj: { label: "CJ Bailey", sub: "VP, Software Management", color: "#00346D", device: "laptop" },
     rd: { label: "Regional Director", sub: "West Region \u00b7 CA, OR, WA, NV", color: "#00346D", device: "laptop" },
     rdPhone: { label: "Regional Director", sub: "West Region \u00b7 CA, OR, WA, NV", color: "#00346D", device: "phone" },
-    oncall: { label: "Integration owner", sub: "On call", color: "#373536", device: "phone" },
+    oncall: { label: "Integration on-call", sub: "PuroClean IT or partner managed service (TBD)", color: "#373536", device: "phone" },
     cjPhone: { label: "CJ Bailey", sub: "VP, Software Management", color: "#00346D", device: "phone" },
-    corp: { label: "PuroClean corporate", sub: "Platform administration", color: "#373536", device: "laptop" },
+    corp: { label: "PuroClean corporate", sub: "Integration administration (illustrative)", color: "#373536", device: "laptop" },
     platform: { label: "Platform review", sub: "PuroClean IT + Salesforce", color: "#373536", device: "laptop" },
-    sync: { label: "Dash sync queue", sub: "PuroClean Wichita East \u00b7 multi-location account", color: "#C50A1D", device: "tablet" },
+    sync: { label: "Project Manager", sub: "PuroClean Wichita East \u00b7 Derby office", color: "#C50A1D", device: "tablet" },
   };
 
   const franchise = {
@@ -52,14 +52,14 @@ window.PC = (function () {
     day: "Tue, Feb 16, 2027",
   };
 
-  /* PuroLogic Dates tab (confirmed: Corey screenshot, Slack Oct 6). Values illustrative. */
+  /* The 18 PuroLogic Dates, in PuroClean's order. Times are illustrative. */
   const milestones = [
     { label: "Date of Loss", field: "date_of_loss", value: "6:12 AM" },
     { label: "Dispatch", field: "dispatch", value: "6:20 AM", sla: true },
     { label: "Received/Accepted", field: "received_accepted", value: "6:24 AM", sla: true },
     { label: "Contacted", field: "contacted", value: "6:41 AM", sla: true },
-    { label: "Inspected", field: "inspected", value: "8:05 AM", sla: true },
-    { label: "Work Authorization", field: "work_authorization", value: "8:22 AM" },
+    { label: "Inspected", field: "inspected", value: "7:52 AM", sla: true },
+    { label: "Work Authorization", field: "work_authorization", value: "8:01 AM" },
     { label: "Estimate Sent", field: "estimate_sent", value: "11:40 AM" },
     { label: "Estimate Approved", field: "estimate_approved", value: "" },
     { label: "Inventoried", field: "inventoried", value: "" },
@@ -79,31 +79,31 @@ window.PC = (function () {
     dash: {
       name: "Dash",
       endpoint: "GET /v2/jobs?updated_since={watermark}",
-      labels: { started: "First On Site", inspected: "Inspection Date", contacted: "Customer Contacted" },
+      labels: {},
       fields: {
         date_of_loss: "loss_date", dispatch: "dispatched_at", received_accepted: "accepted_at",
-        contacted: "customer_contacted", inspected: "inspection_date", started: "first_on_site",
+        contacted: "customer_contacted", inspected: "inspection_date", started: "job_started",
         target_completion: "est_complete", loss_type: 'loss_type: "H2O"',
       },
       payload: {
         job_no: "D-889214", account: "DASH-M-0412/02", loss_type: "H2O", loss_cat: "2",
         loss_date: "2027-02-16T06:12:00-06:00", dispatched_at: "2027-02-16T06:20:00-06:00",
-        accepted_at: "2027-02-16T06:24:00-06:00", first_on_site: "2027-02-16T08:05:00-06:00",
+        accepted_at: "2027-02-16T06:24:00-06:00", job_started: "2027-02-16T08:05:00-06:00",
         est_complete: "2027-02-19", addr1: "2417 N Rock Rd", zip: "67226", ins_claim: "CLM-7781-2027",
       },
     },
     psa: {
       name: "PSA",
       endpoint: "GET /api/Jobs/Changes?since={watermark}",
-      labels: { started: "Job Start DT", inspected: "Inspected DT", contacted: "Contact DT" },
+      labels: { started: "First On Site", inspected: "Inspected DT", contacted: "Contact DT" },
       fields: {
         date_of_loss: "DateOfLoss", dispatch: "DispatchDT", received_accepted: "ReceivedDT",
-        contacted: "ContactDT", inspected: "InspectedDT", started: "JobStartDT",
+        contacted: "ContactDT", inspected: "InspectedDT", started: "FirstOnSiteDT",
         target_completion: "TargetCompDT", loss_type: 'LossCategory: "Water"',
       },
       payload: {
         JobNumber: "P-24-55102", LossCategory: "Water", DateOfLoss: "02/16/2027 06:12",
-        DispatchDT: "02/16/2027 06:20", ReceivedDT: "02/16/2027 06:24", JobStartDT: "02/16/2027 08:05",
+        DispatchDT: "02/16/2027 06:20", ReceivedDT: "02/16/2027 06:24", FirstOnSiteDT: "02/16/2027 08:05",
         TargetCompDT: "02/19/2027", Address: { Line1: "2417 N Rock Rd", Zip: "67226" },
       },
     },
@@ -146,11 +146,11 @@ window.PC = (function () {
     target_completion: "2027-02-19", carrier_claim: "CLM-7781-2027",
   };
 
-  /* Open jobs by state (illustrative). State outlines live in usmap.js. */
+  /* Open jobs by state (illustrative), summing to the 1,712 network total. State outlines live in usmap.js. */
   const openJobs = {
-    AK:4,ME:6,WI:22,VT:3,NH:5,WA:28,ID:11,MT:7,ND:5,MN:24,IL:58,MI:41,NY:52,MA:26,OR:19,NV:16,WY:4,SD:6,IA:18,
-    IN:33,OH:61,PA:49,NJ:31,CT:14,RI:5,CA:74,UT:21,CO:35,NE:15,MO:37,KY:23,WV:9,VA:39,MD:27,DE:6,AZ:38,NM:12,
-    KS:47,AR:17,TN:36,NC:44,SC:25,DC:4,OK:29,LA:31,MS:14,AL:26,GA:48,HI:5,TX:96,FL:88,
+    AK:4,ME:8,WI:27,VT:4,NH:6,WA:28,ID:14,MT:9,ND:6,MN:30,IL:72,MI:51,NY:65,MA:32,OR:19,NV:16,WY:5,SD:8,IA:22,
+    IN:41,OH:96,PA:61,NJ:39,CT:18,RI:6,CA:74,UT:26,CO:44,NE:19,MO:46,KY:29,WV:11,VA:49,MD:34,DE:8,AZ:47,NM:15,
+    KS:47,AR:21,TN:45,NC:55,SC:31,DC:5,OK:36,LA:39,MS:17,AL:32,GA:60,HI:5,TX:120,FL:110,
   };
   const west = ["CA", "OR", "WA", "NV"];
 
@@ -175,17 +175,17 @@ window.PC = (function () {
   };
 
   const kpis = [
-    { k: "Open jobs", v: "1,712", d: "+4.1% wk" },
+    { k: "Open jobs", v: "1,712", d: "+0.6% wk" },
     { k: "Jobs / month / franchise", v: "11.6", d: "network avg" },
-    { k: "Cycle time", v: "9.4 days", d: "\u22120.6 vs Jan" },
-    { k: "On-time completion", v: "82%", d: "+3 pts", lineage: true },
+    { k: "Cycle time", v: "9.4 days", d: "\u22121.0 since Nov" },
+    { k: "On-time completion", v: "82%", d: "+6 pts since Nov", lineage: true },
     { k: "Backlog", v: "214", d: "jobs > target" },
   ];
 
   const kpisWest = [
     { k: "Open jobs", v: "137", d: "CA, OR, WA, NV" },
     { k: "Jobs / month / franchise", v: "12.1", d: "region avg" },
-    { k: "Cycle time", v: "9.1 days", d: "\u22120.4 vs Jan" },
+    { k: "Cycle time", v: "9.1 days", d: "\u22120.4 since Nov" },
     { k: "On-time completion", v: "84%", d: "+2 pts" },
     { k: "Backlog", v: "17", d: "jobs > target" },
   ];
@@ -194,21 +194,23 @@ window.PC = (function () {
     { k: "Jobs / month", fr: 14.2, net: 11.6, fmt: (v) => v.toFixed(1), better: "high" },
     { k: "Cycle time (days)", fr: 8.1, net: 9.4, fmt: (v) => v.toFixed(1), better: "low" },
     { k: "On-time completion", fr: 88, net: 82, fmt: (v) => v + "%", better: "high" },
-    { k: "Backlog (jobs)", fr: 3, net: 5, fmt: (v) => String(v), better: "low" },
+    { k: "Backlog (% of open jobs)", fr: 9.1, net: 12.5, fmt: (v) => v.toFixed(1) + "%", better: "low" },
     { k: "Rework rate", fr: 2.1, net: 3.4, fmt: (v) => v + "%", better: "low" },
     { k: "Cancellation rate", fr: 4.0, net: 4.6, fmt: (v) => v + "%", better: "low" },
   ];
 
+  /* Derived from 11.6 jobs per franchise a month and roughly 40 tracked updates per job; a storm surge is 4x. */
   const scale = [
-    { loc: 50, label: "50 \u00b7 today", jobs: 150, events: 2700, peak: 10800, workers: 1, latency: "1m 48s" },
-    { loc: 430, label: "430 \u00b7 Jan 1", jobs: 1290, events: 23200, peak: 92900, workers: 2, latency: "2m 05s" },
-    { loc: 900, label: "900 \u00b7 growth", jobs: 2700, events: 48600, peak: 194400, workers: 4, latency: "2m 31s" },
+    { loc: 50, label: "50 \u00b7 first connections", jobs: 19, events: 850, peak: 3400, replicas: 2, surge: 2, latency: "avg 2m 40s" },
+    { loc: 430, label: "430 \u00b7 full network", jobs: 164, events: 6850, peak: 27400, replicas: 2, surge: 3, latency: "avg 2m 40s" },
+    { loc: 900, label: "900 \u00b7 growth", jobs: 343, events: 14300, peak: 57200, replicas: 2, surge: 4, latency: "avg 2m 45s" },
   ];
 
-  const outage = { start: "2:14 PM", end: "2:31 PM", franchises: 37, queued: 1284 };
+  const outage = { start: "2:14 PM", end: "2:31 PM", watermark: "2:13 PM", franchises: 37, behind: 21 };
 
   const security = {
-    certs: ["ISO 27001", "SOC 1", "SOC 2", "PCI DSS", "HIPAA", "GDPR"],
+    certs: ["ISO 27001", "SOC 1", "SOC 2", "PCI DSS"],
+    supports: ["HIPAA", "GDPR"],
     controls: [
       "Independent third-party audits",
       "Encryption in transit and at rest",
@@ -217,9 +219,9 @@ window.PC = (function () {
       "Hosted on AWS",
       "Public status page and uptime history",
     ],
-    policies: ["Client ID Enforcement", "OAuth 2.0 Token Enforcement", "JSON/XML Threat Protection", "Rate Limiting", "Tokenization"],
+    policies: ["Client ID Enforcement", "OAuth 2.0 Token Enforcement", "JSON Threat Protection", "Rate Limiting"],
     mulesoft: ["Platform security", "Patching and updates", "Core infrastructure", "Compliance controls and audits"],
-    puroclean: ["Security policies", "User access", "11:11 credentials (Nick)", "Canonical definitions (Nick)"],
+    puroclean: ["Security policies", "User access", "11:11 and vendor credentials", "Canonical definitions (owner to be agreed)"],
   };
 
   const scope = {
@@ -228,7 +230,7 @@ window.PC = (function () {
       ["Xactimate", "Verisk charges for connections"],
       ["Photos", "Stored for reference only"],
       ["QuickBooks Online", "Stage 3, financials"],
-      ["Data Cloud and AI agents", "Phase 2"],
+      ["AI agents and a unified customer view", "after Stage 1"],
     ],
   };
 
