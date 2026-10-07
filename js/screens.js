@@ -250,141 +250,348 @@ window.Screens = (function () {
     );
   }
 
+  /* ------------------------------------------------------------ Tableau Pulse (Salesforce mobile) */
   function pulse() {
+    const ohio = [41, 44, 42, 45, 43, 46, 44, 45, 47, 46, 52, 57, 61];
+    const avg = 44.2;
+    const W = 230, H = 64, P = 4, mn = 36, mx = 64;
+    const X = (i) => P + (i * (W - 2 * P)) / (ohio.length - 1);
+    const Y = (v) => H - P - ((v - mn) / (mx - mn)) * (H - 2 * P);
+    const line = ohio.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(" ");
+    const chart = `<svg class="pz-chart" viewBox="0 0 ${W} ${H}">
+      <rect x="${X(9)}" y="0" width="${W - X(9)}" height="${H}" fill="#fdecec"/>
+      <line x1="0" x2="${W}" y1="${Y(avg)}" y2="${Y(avg)}" stroke="#8a8a8a" stroke-dasharray="3 3"/>
+      <text x="4" y="${Y(avg) - 4}" class="pz-ax">4-wk avg 44</text>
+      <polygon points="${X(0)},${H} ${line} ${X(12)},${H}" fill="#0176D3" opacity=".12"/>
+      <polyline points="${line}" fill="none" stroke="#0176D3" stroke-width="2.4" class="draw"/>
+      <circle cx="${X(12)}" cy="${Y(61)}" r="4" fill="#C23934" stroke="#fff" stroke-width="2"/></svg>`;
     return phone(
       "cjPhone",
       `<div class="m-app">${mHead("Tableau Pulse")}
-        <div class="m-body">
-          <div class="m-greet">Good morning. 1 metric needs attention.</div>
-          <div class="pulse-card"><div class="pl-k">Open water jobs \u00b7 Ohio</div><div class="pl-v">61 <span class="up">\u25b2 38%</span></div>
-          <svg viewBox="0 0 220 60" class="spark"><polyline points="0,46 20,44 40,47 60,43 80,45 100,42 120,44 140,40 160,38 180,24 200,14 220,10" fill="none" stroke="#0176D3" stroke-width="3"/></svg>
-          <p>Up 38% vs the 4-week average, mostly Columbus and Dayton, after Tuesday's storms.</p></div>
-          <div class="pulse-card small"><div class="pl-k">On-time completion \u00b7 network</div><div class="pl-v">82% <span class="flat">steady</span></div></div>
-          <div class="pulse-card small"><div class="pl-k">Integrations working</div><div class="pl-v">5 / 5 <span class="flat">all green</span></div></div>
+        <div class="m-body pz">
+          <div class="pz-hi"><b>Good morning, CJ</b><small>Tuesday digest \u00b7 3 metrics you follow</small></div>
+          <div class="pz-sum"><div class="pz-sk"><i>\u2726</i> Insights summary</div><p>Open water jobs in Ohio are <b>up 38%</b> against the 4-week average, driven by Columbus and Dayton after Tuesday's storms. Your other metrics are on track.</p></div>
+          <div class="pz-card hot">
+            <div class="pz-k">Open water jobs <span>Ohio \u00b7 daily</span></div>
+            <div class="pz-v">61 <span class="pz-d up">\u25b2 38% vs 4-wk avg</span></div>
+            ${chart}
+            <div class="pz-ins"><b>Unusual change</b> Columbus +14 \u00b7 Dayton +9 \u00b7 Cincinnati +3</div>
+          </div>
+          <div class="pz-card"><div class="pz-k">On-time completion <span>Network</span></div><div class="pz-v sm">82% <span class="pz-d ok">\u25cf On track</span></div>${spark([76, 77, 77, 78, 78, 79, 79, 80, 80, 81, 81, 82, 82], { c: "#0176D3", w: 230, h: 22 })}</div>
+          <div class="pz-card"><div class="pz-k">Integrations working <span>MuleSoft</span></div><div class="pz-v sm">5 / 5 <span class="pz-d ok">\u25cf All syncing</span></div></div>
         </div></div>`,
       "7:30"
     );
   }
 
-  /* ------------------------------------------------------------ Tableau embedded in a Lightning page */
+  /* ------------------------------------------------------------ Tableau view embedded in a Lightning page */
   const OPS_TABS = ["Home", "Franchises", "Jobs", "Network Operations", "Reports"];
+  const SHEETS = ["Overview", "Regions", "Jobs", "Benchmarks", "Data Health"];
+  const T10 = { Water: "#4e79a7", Fire: "#e15759", Mold: "#59a14f", Biohazard: "#f28e2b" };
+  const BLUE = ["#dce9f5", "#b5cfe8", "#87b0d8", "#5a8fc4", "#346fa9", "#1d4c80"];
+  const plus = (x, y, l, t, c) => `<rect x="${x - l / 2}" y="${y - t / 2}" width="${l}" height="${t}" fill="${c}"/><rect x="${x - t / 2}" y="${y - l / 2}" width="${t}" height="${l}" fill="${c}"/>`;
+  const TLOGO = `<svg class="tv-logo" viewBox="0 0 24 24">${plus(12, 12, 9, 2.2, "#E8762D")}${plus(12, 3.4, 5, 1.5, "#C72037")}${plus(12, 20.6, 5, 1.5, "#5B879B")}${plus(3.4, 12, 5, 1.5, "#1F457E")}${plus(20.6, 12, 5, 1.5, "#EB912B")}${plus(5.8, 5.8, 3.4, 1.1, "#59879B")}${plus(18.2, 5.8, 3.4, 1.1, "#1F457E")}${plus(5.8, 18.2, 3.4, 1.1, "#C72037")}${plus(18.2, 18.2, 3.4, 1.1, "#59879B")}</svg>`;
 
-  function tabShell(title, crumbs, body, opt = {}) {
-    const viz = `
-      ${pageHead("#E97627", SVG.viz.replace("currentColor", "#fff"), "Tableau dashboard", title, btn("Subscribe") + btn("Share"), `<span class="fresh">\u25cf Data as of ${opt.fresh || "4 min ago"}</span>`)}
-      <div class="tb">
-        <div class="tb-crumbs">${crumbs.map((c, i) => `<span class="${i === crumbs.length - 1 ? "on" : ""}">${esc(c)}</span>`).join("<i>\u203a</i>")}${opt.viewAs ? `<span class="tb-viewas">Viewing as: ${esc(opt.viewAs)}</span>` : ""}</div>
-        <div class="tb-body">${body}</div>
-        <div class="tb-bar"><span>\u21b6</span><span>\u21b7</span><span>\u27f2 Revert</span><span>\u21bb Refresh</span><span class="r">\u2913 Download</span><span>\u2197 Share</span><b>Tableau</b></div>
-      </div>`;
-    return frame(opt.role || "cj", lx("PuroClean Ops", OPS_TABS, "Network Operations", viz, { avatar: opt.role === "rd" ? "RD" : "CB" }), { device: "laptop", clock: opt.clock || "2:00 PM" });
+  /* 13 weekly periods, illustrative */
+  const SERIES = {
+    "Open jobs": { s: [1580, 1602, 1611, 1630, 1625, 1648, 1660, 1655, 1671, 1680, 1690, 1702, 1712], tone: "neu" },
+    "Jobs / month / franchise": { s: [10.8, 10.9, 11.0, 11.1, 11.0, 11.2, 11.3, 11.2, 11.4, 11.5, 11.4, 11.5, 11.6], tone: "neu" },
+    "Cycle time": { s: [10.4, 10.3, 10.2, 10.1, 10.2, 10.0, 9.9, 9.8, 9.8, 9.7, 9.6, 9.5, 9.4], tone: "good" },
+    "On-time completion": { s: [76, 77, 77, 78, 78, 79, 79, 80, 80, 81, 81, 82, 82], tone: "good" },
+    Backlog: { s: [240, 236, 238, 231, 229, 226, 224, 222, 220, 219, 217, 216, 214], tone: "good" },
+  };
+
+  function spark(s, opt = {}) {
+    const w = opt.w || 100, h = opt.h || 24, p = 2.5;
+    const mn = Math.min(...s), mx = Math.max(...s), r = mx - mn || 1;
+    const pts = s.map((v, i) => [p + (i * (w - 2 * p)) / (s.length - 1), h - p - ((v - mn) / r) * (h - 2 * p)]);
+    const line = pts.map((q) => q.map((n) => n.toFixed(1)).join(",")).join(" ");
+    const last = pts[pts.length - 1];
+    const c = opt.c || "#4e79a7";
+    return `<svg class="tv-spark" viewBox="0 0 ${w} ${h}"><polygon points="${p},${h} ${line} ${last[0].toFixed(1)},${h}" fill="${c}" opacity=".13"/><polyline points="${line}" fill="none" stroke="${c}" stroke-width="1.6" stroke-linejoin="round"/><circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="2.3" fill="${c}"/></svg>`;
   }
 
-  function kpiTiles(opt = {}) {
-    return `<div class="tb-kpis">${(opt.kpis || D.kpis)
-      .map((k) => `<div class="kpi ${k.lineage && opt.tapLineage ? "tappable" : ""} ${opt.hl === k.k ? "hl" : ""}" ${k.lineage && opt.tapLineage ? 'data-tap="lineage"' : ""}><div class="kpi-k">${k.k}</div><div class="kpi-v">${k.v}</div><div class="kpi-d">${k.d}</div></div>`)
+  function bans(list, opt = {}) {
+    return `<div class="tv-bans n${list.length}">${list
+      .map((k) => {
+        const m = k.s ? k : SERIES[k.k] || {};
+        const tap = k.lineage && opt.tapLineage;
+        const hl = opt.hl === k.k || tap;
+        const d = k.d || "";
+        const arrow = /^\+/.test(d) ? "\u25b2" : /^[\u2212-]/.test(d) ? "\u25bc" : "";
+        const tone = k.tone || m.tone || "neu";
+        return `<div class="tv-ban ${tap ? "tappable" : ""} ${hl ? "hl" : ""} ${k.cls || ""}" ${tap ? 'data-tap="lineage"' : ""}>
+          <div class="tv-bk">${esc(k.k)}</div>
+          <div class="tv-bv">${k.v}</div>
+          <div class="tv-bd ${arrow ? tone : "mut"}">${arrow ? `<i>${arrow}</i>` : ""}${esc(d.replace(/^[+\u2212-]/, ""))}</div>
+          ${m.s ? spark(m.s, { c: hl ? "#C23934" : k.sc || "#4e79a7" }) : ""}
+        </div>`;
+      })
       .join("")}</div>`;
   }
 
-  function usMap(opt = {}) {
-    const S = 38, G = 4, max = 96;
+  const sheet = (title, body, opt = {}) =>
+    `<div class="tv-sh ${opt.cls || ""}"><div class="tv-sh-h"><b>${title}</b>${opt.right ? `<small>${opt.right}</small>` : ""}</div>${body}</div>`;
+
+  function tileMap(opt = {}) {
+    const S = 30, SH = 23, G = 3, P = S + G, PH = SH + G, W = 11 * P - G, H = 8 * PH - G, max = 97;
+    let tip = "";
     const cells = D.tiles
       .map(([st, c, r]) => {
         const v = D.openJobs[st] || 0;
         const dim = opt.only && !opt.only.includes(st);
-        const a = 0.15 + 0.85 * (v / max);
-        const fill = dim ? "#e6e8ec" : `rgba(1,118,211,${a.toFixed(2)})`;
-        const txt = dim ? "#b6b9be" : a > 0.5 ? "#fff" : "#014486";
-        const tap = opt.tap === st ? `data-tap="${st}" class="tile tap"` : 'class="tile"';
-        const sel = opt.sel === st ? `<rect x="${c * (S + G) - 2}" y="${r * (S + G) - 2}" width="${S + 4}" height="${S + 4}" rx="7" fill="none" stroke="#C50A1D" stroke-width="3"/>` : "";
-        return `<g ${tap}><rect x="${c * (S + G)}" y="${r * (S + G)}" width="${S}" height="${S}" rx="5" fill="${fill}"/>
-          <text x="${c * (S + G) + S / 2}" y="${r * (S + G) + 16}" text-anchor="middle" fill="${txt}" class="tl">${st}</text>
-          <text x="${c * (S + G) + S / 2}" y="${r * (S + G) + 30}" text-anchor="middle" fill="${txt}" class="tv">${dim ? "" : v}</text></g>${sel}`;
+        const bi = Math.min(BLUE.length - 1, Math.floor((v / max) * BLUE.length));
+        const fill = dim ? "#eef0f3" : BLUE[bi];
+        const txt = dim ? "#c3c6cb" : bi >= 3 ? "#fff" : "#1d4c80";
+        const x = c * P, y = r * PH;
+        const tap = opt.tap === st;
+        const sel = opt.sel === st || tap;
+        const fade = opt.sel && opt.sel !== st;
+        if (opt.tip === st) {
+          const k = st === "KS" ? D.kansas : null;
+          const top = k ? `${k.byLoss[0].k} (${k.byLoss[0].v})` : "Water";
+          tip = `<div class="tv-tip" style="left:${(((x + S + 6) / W) * 100).toFixed(1)}%;top:${((y / H) * 100).toFixed(1)}%">
+            <div><span>State</span><b>${st === "KS" ? "Kansas" : st}</b></div><div><span>Open jobs</span><b>${v}</b></div><div><span>Top loss type</span><b>${top}</b></div><div><span>Franchises</span><b>${st === "KS" ? 6 : "\u2014"}</b></div>
+            ${tap ? "<em>Click to drill down \u203a</em>" : ""}</div>`;
+        }
+        return `<g class="tv-tile ${tap ? "tap" : ""} ${fade ? "fade" : ""}" ${tap ? `data-tap="${st}"` : ""}><rect x="${x}" y="${y}" width="${S}" height="${SH}" rx="3" fill="${fill}"/>${sel ? `<rect x="${x - 1.5}" y="${y - 1.5}" width="${S + 3}" height="${SH + 3}" rx="4" fill="none" stroke="#1b1b1b" stroke-width="2"/>` : ""}<text x="${x + S / 2}" y="${y + 10}" text-anchor="middle" fill="${txt}" class="tl">${st}</text>${dim ? "" : `<text x="${x + S / 2}" y="${y + 20}" text-anchor="middle" fill="${txt}" class="tv">${v}</text>`}</g>`;
       })
       .join("");
-    return `<svg class="usmap" viewBox="0 0 ${11 * (S + G)} ${8 * (S + G)}">${cells}</svg>`;
+    const legend = `<div class="tv-legend"><b>Open jobs</b><span>0</span><i style="background:linear-gradient(90deg,${BLUE.join(",")})"></i><span>${max - 1}</span></div>`;
+    return `<div class="tv-map"><svg class="tv-tiles" viewBox="0 0 ${W} ${H}">${cells}</svg>${tip}</div>${opt.legend === false ? "" : legend}`;
   }
 
-  function lossBars(opt = {}) {
-    const max = Math.max(...D.kansas.byLoss.map((x) => x.v));
-    return `<div class="bars">${D.kansas.byLoss
-      .map((x) => `<div class="bar-row ${opt.tap === x.k ? "tap" : ""}" ${opt.tap === x.k ? `data-tap="${x.k}"` : ""}><span class="bl">${icon(x.k)} ${x.k}</span>
-        <span class="bt"><span style="width:${(x.v / max) * 100}%;background:${x.c}"></span></span><span class="bv">${x.v}</span></div>`)
+  function donut(parts, opt = {}) {
+    const tot = parts.reduce((a, p) => a + p.v, 0);
+    const R = 36, r = 23, cx = 40, cy = 40;
+    const pt = (a, rr) => `${(cx + rr * Math.cos(a)).toFixed(2)},${(cy + rr * Math.sin(a)).toFixed(2)}`;
+    let a0 = -Math.PI / 2;
+    const arcs = parts
+      .map((p) => {
+        const a1 = a0 + (p.v / tot) * Math.PI * 2;
+        const lg = a1 - a0 > Math.PI ? 1 : 0;
+        const d = `M${pt(a0, R)} A${R},${R} 0 ${lg} 1 ${pt(a1, R)} L${pt(a1, r)} A${r},${r} 0 ${lg} 0 ${pt(a0, r)}Z`;
+        a0 = a1;
+        return `<path d="${d}" fill="${p.c}" stroke="#fff" stroke-width="1.5"/>`;
+      })
+      .join("");
+    return `<div class="tv-donut"><svg viewBox="0 0 80 80">${arcs}<text x="40" y="41" text-anchor="middle" class="dn-v">${opt.center}</text><text x="40" y="51" text-anchor="middle" class="dn-l">${opt.sub}</text></svg>
+      <div class="tv-lg">${parts.map((p) => `<div><i style="background:${p.c}"></i><span>${p.k}</span><b>${Math.round((p.v / tot) * 100)}%</b></div>`).join("")}</div></div>`;
+  }
+
+  function area(s, opt = {}) {
+    const W = opt.w || 300, H = opt.h || 110, L = 30, B = 15, T = 9, R = 8;
+    const mn = opt.min != null ? opt.min : Math.min(...s), mx = opt.max != null ? opt.max : Math.max(...s);
+    const X = (i) => L + (i * (W - L - R)) / (s.length - 1);
+    const Y = (v) => T + (H - T - B) * (1 - (v - mn) / (mx - mn || 1));
+    const fmt = opt.fmt || ((v) => Math.round(v).toLocaleString());
+    const line = s.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(" ");
+    const ticks = opt.ticks || [mn, (mn + mx) / 2, mx];
+    const grid = ticks.map((t) => `<line x1="${L}" x2="${W - R}" y1="${Y(t).toFixed(1)}" y2="${Y(t).toFixed(1)}" class="gl"/><text x="${L - 5}" y="${(Y(t) + 3).toFixed(1)}" text-anchor="end" class="ax">${fmt(t)}</text>`).join("");
+    const xl = (opt.xl || []).map(([i, t]) => `<text x="${X(i).toFixed(1)}" y="${H - 3}" text-anchor="middle" class="ax">${t}</text>`).join("");
+    const ann = (opt.ann || []).map(([i, t]) => `<line x1="${X(i).toFixed(1)}" x2="${X(i).toFixed(1)}" y1="${T - 4}" y2="${H - B}" class="an"/><text x="${(X(i) + 3).toFixed(1)}" y="${T + 4}" class="anl">${t}</text>`).join("");
+    const ref = opt.ref != null ? `<line x1="${L}" x2="${W - R}" y1="${Y(opt.ref).toFixed(1)}" y2="${Y(opt.ref).toFixed(1)}" class="ref"/><text x="${W - R}" y="${(Y(opt.ref) - 3).toFixed(1)}" text-anchor="end" class="refl">${opt.refL || ""}</text>` : "";
+    const c = opt.c || "#4e79a7";
+    const n = s.length - 1;
+    return `<svg class="tv-area" viewBox="0 0 ${W} ${H}">${grid}${ann}<polygon points="${L},${H - B} ${line} ${X(n).toFixed(1)},${H - B}" fill="${c}" opacity=".14"/><polyline points="${line}" fill="none" stroke="${c}" stroke-width="2.2" stroke-linejoin="round" class="draw"/>${ref}${xl}<circle cx="${X(n).toFixed(1)}" cy="${Y(s[n]).toFixed(1)}" r="3.4" fill="${c}" stroke="#fff" stroke-width="1.6"/>${opt.lastL ? `<text x="${(X(n) - 6).toFixed(1)}" y="${(Y(s[n]) - 7).toFixed(1)}" text-anchor="end" class="lbl">${opt.lastL}</text>` : ""}</svg>`;
+  }
+
+  function hbars(rows, opt = {}) {
+    const max = opt.max || Math.max(...rows.map((r) => r.v));
+    return `<div class="tv-hb">${rows
+      .map((r) => `<div class="hb-r ${r.tap ? "tap" : ""} ${r.fade ? "fade" : ""}" ${r.tap ? `data-tap="${r.tap}"` : ""}><span class="hb-k">${r.ico || ""}${esc(r.k)}</span><span class="hb-t"><span style="width:${((r.v / max) * 100).toFixed(1)}%;background:${r.c || "#4e79a7"}"></span></span><b>${r.l != null ? r.l : r.v}</b></div>`)
       .join("")}</div>`;
+  }
+
+  function tabShell(title, crumbs, body, opt = {}) {
+    const filters = (opt.filters || [["Region", "All"], ["Loss type", "All"], ["Period", "Last 13 weeks"]])
+      .map(([l, v, on]) => `<div class="tv-f ${on ? "on" : ""}"><label>${l}</label><span>${esc(v)}<i>\u25be</i></span></div>`)
+      .join("");
+    const viz = `
+      <div class="lx-card tv-wrap">
+        <div class="tv-cmp">${TLOGO}<b>${esc(title)}</b><span class="tv-src">Tableau Cloud</span><span class="fresh">\u25cf ${opt.fresh || "Live \u00b7 4 min ago"}</span>${btn("Subscribe", "", "neutral xs")}</div>
+        <div class="tv-tabs">${SHEETS.map((s) => `<span class="${s === (opt.sheet || "Overview") ? "on" : ""}">${s}</span>`).join("")}</div>
+        <div class="tv-dash">
+          <div class="tv-top">
+            <div class="tv-crumbs">${crumbs.map((c, i) => `<span class="${i === crumbs.length - 1 ? "on" : ""}">${esc(c)}</span>`).join("<i>\u203a</i>")}</div>
+            <div class="tv-filters">${filters}</div>
+          </div>
+          ${opt.viewAs ? `<div class="tv-rls"><b>Row-level security</b> Viewing as ${esc(opt.viewAs)} \u00b7 filter Region = West from the user's Salesforce attributes</div>` : ""}
+          ${body}
+        </div>
+        <div class="tb-bar"><span>\u21b6</span><span>\u21b7</span><span>\u27f2 Revert</span><span>\u21bb Refresh</span><span>\u25f7 Pause</span><span class="r">\u2913 Download</span><span>\u2922 Full screen</span><b>${TLOGO}Tableau</b></div>
+      </div>`;
+    return frame(opt.role || "cj", lx("PuroClean Ops", OPS_TABS, "Network Operations", viz, { avatar: opt.role === "rd" ? "RD" : "CB" }), { device: "laptop", clock: opt.clock || "2:00 PM" });
+  }
+
+  const NET_LOSS = [
+    { k: "Water", v: 58, c: T10.Water },
+    { k: "Fire", v: 21, c: T10.Fire },
+    { k: "Mold", v: 14, c: T10.Mold },
+    { k: "Biohazard", v: 7, c: T10.Biohazard },
+  ];
+  const STAGES = D.milestones.map((m) => m.label);
+  const toMin = (t) => {
+    const m = /(\d+):(\d+)\s*(AM|PM)/.exec(t || "");
+    if (!m) return null;
+    return ((+m[1] % 12) + (m[3] === "PM" ? 12 : 0)) * 60 + +m[2];
+  };
+
+  function jobGantt() {
+    const ms = D.milestones.filter((m) => !["target_start", "target_completion", "started"].includes(m.field)).slice(0, 8);
+    const W = 420, rowH = 17, L = 104, R = 30, T = 16;
+    const t0 = 6 * 60, t1 = 12 * 60;
+    const X = (m) => L + ((m - t0) / (t1 - t0)) * (W - L - R);
+    const H = T + ms.length * rowH + 4;
+    let prev = null;
+    const hours = [6, 7, 8, 9, 10, 11, 12].map((h) => `<line x1="${X(h * 60)}" x2="${X(h * 60)}" y1="${T - 4}" y2="${H}" class="gl"/><text x="${X(h * 60)}" y="${T - 7}" text-anchor="middle" class="ax">${h > 12 ? h - 12 : h}${h < 12 ? " AM" : " PM"}</text>`).join("");
+    const acc = toMin("6:24 AM");
+    const sla = `<rect x="${X(acc)}" y="${T + 3 * rowH + 1}" width="${X(acc + 30) - X(acc)}" height="${rowH - 2}" fill="#fbe3e3" stroke="#f0b4b4" stroke-dasharray="2 2" rx="2"/>`;
+    const rows = ms
+      .map((m, i) => {
+        const y = T + i * rowH;
+        const t = toMin(m.value);
+        const lab = `<text x="${L - 8}" y="${y + 13}" text-anchor="end" class="gk ${t == null ? "pend" : ""}">${m.label}</text>`;
+        if (t == null) return `${lab}<text x="${L + 4}" y="${y + 13}" class="gp">pending</text>`;
+        const x0 = X(prev == null ? t : prev), x1 = X(t);
+        prev = t;
+        const c = m.sla ? "#4e79a7" : "#76b7b2";
+        return `${lab}<rect x="${x0}" y="${y + 5}" width="${Math.max(3, x1 - x0)}" height="${rowH - 10}" rx="2" fill="${c}" opacity=".85"/><circle cx="${x1}" cy="${y + rowH / 2}" r="4" fill="${c}" stroke="#fff" stroke-width="1.5"/><text x="${x1 + 7}" y="${y + 13}" class="gv">${m.value}</text>`;
+      })
+      .join("");
+    return `<svg class="tv-gantt" viewBox="0 0 ${W} ${H}">${hours}${sla}${rows}</svg>`;
   }
 
   function tableau(view, opt = {}) {
     const K = D.kansas;
     if (view === "network") {
-      return tabShell("Network Operations", ["All franchises"], `${kpiTiles()}
-        <div class="tb-grid"><div class="tb-card wide"><div class="tb-h">Open jobs by state <small>tap a state</small></div>${usMap({ tap: opt.tap ? "KS" : null })}</div>
-        <div class="tb-card"><div class="tb-h">Loss type \u00b7 network</div>
-          <div class="donut-legend"><div><i style="background:#4e79a7"></i>Water 58%</div><div><i style="background:#e15759"></i>Fire 21%</div><div><i style="background:#59a14f"></i>Mold 14%</div><div><i style="background:#f28e2b"></i>Biohazard 7%</div></div>
-          <div class="tb-note">Sources: Dash, PSA, Albi, JobSite \u00b7 via MuleSoft</div></div></div>`);
+      return tabShell("Network Operations", ["All franchises"], `${bans(D.kpis)}
+        <div class="tv-g g-map">
+          ${sheet("Open jobs by state", tileMap({ tap: opt.tap ? "KS" : null, tip: opt.tap ? "KS" : null }), { right: opt.tap ? "Click a state to drill down" : "All four SPAR platforms" })}
+          <div class="tv-col">
+            ${sheet("Open jobs by loss type", donut(NET_LOSS, { center: "1,712", sub: "open jobs" }))}
+            ${sheet("Open jobs \u00b7 last 13 weeks", area(SERIES["Open jobs"].s, { w: 210, h: 64, min: 1560, max: 1720, ticks: [1600, 1700], xl: [[0, "Nov"], [6, "Dec"], [12, "Feb"]], lastL: "1,712" }))}
+          </div>
+        </div>`);
     }
     if (view === "kansas") {
-      return tabShell("Network Operations", ["All franchises", "Kansas"], `${kpiTiles()}
-        <div class="tb-grid"><div class="tb-card wide"><div class="tb-h">Open jobs by state</div>${usMap({ sel: "KS" })}</div>
-        <div class="tb-card"><div class="tb-h">Kansas \u00b7 ${K.open} open jobs by loss type <small>tap Water</small></div>${lossBars({ tap: opt.tap ? "Water" : null })}</div></div>`);
+      const metros = [
+        { k: "Kansas City", v: 17 },
+        { k: "Wichita", v: 14, c: "#346fa9" },
+        { k: "Topeka", v: 9 },
+        { k: "Other", v: 7 },
+      ];
+      return tabShell("Network Operations", ["All franchises", "Kansas"], `${bans([
+          { k: "Open jobs \u00b7 Kansas", v: "47", d: "+3 vs last week", s: [38, 40, 39, 41, 42, 41, 43, 44, 43, 45, 44, 46, 47] },
+          { k: "Water jobs", v: "31", d: "66% of open", s: [22, 23, 23, 24, 25, 24, 26, 27, 27, 28, 29, 30, 31], sc: T10.Water },
+          { k: "Estimated value", v: "$338K", d: "+$21K vs last week", s: [290, 295, 298, 301, 300, 306, 311, 315, 314, 322, 327, 331, 338] },
+          { k: "Cycle time", v: "9.0 days", d: "\u22120.4 vs Jan", s: [9.8, 9.7, 9.7, 9.6, 9.5, 9.5, 9.4, 9.3, 9.3, 9.2, 9.1, 9.1, 9.0], tone: "good" },
+        ])}
+        <div class="tv-g g-map">
+          ${sheet("Open jobs by state", tileMap({ sel: "KS", tip: "KS" }), { right: "Kansas selected" })}
+          <div class="tv-col">
+            ${sheet(`Kansas \u00b7 open jobs by loss type`, hbars(K.byLoss.map((x) => ({ k: x.k, v: x.v, c: x.c, ico: icon(x.k), tap: opt.tap && x.k === "Water" ? "Water" : null }))), { right: opt.tap ? "Click Water" : "" })}
+            ${sheet("By metro area", hbars(metros))}
+          </div>
+        </div>`, { filters: [["Region", "Kansas", true], ["Loss type", "All"], ["Period", "Last 13 weeks"]] });
     }
     if (view === "wichita") {
+      const max = Math.max(...K.wichita.list.map((j) => j.est));
       const rows = K.wichita.list
-        .map((j) => `<tr class="${j.id === D.job.id && opt.tap ? "tap" : ""}" ${j.id === D.job.id && opt.tap ? 'data-tap="job"' : ""}><td class="lnk">${j.id}</td><td>${j.fr}</td><td>${icon(j.loss)} ${j.loss}</td><td>${money(j.est)}</td><td>${j.stage}</td></tr>`)
+        .map((j) => {
+          const tap = j.id === D.job.id && opt.tap;
+          const si = STAGES.indexOf(j.stage) + 1;
+          return `<tr class="${tap ? "tap" : ""}" ${tap ? 'data-tap="job"' : ""}><td class="lnk">${j.id}</td><td>${j.fr}</td><td><i class="dot" style="background:${T10[j.loss]}"></i>${j.loss}</td>
+            <td class="est"><span class="db" style="width:${((j.est / max) * 100).toFixed(0)}%"></span><b>${money(j.est)}</b></td>
+            <td class="stg"><span class="pg"><span style="width:${((si / STAGES.length) * 100).toFixed(0)}%"></span></span>${j.stage}</td></tr>`;
+        })
         .join("");
-      return tabShell("Network Operations", ["All franchises", "Kansas", "Water + Fire", "Wichita area"], `
-        <div class="tb-kpis three"><div class="kpi"><div class="kpi-k">Open water + fire jobs</div><div class="kpi-v">${K.wichita.jobs}</div></div>
-        <div class="kpi hl"><div class="kpi-k">Estimated value</div><div class="kpi-v">${money(K.wichita.est)}</div></div>
-        <div class="kpi"><div class="kpi-k">Franchises</div><div class="kpi-v">2</div></div></div>
-        <div class="tb-card"><div class="tb-h">Wichita area jobs <small>tap ${D.job.id}</small></div>
-          <table class="tb-table"><thead><tr><th>Job</th><th>Franchise</th><th>Loss</th><th>Estimate</th><th>Current milestone</th></tr></thead><tbody>${rows}</tbody></table></div>`);
+      return tabShell("Network Operations", ["All franchises", "Kansas", "Water + Fire", "Wichita area"], `${bans([
+          { k: "Open water + fire jobs", v: String(K.wichita.jobs), d: "+2 vs last week", s: [7, 8, 8, 8, 9, 9, 9, 10, 9, 10, 10, 11, 11] },
+          { k: "Estimated value", v: money(K.wichita.est), d: "+$9.6K vs last week", s: [61, 63, 64, 66, 65, 68, 70, 71, 72, 74, 75, 78, 80] },
+          { k: "Franchises", v: "2", d: "Wichita East, West" },
+          { k: "Avg job age", v: "2.3 days", d: "\u22120.5 vs Jan", tone: "good", s: [3.1, 3.0, 3.0, 2.9, 2.8, 2.8, 2.7, 2.6, 2.6, 2.5, 2.4, 2.4, 2.3] },
+        ])}
+        ${sheet("Wichita area \u00b7 open jobs", `<table class="tv-table"><thead><tr><th>Job</th><th>Franchise</th><th>Loss</th><th>Estimate</th><th>Current milestone (of 18)</th></tr></thead><tbody>${rows}</tbody></table>`, { right: opt.tap ? `Click ${D.job.id}` : "Sorted by last update" })}`,
+        { sheet: "Jobs", filters: [["Region", "Kansas", true], ["Loss type", "Water, Fire", true], ["Metro", "Wichita", true]] });
     }
     if (view === "job") {
-      const done = D.milestones.filter((m) => m.value && !["target_start", "target_completion", "started"].includes(m.field));
-      const steps = D.milestones
-        .filter((m) => !["target_start", "target_completion", "started"].includes(m.field))
-        .slice(0, 9)
-        .map((m) => `<div class="tl-step ${m.value ? "done" : ""}"><span class="tl-dot"></span><span class="tl-l">${m.label}</span><span class="tl-v">${m.value || ""}</span></div>`)
-        .join("");
-      return tabShell("Job detail", ["All franchises", "Kansas", "Wichita area", D.job.id], `
-        <div class="tb-card"><div class="tb-h">${D.job.id} \u00b7 ${D.franchise.name} \u00b7 ${D.job.loss}, ${D.job.category} \u00b7 est. $${D.job.estimate.toLocaleString()}</div>
-        <div class="tl">${steps}</div>
-        <div class="tb-note">PuroLogic Dates, from Dash via MuleSoft \u00b7 ${done.length} of 18 milestones reached \u00b7 Target Completion Feb 19</div></div>`);
+      const reached = D.milestones.filter((m) => m.value && !["target_start", "target_completion", "started"].includes(m.field)).length;
+      return tabShell("Job detail", ["All franchises", "Kansas", "Wichita area", D.job.id], `${bans([
+          { k: "Milestones reached", v: `${reached} / 18`, d: "PuroLogic Dates" },
+          { k: "SLA milestones", v: "4 / 4 met", d: "Dispatch \u2192 Inspected", cls: "ok" },
+          { k: "Elapsed", v: "5h 28m", d: "loss to estimate sent" },
+          { k: "Estimate", v: `$${D.job.estimate.toLocaleString()}`, d: `${D.job.loss}, ${D.job.category}` },
+        ])}
+        ${sheet(`${D.job.id} \u00b7 ${D.franchise.name} \u00b7 milestone timeline`, jobGantt(), { right: "<i class=\"dot\" style=\"background:#4e79a7\"></i>SLA milestone <i class=\"dot\" style=\"background:#76b7b2\"></i>Other <i class=\"dot sq\"></i>30-min contact window" })}
+        <div class="tv-foot">Source: Dash via MuleSoft job-sync \u00b7 11:11 curated.job_milestone \u00b7 Target Completion Feb 19</div>`,
+        { sheet: "Jobs", filters: [["Job", D.job.id, true], ["Franchise", "Wichita East", true]] });
     }
     if (view === "rd") {
-      return tabShell("Network Operations", ["West Region"], `${kpiTiles({ kpis: D.kpisWest })}
-        <div class="tb-grid"><div class="tb-card wide"><div class="tb-h">Open jobs by state \u00b7 row-level security applied</div>${usMap({ only: D.west })}</div>
-        <div class="tb-card"><div class="tb-h">West Region</div><div class="rd-list">${D.west.map((s) => `<div><b>${s}</b><span>${D.openJobs[s]} open</span></div>`).join("")}</div>
-        <div class="tb-note">1 of 12\u201313 regional directors. Same dashboard, filtered to this region.</div></div></div>`, { role: "rd", viewAs: "Regional Director, West" });
+      const rows = D.west.map((s) => ({ k: { CA: "California", OR: "Oregon", WA: "Washington", NV: "Nevada" }[s], v: D.openJobs[s], c: "#346fa9" })).sort((a, b) => b.v - a.v);
+      return tabShell("Network Operations", ["West Region"], `${bans(D.kpisWest)}
+        <div class="tv-g g-map">
+          ${sheet("Open jobs by state", tileMap({ only: D.west, legend: false }), { right: "Only West Region rows returned" })}
+          <div class="tv-col">
+            ${sheet("West Region \u00b7 open jobs by state", hbars(rows))}
+            ${sheet("On-time completion \u00b7 13 weeks", area([79, 80, 80, 81, 81, 82, 82, 83, 82, 83, 84, 84, 84], { w: 210, h: 64, min: 76, max: 86, ticks: [78, 84], fmt: (v) => v + "%", ref: 82, refL: "Network 82%", lastL: "84%" }))}
+          </div>
+        </div>`, { role: "rd", viewAs: "Regional Director, West", sheet: "Regions", filters: [["Region", "West", true], ["Loss type", "All"], ["Period", "Last 13 weeks"]] });
     }
     if (view === "bench") {
       const rows = D.benchmark
         .map((b) => {
-          const max = Math.max(b.fr, b.net) * 1.25;
+          const max = Math.max(b.fr, b.net) * 1.3;
           const good = b.better === "high" ? b.fr >= b.net : b.fr <= b.net;
-          return `<div class="bm-row"><span class="bm-k">${b.k}</span><span class="bm-bars"><span class="bm-fr ${good ? "good" : "bad"}" style="width:${(b.fr / max) * 100}%">${b.fmt(b.fr)}</span><span class="bm-net" style="width:${(b.net / max) * 100}%">${b.fmt(b.net)}</span></span></div>`;
+          const pct = Math.round((Math.abs(b.fr - b.net) / b.net) * 100);
+          return `<div class="bu-r"><span class="bu-k">${b.k}</span>
+            <span class="bu-t"><span class="bu-band" style="width:${((b.net / max) * 100).toFixed(1)}%"></span><span class="bu-bar ${good ? "good" : "bad"}" style="width:${((b.fr / max) * 100).toFixed(1)}%"></span><span class="bu-ref" style="left:${((b.net / max) * 100).toFixed(1)}%"></span></span>
+            <b>${b.fmt(b.fr)}</b><span class="bu-d ${good ? "good" : "bad"}">${good ? "\u25b2" : "\u25bc"} ${pct}% ${good ? "better" : "worse"}</span></div>`;
         })
         .join("");
       return tabShell("Franchise benchmarking", ["All franchises", "Kansas", D.franchise.name], `
-        <div class="tb-card"><div class="tb-h">${D.franchise.name} vs network average <small><i class="lg-fr"></i>franchise <i class="lg-net"></i>network</small></div>${rows}
-        <div class="bm-fin">Revenue \u00b7 gross margin \u00b7 labor and material % \u00b7 growth trend <span>Stage 3, with QuickBooks Online</span></div></div>`);
+        ${sheet(`${D.franchise.name} vs network average`, `<div class="bu-lg"><span><i class="bu-sw good"></i>Franchise</span><span><i class="bu-sw ref"></i>Network average</span><span><i class="bu-sw band"></i>0 to network average</span></div>${rows}`, { right: "Certified KPIs from CJ's list" })}
+        <div class="tv-later"><b>Financial benchmarks</b> Revenue, gross margin, labor and material %, growth trend <span>Stage 3, with QuickBooks Online</span></div>`,
+        { sheet: "Benchmarks", filters: [["Franchise", D.franchise.name, true], ["Compare to", "Network average", true], ["Period", "Last 13 weeks"]] });
     }
     if (view === "lineage") {
-      return tabShell("Network Operations", ["All franchises"], `${kpiTiles({ tapLineage: opt.tap, hl: opt.tap ? null : "On-time completion" })}
-        <div class="tb-card"><div class="tb-h">Where does "On-time completion" come from?</div>
-        <p class="tb-ask">${opt.tap ? "Tap the tile to trace it." : "Traced on the right: Tableau, MuleSoft, then each platform's field."}</p></div>`);
+      const guide = `<div class="tv-guide"><div class="tg-h">Data Guide</div>
+        <div class="tg-i"><small>Metric</small><b>On-Time Completion % <span class="cert">\u2714 Certified</span></b></div>
+        <div class="tg-i"><small>Definition</small><span>Completed jobs where Majority Completion \u2264 Target Completion, \u00f7 completed jobs</span></div>
+        <div class="tg-i"><small>Data source</small><span><code>curated.job_milestone</code> \u00b7 11:11 SQL Server \u00b7 live</span></div>
+        <div class="tg-i"><small>Upstream</small><span>MuleSoft job-sync-papi \u00b7 4 SPAR platforms</span></div>
+        <div class="tg-i"><small>Owner</small><span>PuroClean IT (Nick)</span></div></div>`;
+      return tabShell("Network Operations", ["All franchises"], `${bans(D.kpis, { tapLineage: opt.tap, hl: opt.tap ? null : "On-time completion" })}
+        <div class="tv-g g-lin">
+          ${sheet("On-time completion \u00b7 last 13 weeks", area(SERIES["On-time completion"].s, { w: 250, h: 112, min: 74, max: 84, ticks: [76, 80, 84], fmt: (v) => v + "%", c: opt.tap ? "#4e79a7" : "#C23934", xl: [[0, "Nov"], [6, "Dec"], [12, "Feb"]], ref: 80, refL: "Target 80%", lastL: "82%" }), { right: opt.tap ? "Click the On-time completion tile" : "Traced on the right" })}
+          ${guide}
+        </div>`);
     }
     if (view === "health" || view === "health-amber" || view === "health-ok") {
       const amber = view === "health-amber";
-      return tabShell("Data Health & Integrations", ["All franchises"], `
-        <div class="tb-kpis three">
-          <div class="kpi"><div class="kpi-k">Franchises with usable data</div><div class="kpi-v">64% <small class="up">from 19%</small></div></div>
-          <div class="kpi ${amber ? "amber" : "green"}"><div class="kpi-k">Integrations working</div><div class="kpi-v">${amber ? "4 / 5" : "5 / 5"}</div><div class="kpi-d">${amber ? "PSA delayed \u00b7 events queued" : "all platforms syncing"}</div></div>
-          <div class="kpi"><div class="kpi-k">Records quarantined (7 days)</div><div class="kpi-v">312</div><div class="kpi-d">0.4% of volume</div></div></div>
-        <div class="tb-grid"><div class="tb-card"><div class="tb-h">Usable data, % of franchises</div>
-          <svg viewBox="0 0 300 110" class="trend"><polyline points="0,92 40,90 80,86 120,70 160,58 200,46 240,38 280,32 300,30" fill="none" stroke="#0176D3" stroke-width="3"/><line x1="120" y1="0" x2="120" y2="110" stroke="#C50A1D" stroke-dasharray="4 3"/><text x="124" y="12" class="tr-l">Wave 1</text><line x1="200" y1="0" x2="200" y2="110" stroke="#C50A1D" stroke-dasharray="4 3"/><text x="204" y="12" class="tr-l">Wave 2</text></svg></div>
-        <div class="tb-card"><div class="tb-h">Top quarantine reasons</div><div class="bars">
-          ${[["Missing loss type", 41], ["Duplicate job", 33], ["Dates out of order", 17], ["Unknown franchise", 9]].map(([k, v]) => `<div class="bar-row"><span class="bl">${k}</span><span class="bt"><span style="width:${v * 2.2}%;background:#C50A1D"></span></span><span class="bv">${v}%</span></div>`).join("")}
-        </div></div></div>`, { clock: amber ? "2:16 PM" : "2:00 PM", fresh: amber ? "PSA: 2 min delayed" : "4 min ago" });
+      const plats = [
+        ["Dash", "1 min ago", [42, 45, 44, 47, 46, 48, 50, 49]],
+        ["PSA", amber ? "delayed \u00b7 events queued" : "2 min ago", amber ? [38, 40, 39, 41, 0, 0, 0, 0] : [38, 40, 39, 41, 42, 40, 43, 44]],
+        ["Albi", "3 min ago", [21, 22, 21, 23, 24, 23, 25, 24]],
+        ["JobSite", "1 min ago", [30, 31, 29, 32, 33, 31, 34, 35]],
+        ["FranConnect", "nightly \u00b7 2:00 AM", [5, 5, 5, 5, 5, 5, 5, 5]],
+      ];
+      const strip = `<div class="tv-int">${plats
+        .map(([n, t, s]) => {
+          const bad = amber && n === "PSA";
+          return `<div class="ti ${bad ? "amber" : ""}"><div class="ti-h"><i></i><b>${n}</b></div><small>${t}</small>${spark(s, { c: bad ? "#d97a00" : "#59a14f", w: 90, h: 18 })}</div>`;
+        })
+        .join("")}</div>`;
+      return tabShell("Data Health & Integrations", ["All franchises"], `${bans([
+          { k: "Franchises with usable data", v: "64%", d: "+45 pts since Wave 1", tone: "good", s: [19, 19, 21, 24, 30, 37, 43, 48, 52, 56, 59, 62, 64] },
+          { k: "Integrations working", v: amber ? "4 / 5" : "5 / 5", d: amber ? "PSA delayed \u00b7 events queued" : "all platforms syncing", cls: amber ? "amber" : "ok" },
+          { k: "Records quarantined \u00b7 7 days", v: "312", d: "\u22120.2 pts \u00b7 0.4% of volume", tone: "good", s: [0.9, 0.85, 0.8, 0.8, 0.7, 0.66, 0.6, 0.58, 0.55, 0.5, 0.46, 0.42, 0.4] },
+        ])}
+        ${strip}
+        <div class="tv-g g-half">
+          ${sheet("Usable data, % of franchises", area([19, 19, 21, 24, 30, 37, 43, 48, 52, 56, 59, 62, 64], { w: 230, h: 84, min: 0, max: 100, ticks: [0, 50, 100], fmt: (v) => v + "%", c: "#59a14f", ann: [[3, "Wave 1"], [7, "Wave 2"]], ref: 95, refL: "Target 95%", lastL: "64%" }))}
+          ${sheet("Top quarantine reasons", hbars([["Missing loss type", 41], ["Duplicate job", 33], ["Dates out of order", 17], ["Unknown franchise", 9]].map(([k, v]) => ({ k, v, l: v + "%", c: "#e15759" })), { max: 45 }))}
+        </div>`, { sheet: "Data Health", clock: amber ? "2:16 PM" : "2:00 PM", fresh: amber ? "PSA 2 min delayed" : "Live \u00b7 4 min ago" });
     }
     return "";
   }
