@@ -6,17 +6,17 @@ window.Acts = (function () {
   const code = (s) => `<code>${C.esc(s)}</code>`;
 
   const acts = [
-    { id: "hero", n: "", title: "Start", short: true },
-    { id: "1", n: "1", title: "A job is born", short: true },
-    { id: "2", n: "2", title: "Rosetta Stone", short: true },
-    { id: "3", n: "3", title: "30-minute clock", short: false },
-    { id: "4", n: "4", title: "Dirty to trusted", short: false },
-    { id: "5", n: "5", title: "Drill-down", short: true, focus: "CJ focus 1" },
-    { id: "6", n: "6", title: "Scale to 900", short: true, focus: "CJ focus 2" },
-    { id: "7", n: "7", title: "When it breaks", short: true, focus: "CJ focus 3" },
-    { id: "8", n: "8", title: "Proactive", short: false },
-    { id: "arch", n: "", title: "How it fits", short: false },
-    { id: "close", n: "", title: "Close", short: true },
+    { id: "hero", n: "", title: "Overview", short: true, tip: "Scope and agenda" },
+    { id: "1", n: "1", title: "Ingestion", short: true, tip: "Watermark polling, System API, DataWeave transform, upsert to 11:11" },
+    { id: "2", n: "2", title: "Canonical Model", short: true, tip: "Per-platform field mapping to PuroLogic Dates; adding a platform" },
+    { id: "3", n: "3", title: "SLA Alerting", short: false, tip: "5-minute SLA lane vs nightly batch; SLA-breach notifications" },
+    { id: "4", n: "4", title: "Data Quality", short: false, tip: "Dedupe, validation rules, quarantine table" },
+    { id: "5", n: "5", title: "Tableau Analytics", short: true, focus: "CJ focus 1", tip: "Live queries, semantic model, row-level security, KPI lineage" },
+    { id: "6", n: "6", title: "Scaling", short: true, focus: "CJ focus 2", tip: "Horizontal scaling, persistent queues, config-driven onboarding" },
+    { id: "7", n: "7", title: "Resilience & Security", short: true, focus: "CJ focus 3", tip: "Retries, circuit breaker, replay, monitoring, API Manager policies" },
+    { id: "8", n: "8", title: "Tableau Pulse", short: false, tip: "Metric monitoring, anomaly digests, roadmap" },
+    { id: "arch", n: "", title: "Architecture", short: false, tip: "End-to-end reference architecture" },
+    { id: "close", n: "", title: "Next Steps", short: true, tip: "Wave 1 scope and rollout" },
   ];
 
   const datesUpTo = (field) => {

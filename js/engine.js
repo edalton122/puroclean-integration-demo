@@ -36,7 +36,7 @@
         const on = a.id === cur.act;
         const off = !inPath(a.id);
         const label = a.n ? `<i>${a.n}</i>${esc(a.title)}` : esc(a.title);
-        return `<button class="st ${on ? "on" : ""} ${off ? "off" : ""} ${a.focus ? "focus" : ""}" data-act="${a.id}" title="${a.focus || ""}">${label}</button>`;
+        return `<button class="st ${on ? "on" : ""} ${off ? "off" : ""} ${a.focus ? "focus" : ""}" data-act="${a.id}" title="${esc([a.tip, a.focus].filter(Boolean).join(" \u00b7 "))}">${label}</button>`;
       })
       .join("");
   }
