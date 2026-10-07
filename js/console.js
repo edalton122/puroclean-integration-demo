@@ -1,0 +1,344 @@
+/* Right pane: the "backend console". All animation checks Run.alive() so a step change cancels it. */
+window.Run = (function () {
+  let token = 0;
+  class Cancelled extends Error {}
+  return {
+    Cancelled,
+    next() { token += 1; return token; },
+    get token() { return token; },
+    alive(t) { return t === token; },
+    sleep(ms, t) {
+      return new Promise((resolve, reject) => {
+        setTimeout(() => (t === token ? resolve() : reject(new Cancelled())), ms);
+      });
+    },
+  };
+})();
+
+window.Console = (function () {
+  const NS = "http://www.w3.org/2000/svg";
+  let root, els = {}, clockBase = 0, edgesById = {}, nodesById = {};
+  /* ?fast skips the packet tween for screenshot QA. */
+  const FAST = /[?&]fast\b/.test(location.search);
+  if (FAST) document.documentElement.classList.add("qa");
+
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const fmtClock = (ms) => {
+    const d = new Date(ms);
+    const p = (n, l = 2) => String(n).padStart(l, "0");
+    return `${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())}.${p(d.getUTCMilliseconds(), 3)}`;
+  };
+
+  function init(el) {
+    root = el;
+    root.innerHTML = `
+      <div class="cx-head">
+        <img src="assets/pc-logo-white.png" alt="PuroClean" class="cx-logo"/>
+        <div class="cx-title">What's happening underneath</div>
+        <div class="cx-depth" role="group" aria-label="Depth">
+          <button data-depth="eng" class="on">Engineer view</button><button data-depth="exec">Exec view</button>
+        </div>
+      </div>
+      <div class="cx-caption" id="cxCaption"></div>
+      <nav class="cx-tabs">
+        ${["flow", "logs", "payload", "lineage", "monitor"].map((t) => `<button data-tab="${t}">${t[0].toUpperCase() + t.slice(1)}</button>`).join("")}
+      </nav>
+      <div class="cx-body">
+        <section class="cx-pane" data-pane="flow"><div class="cx-flow"></div><div class="cx-extra"></div></section>
+        <section class="cx-pane" data-pane="logs"><div class="cx-logs"></div></section>
+        <section class="cx-pane" data-pane="payload"><div class="cx-payload"></div></section>
+        <section class="cx-pane" data-pane="lineage"><div class="cx-lineage"></div></section>
+        <section class="cx-pane" data-pane="monitor"><div class="cx-monitor"></div></section>
+      </div>
+      <div class="cx-clock"></div>`;
+    els = {
+      caption: root.querySelector("#cxCaption"),
+      flow: root.querySelector(".cx-flow"),
+      extra: root.querySelector(".cx-extra"),
+      logs: root.querySelector(".cx-logs"),
+      payload: root.querySelector(".cx-payload"),
+      lineage: root.querySelector(".cx-lineage"),
+      monitor: root.querySelector(".cx-monitor"),
+      clock: root.querySelector(".cx-clock"),
+    };
+    root.querySelectorAll(".cx-tabs button").forEach((b) => b.addEventListener("click", () => tab(b.dataset.tab)));
+    root.querySelectorAll(".cx-depth button").forEach((b) =>
+      b.addEventListener("click", () => {
+        document.body.classList.toggle("exec", b.dataset.depth === "exec");
+        root.querySelectorAll(".cx-depth button").forEach((x) => x.classList.toggle("on", x === b));
+      })
+    );
+  }
+
+  function reset() {
+    ["flow", "extra", "logs", "payload", "lineage", "monitor", "clock", "caption"].forEach((k) => (els[k].innerHTML = ""));
+    root.querySelectorAll(".cx-tabs button").forEach((b) => b.classList.remove("has"));
+    edgesById = {};
+    nodesById = {};
+  }
+
+  function mark(name) {
+    const b = root.querySelector(`.cx-tabs button[data-tab="${name}"]`);
+    if (b) b.classList.add("has");
+  }
+
+  function tab(name) {
+    root.querySelectorAll(".cx-tabs button").forEach((b) => b.classList.toggle("on", b.dataset.tab === name));
+    root.querySelectorAll(".cx-pane").forEach((p) => p.classList.toggle("on", p.dataset.pane === name));
+  }
+
+  function caption(text) {
+    els.caption.innerHTML = text ? `<span class="cap-dot"></span>${text}` : "";
+  }
+
+  /* ------------------------------------------------------------ graph */
+  function graph(spec) {
+    mark("flow");
+    const W = spec.w || 1000, H = spec.h || 450;
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    svg.classList.add("cx-graph");
+    const defs = document.createElementNS(NS, "defs");
+    defs.innerHTML = `<filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5d5a5b"/></marker>`;
+    svg.appendChild(defs);
+    (spec.groups || []).forEach((g) => {
+      const r = document.createElementNS(NS, "rect");
+      Object.entries({ x: g.x, y: g.y, width: g.w, height: g.h, rx: 12, class: "cx-group" }).forEach(([k, v]) => r.setAttribute(k, v));
+      svg.appendChild(r);
+      const t = document.createElementNS(NS, "text");
+      t.setAttribute("x", g.x + 12); t.setAttribute("y", g.y + 18); t.setAttribute("class", "cx-group-label");
+      t.textContent = g.label;
+      svg.appendChild(t);
+    });
+    const nodeMap = {};
+    spec.nodes.forEach((n) => (nodeMap[n.id] = n));
+    const edgeLayer = document.createElementNS(NS, "g");
+    svg.appendChild(edgeLayer);
+    spec.edges.forEach(([a, b, opt = {}]) => {
+      const A = nodeMap[a], B = nodeMap[b];
+      const x1 = A.x + A.w, y1 = A.y + A.h / 2, x2 = B.x, y2 = B.y + B.h / 2;
+      let d;
+      if (opt.down) {
+        const ax = A.x + A.w / 2, bx = B.x + B.w / 2;
+        d = `M${ax},${A.y + A.h} C${ax},${(A.y + A.h + B.y) / 2} ${bx},${(A.y + A.h + B.y) / 2} ${bx},${B.y}`;
+      } else if (opt.up) {
+        const ax = A.x + A.w / 2, bx = B.x + B.w / 2;
+        d = `M${ax},${A.y} C${ax},${(A.y + B.y + B.h) / 2} ${bx},${(A.y + B.y + B.h) / 2} ${bx},${B.y + B.h}`;
+      } else {
+        const mx = (x1 + x2) / 2;
+        d = `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`;
+      }
+      const p = document.createElementNS(NS, "path");
+      p.setAttribute("d", d);
+      p.setAttribute("class", "cx-edge" + (opt.dashed ? " dashed" : ""));
+      p.setAttribute("marker-end", "url(#arr)");
+      edgeLayer.appendChild(p);
+      edgesById[a + ">" + b] = p;
+    });
+    spec.nodes.forEach((n) => {
+      const g = document.createElementNS(NS, "g");
+      g.setAttribute("class", "cx-node " + (n.kind || "") + " " + (n.state || ""));
+      g.setAttribute("transform", `translate(${n.x},${n.y})`);
+      g.innerHTML = `<rect width="${n.w}" height="${n.h}" rx="10"/>
+        <text x="${n.w / 2}" y="${n.h / 2 + (n.sub ? -3 : 5)}" text-anchor="middle" class="nl">${esc(n.label)}</text>
+        ${n.sub ? `<text x="${n.w / 2}" y="${n.h / 2 + 13}" text-anchor="middle" class="ns">${esc(n.sub)}</text>` : ""}
+        ${n.badge ? `<g class="nb"><rect x="${n.w - 56}" y="-9" width="62" height="18" rx="9"/><text x="${n.w - 25}" y="4" text-anchor="middle">${esc(n.badge)}</text></g>` : ""}`;
+      svg.appendChild(g);
+      nodesById[n.id] = g;
+    });
+    els.flow.innerHTML = "";
+    els.flow.appendChild(svg);
+    if (spec.legend) {
+      const lg = document.createElement("div");
+      lg.className = "cx-legend";
+      lg.innerHTML = spec.legend;
+      els.flow.appendChild(lg);
+    }
+    return svg;
+  }
+
+  function node(id, state, badge) {
+    const g = nodesById[id];
+    if (!g) return;
+    g.classList.remove("active", "ok", "err", "warn", "reuse", "new", "dim");
+    if (state) state.split(" ").forEach((s) => g.classList.add(s));
+    if (badge !== undefined) {
+      let nb = g.querySelector(".nb text");
+      if (nb) nb.textContent = badge;
+    }
+  }
+
+  function edge(a, b, state) {
+    const p = edgesById[a + ">" + b];
+    if (!p) return;
+    p.classList.remove("hot", "err", "ok");
+    if (state) p.classList.add(state);
+  }
+
+  async function packet(path, t, opt = {}) {
+    const svg = els.flow.querySelector("svg");
+    if (!svg) return;
+    const dot = document.createElementNS(NS, "circle");
+    dot.setAttribute("r", opt.r || 7);
+    dot.setAttribute("class", "cx-packet " + (opt.kind || ""));
+    dot.setAttribute("filter", "url(#glow)");
+    svg.appendChild(dot);
+    try {
+      for (let i = 0; i < path.length - 1; i++) {
+        const a = path[i], b = path[i + 1];
+        const p = edgesById[a + ">" + b];
+        node(a, "active");
+        if (!p) continue;
+        p.classList.add("hot");
+        const len = p.getTotalLength();
+        const dur = opt.dur || 650;
+        const t0 = performance.now();
+        if (FAST) await Run.sleep(dur, t);
+        else await new Promise((resolve, reject) => {
+          const tick = () => {
+            if (!Run.alive(t)) return reject(new Run.Cancelled());
+            const k = Math.min(1, (performance.now() - t0) / dur);
+            const e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+            const pt = p.getPointAtLength(len * e);
+            dot.setAttribute("cx", pt.x);
+            dot.setAttribute("cy", pt.y);
+            k < 1 ? setTimeout(tick, 16) : resolve();
+          };
+          tick();
+        });
+        p.classList.remove("hot");
+        p.classList.add(opt.edgeState || "ok");
+        node(a, opt.trail || "ok");
+        if (opt.onHop) await opt.onHop(b, t);
+      }
+      node(path[path.length - 1], opt.finalState || "ok");
+    } finally {
+      dot.remove();
+    }
+  }
+
+  function extra(html) {
+    els.extra.innerHTML = html || "";
+    return els.extra;
+  }
+
+  /* ------------------------------------------------------------ logs */
+  function setClock(hhmmss) {
+    const [h, m, s] = hhmmss.split(":").map(Number);
+    clockBase = Date.UTC(2027, 1, 16, h, m, s || 0);
+  }
+
+  async function log(entries, t, opt = {}) {
+    mark("logs");
+    for (const e of entries) {
+      if (e.at) setClock(e.at);
+      clockBase += e.dt != null ? e.dt : 40 + Math.floor(Math.random() * 140);
+      const row = document.createElement("div");
+      row.className = `lg ${e.lvl || "info"}` + (e.exec ? "" : " eng-only");
+      row.innerHTML = `<span class="lt">${fmtClock(clockBase)}</span><span class="ll">${(e.lvl || "info").toUpperCase()}</span>
+        <span class="lm"><span class="raw">${e.raw}</span>${e.exec ? `<span class="ex">${e.exec}</span>` : ""}</span>`;
+      els.logs.appendChild(row);
+      els.logs.scrollTop = els.logs.scrollHeight;
+      if (opt.mirror !== false) mirror(e);
+      await Run.sleep(e.wait != null ? e.wait : opt.pace || 230, t);
+    }
+  }
+
+  /* A compact mirror of the latest log lines under the flow graph, so the flow tab stays alive. */
+  function mirror(e) {
+    let m = els.flow.querySelector(".cx-mini");
+    if (!m) {
+      m = document.createElement("div");
+      m.className = "cx-mini";
+      els.flow.appendChild(m);
+    }
+    const row = document.createElement("div");
+    row.className = `lg ${e.lvl || "info"}` + (e.exec ? "" : " eng-only");
+    row.innerHTML = `<span class="lt">${fmtClock(clockBase)}</span><span class="lm"><span class="raw">${e.raw}</span>${e.exec ? `<span class="ex">${e.exec}</span>` : ""}</span>`;
+    m.appendChild(row);
+    while (m.children.length > 5) m.removeChild(m.firstChild);
+  }
+
+  /* ------------------------------------------------------------ payload */
+  function json(obj, hl = [], cls = "") {
+    const lines = JSON.stringify(obj, null, 2).split("\n").map((ln) => {
+      const m = ln.match(/^(\s*)"([^"]+)":\s?(.*)$/);
+      if (!m) return `<div class="jl">${esc(ln)}</div>`;
+      const [, ind, k, rest] = m;
+      const on = hl.includes(k) ? " hl " + cls : "";
+      const val = esc(rest).replace(/^(&quot;.*&quot;)(,?)$/, '<span class="js">$1</span>$2').replace(/^(-?\d[\d.]*)(,?)$/, '<span class="jn">$1</span>$2');
+      return `<div class="jl${on}">${ind}<span class="jk">"${esc(k)}"</span>: ${val}</div>`;
+    });
+    return `<pre class="json">${lines.join("")}</pre>`;
+  }
+
+  function payload(spec) {
+    mark("payload");
+    const cols = spec.sources
+      ? spec.sources.map((s) => `<div class="pl-col"><div class="pl-h">${s.title}</div>${json(s.obj, s.hl, s.cls)}</div>`).join("")
+      : `<div class="pl-col"><div class="pl-h">${spec.left.title}</div>${json(spec.left.obj, spec.left.hl, "src")}</div>`;
+    const map = (spec.map || [])
+      .map((r) => `<tr><td><code>${esc(r[0])}</code></td><td class="arrow">\u2192</td><td><code class="canon">${esc(r[1])}</code></td><td class="pl-note">${r[2] ? esc(r[2]) : ""}</td></tr>`)
+      .join("");
+    els.payload.innerHTML = `
+      <div class="pl-grid ${spec.sources ? "multi" : ""}">
+        <div class="pl-sources">${cols}</div>
+        <div class="pl-col canon"><div class="pl-h">${spec.right.title}</div>${json(spec.right.obj, spec.right.hl, "dst")}</div>
+      </div>
+      ${map ? `<div class="pl-map"><div class="pl-h">${spec.mapTitle || "DataWeave mapping"}</div><table>${map}</table></div>` : ""}`;
+  }
+
+  function lineage(html) { mark("lineage"); els.lineage.innerHTML = html; }
+  function monitor(html) { mark("monitor"); els.monitor.innerHTML = html; return els.monitor; }
+
+  /* ------------------------------------------------------------ clock strip */
+  function clock(items) {
+    els.clock.innerHTML = items
+      .map((c) => `<div class="ck ${c.state || ""}"><div class="ck-l">${c.l}</div><div class="ck-v">${c.v}</div>${c.s ? `<div class="ck-s">${c.s}</div>` : ""}</div>`)
+      .join("");
+  }
+
+  /* ------------------------------------------------------------ shared graph */
+  function baseGraph(over = {}) {
+    const src = (id, label, y, sub) => ({ id, label, sub, x: 14, y, w: 118, h: 46, kind: "src" });
+    const sys = (id, label, y) => ({ id, label, sub: "System API", x: 186, y, w: 150, h: 46, kind: "sys" });
+    const nodes = [
+      src("dash", "Dash", 30, "SPAR platform"),
+      src("psa", "PSA", 96, "SPAR platform"),
+      src("albi", "Albi", 162, "SPAR platform"),
+      src("jobsite", "JobSite", 228, "SPAR platform"),
+      src("fran", "FranConnect", 318, "franchise master"),
+      sys("s-dash", "dash-sapi", 30),
+      sys("s-psa", "psa-sapi", 96),
+      sys("s-albi", "albi-sapi", 162),
+      sys("s-jobsite", "jobsite-sapi", 228),
+      sys("s-fran", "franconnect-sapi", 318),
+      { id: "proc", label: "Job Sync", sub: "Process API \u00b7 DataWeave", x: 392, y: 126, w: 160, h: 64, kind: "proc" },
+      { id: "dq", label: "Data quality", sub: "dedupe \u00b7 rules", x: 598, y: 132, w: 132, h: 52, kind: "proc" },
+      { id: "quar", label: "quarantine.job", sub: "held, with reason", x: 598, y: 30, w: 132, h: 46, kind: "store dim" },
+      { id: "lake", label: "11:11 SQL Server", sub: "staging \u2192 curated", x: 780, y: 112, w: 200, h: 92, kind: "store" },
+      { id: "tab", label: "Tableau", sub: "semantic model \u00b7 RLS", x: 800, y: 268, w: 160, h: 56, kind: "viz" },
+      { id: "notify", label: "Notification API", sub: "alerts by region", x: 598, y: 268, w: 132, h: 52, kind: "proc dim" },
+      { id: "mon", label: "Anypoint Monitoring", sub: "health \u00b7 alerts", x: 392, y: 372, w: 160, h: 48, kind: "ops" },
+    ];
+    const edges = [
+      ["dash", "s-dash"], ["psa", "s-psa"], ["albi", "s-albi"], ["jobsite", "s-jobsite"], ["fran", "s-fran"],
+      ["s-dash", "proc"], ["s-psa", "proc"], ["s-albi", "proc"], ["s-jobsite", "proc"], ["s-fran", "proc"],
+      ["proc", "dq"], ["dq", "lake"], ["dq", "quar", { up: true }], ["lake", "tab", { down: true }], ["proc", "notify", { dashed: true }],
+    ];
+    return {
+      w: 1000, h: 440,
+      groups: [
+        { label: "SPAR platforms", x: 4, y: 6, w: 138, h: 380 },
+        { label: "MuleSoft Anypoint", x: 172, y: 6, w: 572, h: 424 },
+        { label: "PuroClean data lake + analytics", x: 766, y: 6, w: 226, h: 340 },
+      ],
+      nodes: nodes.concat(over.addNodes || []),
+      edges: edges.concat(over.addEdges || []),
+      legend: over.legend,
+    };
+  }
+
+  return { init, reset, tab, caption, graph, node, edge, packet, extra, setClock, log, payload, json, lineage, monitor, clock, baseGraph, esc };
+})();
