@@ -66,7 +66,7 @@
   /* Leading persona for each chapter. */
   const CHAPTER_PERSONA = { "1": "pm", "2": "rd", "3": "cj", "4": "cj", "5": "it", "6": "it", "7": "it", "8": "cj" };
   const PERSONA_LABELS = { pm: "Project Manager", rd: "Regional Director", cj: "CJ Bailey", it: "IT" };
-  const PERSONA_COLORS = { pm: "#C50A1D", rd: "#00346D", cj: "#00346D", it: "#373536" };
+  const PERSONA_COLORS = { pm: "#C50A1D", rd: "#0176D3", cj: "#032D60", it: "#54698D" };
 
   function renderTalk() {
     const s = ALL[state.i];
@@ -367,7 +367,9 @@
         }).join("");
         return `<div class="jmap-row" style="--pc:${p.color}">
           <div class="jmap-who">
-            <div class="jmw-av" style="background:${p.color}">${esc(p.initials)}</div>
+            <div class="jmw-av" style="--pc:${p.color}">
+              ${p.img ? `<img src="${p.img}" alt="${esc(p.name)}"/>` : `<span style="background:${p.color};color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;width:100%;height:100%;border-radius:50%">${esc(p.initials)}</span>`}
+            </div>
             <div class="jmw-inf">
               <div class="jmw-nm">${esc(p.name)}</div>
               <div class="jmw-rl">${esc(p.role)}</div>
@@ -380,7 +382,9 @@
 
       const castCards = D.personas.map((p) => `
         <div class="cast-card" style="--pc:${p.color}" data-go="${p.chapters[0]}">
-          <div class="cast-av" style="background:${p.color}">${esc(p.initials)}</div>
+          <div class="cast-av" style="--pc:${p.color}">
+            ${p.img ? `<img src="${p.img}" alt="${esc(p.name)}"/>` : `<span class="cast-av-initials" style="background:${p.color}">${esc(p.initials)}</span>`}
+          </div>
           <div class="cast-inf">
             <div class="cast-nm">${esc(p.name)}</div>
             <div class="cast-rl">${esc(p.role)}</div>
@@ -392,7 +396,7 @@
       return `<div class="hero hv2">
         <div class="hv2-band">
           <div class="hv2-brand">
-            <img src="assets/pc-logo-white.png" alt="PuroClean" class="hv2-logo"/>
+            <img src="assets/puroclean-logo.svg" alt="PuroClean" class="hv2-logo"/>
             <div>
               <div class="hv2-ey">MuleSoft + Tableau \u00b7 Stage 1</div>
               <h1 class="hv2-h1">${esc(D.meta.title)}</h1>
