@@ -74,7 +74,7 @@
   function renderTalk() {
     const s = ALL[state.i];
     const ch = chapterById[s.act];
-    const seq = ALL.filter((x) => inPath(x) || x.act === s.act);
+    const seq = ALL.filter((x) => inPath(x) || x === s);
     const pos = seq.indexOf(s) + 1;
     const persona = stepPersona(s);
     const clock = CLOCKS[s.id] || "";
@@ -117,14 +117,14 @@
   function nextIndex() {
     for (let j = state.i + 1; j < ALL.length; j++) {
       const s = ALL[j];
-      if (s.act === ALL[state.i].act || inPath(s)) return j;
+      if (inPath(s)) return j;
     }
     return -1;
   }
   function prevIndex() {
     for (let j = state.i - 1; j >= 0; j--) {
       const s = ALL[j];
-      if (s.act === ALL[state.i].act || inPath(s)) return j;
+      if (inPath(s)) return j;
     }
     return -1;
   }

@@ -47,9 +47,11 @@ window.Screens = (function () {
         ? `<span class="lx-brand">${APLOGO}<b>Anypoint Platform</b><em>${esc(app)}</em></span>`
         : kind === "admin"
         ? `<span class="lx-brand"><img class="lx-logo" src="assets/puroclean-logo.svg" alt="PuroClean"/><b>${esc(app)}</b>${opt.tag ? `<em>${esc(opt.tag)}</em>` : ""}</span>`
+        : opt.skin === "dash"
+        ? `<span class="lx-brand"><span class="dx-logo">DASH<small>ENTERPRISE</small></span>${opt.tag ? `<em>${esc(opt.tag)}</em>` : ""}</span>`
         : `<span class="lx-brand"><span class="vx-mark">${esc(app[0])}</span><b>${esc(app)}</b>${opt.tag ? `<em>${esc(opt.tag)}</em>` : ""}</span>`;
     const search = kind === "tableau" ? "Search views, metrics and data sources" : kind === "anypoint" ? "Search Anypoint Platform" : "Search...";
-    return `<div class="lx ${kind}">
+    return `<div class="lx ${kind}${opt.skin ? " " + opt.skin : ""}">
       <div class="lx-gh">
         ${brand}
         <div class="lx-search">${SVG.search}<span>${search}</span></div>
@@ -59,6 +61,10 @@ window.Screens = (function () {
       <div class="lx-body">${opt.toast || ""}${body}</div>
     </div>`;
   }
+
+  /* Dash is drawn after Next Gear's DASH Enterprise: menu bar, job tab row, light-blue buttons. Simulated, not the vendor's UI. */
+  const DASH_NAV = ["Home", "Jobs", "Calendar", "Dashboards", "Administration"];
+  const dashTabs = (active) => `<div class="dx-tabs">${["Dates", "Documents", "Estimates", "Invoices", "Notes", "Photos"].map((t) => `<span class="${t === active ? "on" : ""}">${t}</span>`).join("")}</div>`;
 
   const toast = (kind, title, sub) =>
     `<div class="lx-toast ${kind}"><span class="lx-ti">${kind === "success" ? SVG.check : "!"}</span><div><b>${esc(title)}</b>${sub ? `<small>${esc(sub)}</small>` : ""}</div></div>`;
@@ -245,11 +251,12 @@ window.Screens = (function () {
         <div><small>Category</small><b>${J.category.split(" \u00b7 ")[0]}</b></div>
         <div ${spot("address")}><small>Address</small><b>${esc(st.address || J.address.split(",")[0])}</b></div>
       </div>
+      ${vKey === "dash" ? dashTabs(st.activity ? "Notes" : "Dates") : ""}
       ${path(set, vKey, st.flash, st.tapF === "path" ? "f-path" : null)}
       ${st.activity ? activityCard(st.activity) : card("Job dates", `<div class="lx-fields">${fields}</div>`, { right: `${J.carrier} \u00b7 ${J.claim}` })}
       ${st.activity ? composer(st.activity) : ""}
       ${st.activity && st.activity.sent ? `<div class="sf-toast">${SVG.check}<span>Email was sent. <small>Contacted set to 6:41 AM</small></span></div>` : ""}`;
-    return frame(st.role || "pm", lx(v.name, ["Jobs", "Schedule", "Estimates"], "Jobs", body, { kind: "vendor", tag: "simulated", avatar: "PM" }), { clock: st.clock || "6:21 AM" });
+    return frame(st.role || "pm", lx(v.name, vKey === "dash" ? DASH_NAV : ["Jobs", "Schedule", "Estimates"], "Jobs", body, { kind: "vendor", skin: vKey === "dash" ? "dash" : "", tag: "simulated", avatar: "PM" }), { clock: st.clock || "6:21 AM" });
   }
 
   /* Recent changes on a Dash multi-location account, as the franchise sees them. */
@@ -267,7 +274,7 @@ window.Screens = (function () {
         .map((r) => `<tr><td class="lnk">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td class="mut">${r[4]}</td></tr>`)
         .join("")}</tbody></table>${bar}`)}
       <p class="lx-note">D-889305 repeats the address, date of loss and claim of D-889214, logged earlier at the main office. D-889301 was saved without a loss type.</p>`;
-    return frame("sync", lx("Dash", ["Jobs", "Schedule", "Estimates"], "Jobs", body, { kind: "vendor", tag: "simulated", avatar: "PM" }), { clock: o.clock || "10:15 AM" });
+    return frame("sync", lx("Dash", DASH_NAV, "Jobs", body, { kind: "vendor", skin: "dash", tag: "simulated", avatar: "PM" }), { clock: o.clock || "10:15 AM" });
   }
 
   /* ------------------------------------------------------------ PuroClean integration admin (illustrative) */

@@ -708,6 +708,24 @@ body.exec .cx-mini .lg { grid-template-columns: 92px 1fr; }
 .lx.vendor .lx-card { border-radius: 6px; }
 .lx.vendor .sbtn, .lx.vendor .sbtn-group, .lx.vendor .lx-oi { border-radius: 6px; }
 
+/* Dash: a light header with the DASH wordmark over a blue menu bar, a job tab row and light-blue buttons */
+.lx.vendor.dash { --sf: #2b6cb0; --sf-d: #1f5890; background: #f1f4f8; }
+.lx.vendor.dash .lx-gh { height: 34px; background: #fff; border-bottom: 1px solid #d5dce5; color: #44546a; }
+.lx.vendor.dash .lx-search { display: none; }
+.lx.vendor.dash .lx-ghi { margin-left: auto; color: #6b7a8c; }
+.lx.vendor.dash .lx-brand em { color: #6b7a8c; border-color: #cbd5e1; }
+.lx.vendor.dash .lx-av { background: #2b4f81; }
+.lx.vendor.dash .lx-nav { background: #2b4f81; height: 28px; }
+.lx.vendor.dash .lx-tab { height: 28px; color: #e3ebf6; font-size: 12px; }
+.lx.vendor.dash .lx-tab.on { color: #fff; background: rgba(255,255,255,.16); border-bottom-color: #7cc4f0; }
+.lx.vendor.dash .sbtn.brand { background: #4aa8de; border-color: #4aa8de; }
+.lx.vendor.dash .sbtn.brand:hover { background: #3a95cb; }
+.dx-logo { display: flex; flex-direction: column; line-height: 1; font-weight: 800; font-size: 16px; letter-spacing: .6px; color: #1d5fa8; }
+.dx-logo small { font-size: 6.5px; letter-spacing: 1.4px; font-weight: 700; color: #6b7a8c; margin-top: 1px; }
+.dx-tabs { display: flex; gap: 2px; margin: 0 2px; border-bottom: 2px solid #4aa8de; font-size: 11px; overflow: hidden; }
+.dx-tabs span { padding: 3px 8px; color: #5a6878; background: #e3e9f0; border: 1px solid #cfd7e0; border-bottom: 0; border-radius: 3px 3px 0 0; white-space: nowrap; }
+.dx-tabs span.on { background: #4aa8de; border-color: #4aa8de; color: #fff; font-weight: 600; }
+
 .lx.admin { --sf: #00346D; --sf-d: #002650; background: #f3f4f6; }
 .lx.admin .lx-logo { height: 16px; }
 .lx.admin .lx-nav { box-shadow: none; border-bottom: 1px solid var(--sf-line); }
