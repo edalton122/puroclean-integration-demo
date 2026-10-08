@@ -139,6 +139,15 @@ window.Console = (function () {
       t.textContent = g.label;
       svg.appendChild(t);
     });
+    (spec.lanes || []).forEach((l) => {
+      const r = document.createElementNS(NS, "rect");
+      Object.entries({ x: l.x, y: l.y, width: l.w, height: l.h, rx: 8, class: "cx-lane " + (l.kind || "") }).forEach(([k, v]) => r.setAttribute(k, v));
+      svg.appendChild(r);
+      const t = document.createElementNS(NS, "text");
+      t.setAttribute("x", l.x + 10); t.setAttribute("y", l.y + 15); t.setAttribute("class", "cx-lane-label " + (l.kind || ""));
+      t.textContent = l.label;
+      svg.appendChild(t);
+    });
     const nodeMap = {};
     spec.nodes.forEach((n) => (nodeMap[n.id] = n));
     const edgeLayer = document.createElementNS(NS, "g");
@@ -433,9 +442,13 @@ window.Console = (function () {
   }
 
   /* ------------------------------------------------------------ shared graph */
+  const LAYER_LEGEND = `<span class="lg sys"></span>System APIs connect each platform <span class="lg proc"></span>Process APIs combine, clean and route <span class="lg exp"></span>Experience APIs deliver alerts to people`;
+
+  /* T keeps the layer headers clear of the tags that float 26px above the top row of nodes. */
   function baseGraph(over = {}) {
-    const src = (id, label, y, sub) => ({ id, label, sub, x: 14, y, w: 118, h: 46, kind: "src" });
-    const sys = (id, label, y) => ({ id, label, sub: "System API \u00b7 mapping", x: 186, y, w: 150, h: 46, kind: "sys" });
+    const T = 44;
+    const src = (id, label, y, sub) => ({ id, label, sub, x: 14, y: y + T, w: 118, h: 46, kind: "src" });
+    const sys = (id, label, y) => ({ id, label, sub: "System API \u00b7 mapping", x: 186, y: y + T, w: 150, h: 46, kind: "sys" });
     const nodes = [
       src("dash", "Dash", 30, "SPAR platform"),
       src("psa", "PSA", 96, "SPAR platform"),
@@ -447,13 +460,13 @@ window.Console = (function () {
       sys("s-albi", "albi-sapi", 162),
       sys("s-jobsite", "jobsite-sapi", 228),
       sys("s-fran", "franconnect-sapi", 318),
-      { id: "proc", label: "job-sync-papi", sub: "Process API \u00b7 enrich \u00b7 route", x: 392, y: 126, w: 160, h: 64, kind: "proc" },
-      { id: "dq", label: "Data quality", sub: "dedupe \u00b7 rules", x: 598, y: 132, w: 132, h: 52, kind: "proc" },
-      { id: "quar", label: "quarantine.job", sub: "held, with reason", x: 598, y: 30, w: 132, h: 46, kind: "store dim" },
-      { id: "lake", label: "11:11 SQL Server", sub: "private link \u00b7 curated", x: 780, y: 112, w: 200, h: 92, kind: "store" },
-      { id: "tab", label: "Tableau Cloud", sub: "via Bridge \u00b7 RLS", x: 800, y: 268, w: 160, h: 56, kind: "viz" },
-      { id: "notify", label: "notification-api", sub: "Experience API \u00b7 alerts", x: 598, y: 268, w: 132, h: 52, kind: "proc dim" },
-      { id: "mon", label: "Anypoint Monitoring", sub: "health \u00b7 alerts", x: 392, y: 372, w: 160, h: 48, kind: "ops" },
+      { id: "proc", label: "job-sync-papi", sub: "Process API \u00b7 enrich \u00b7 route", x: 392, y: 126 + T, w: 160, h: 64, kind: "proc" },
+      { id: "dq", label: "Data quality", sub: "dedupe \u00b7 rules", x: 598, y: 132 + T, w: 132, h: 52, kind: "proc" },
+      { id: "quar", label: "quarantine.job", sub: "held, with reason", x: 790, y: 30 + T, w: 180, h: 46, kind: "store dim" },
+      { id: "lake", label: "11:11 SQL Server", sub: "private link \u00b7 curated", x: 780, y: 112 + T, w: 200, h: 92, kind: "store" },
+      { id: "tab", label: "Tableau Cloud", sub: "via Bridge \u00b7 RLS", x: 800, y: 268 + T, w: 160, h: 56, kind: "viz" },
+      { id: "notify", label: "notification-api", sub: "Experience API \u00b7 alerts", x: 598, y: 268 + T, w: 132, h: 52, kind: "exp dim" },
+      { id: "mon", label: "Anypoint Monitoring", sub: "health \u00b7 alerts", x: 392, y: 372 + T, w: 160, h: 48, kind: "ops" },
     ];
     const edges = [
       ["dash", "s-dash"], ["psa", "s-psa"], ["albi", "s-albi"], ["jobsite", "s-jobsite"], ["fran", "s-fran"],
@@ -461,15 +474,20 @@ window.Console = (function () {
       ["proc", "dq"], ["dq", "lake"], ["dq", "quar", { up: true }], ["lake", "tab", { down: true }], ["proc", "notify", { dashed: true }],
     ];
     return {
-      w: 1000, h: 440,
+      w: 1000, h: 490,
       groups: [
-        { label: "SPAR platforms", x: 4, y: 6, w: 138, h: 380 },
-        { label: "MuleSoft Anypoint", x: 172, y: 6, w: 572, h: 424 },
-        { label: "PuroClean data lake + analytics", x: 766, y: 6, w: 226, h: 340 },
+        { label: "SPAR platforms", x: 4, y: 6, w: 138, h: 380 + T },
+        { label: "MuleSoft Anypoint \u00b7 API-led", x: 172, y: 6, w: 572, h: 476 },
+        { label: "PuroClean data lake + analytics", x: 766, y: 6, w: 226, h: 340 + T },
+      ],
+      lanes: [
+        { label: "System APIs", kind: "sys", x: 180, y: 32, w: 162, h: 446 },
+        { label: "Process APIs", kind: "proc", x: 352, y: 32, w: 384, h: 232 },
+        { label: "Experience APIs", kind: "exp", x: 352, y: 274, w: 384, h: 110 },
       ],
       nodes: nodes.concat(over.addNodes || []),
       edges: edges.concat(over.addEdges || []),
-      legend: over.legend,
+      legend: over.legend === undefined ? LAYER_LEGEND : over.legend,
     };
   }
 

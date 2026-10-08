@@ -55,7 +55,7 @@ window.Screens = (function () {
         <div class="lx-search">${SVG.search}<span>${search}</span></div>
         <div class="lx-ghi"><i>${SVG.help}</i>${kind === "tableau" || kind === "anypoint" ? "" : `<i>${SVG.gear}</i>`}<i class="bell ${opt.bell ? "on" : ""}">${SVG.bell}</i><span class="lx-av">${opt.avatar || "CB"}</span></div>
       </div>
-      ${kind === "anypoint" ? `<div class="ap-env-bar"><span class="ap-env-sel">Production <i>\u25be</i></span>${(tabs || []).map((t) => `<span class="lx-tab ${t === active ? "on" : ""}">${esc(t)}</span>`).join("")}</div>` : `<div class="lx-nav">${(tabs || []).map((t) => `<span class="lx-tab ${t === active ? "on" : ""}">${esc(t)}</span>`).join("")}</div>`}
+      ${kind === "anypoint" ? `<div class="ap-env-bar"><span class="ap-env-sel">${esc(opt.env || "Production")} <i>\u25be</i></span>${(tabs || []).map((t) => `<span class="lx-tab ${t === active ? "on" : ""}">${esc(t)}</span>`).join("")}</div>` : `<div class="lx-nav">${(tabs || []).map((t) => `<span class="lx-tab ${t === active ? "on" : ""}">${esc(t)}</span>`).join("")}</div>`}
       <div class="lx-body">${opt.toast || ""}${body}</div>
     </div>`;
   }
@@ -536,7 +536,7 @@ window.Screens = (function () {
     return ctrl + frame("it", anypointRM(idx, surge, prev), { clock: "2:05 PM" });
   }
 
-  /* ------------------------------------------------------------ Anypoint Runtime Manager (step 5.2) */
+  /* ------------------------------------------------------------ PuroClean Integration Admin, illustrative (step 5.2) */
   /* stage: 0 list · 1 pick from FranConnect · 2 map account · 3 connected */
   function anypointOnboard(stage, o = {}) {
     stage = stage === true ? 3 : stage || 0;
@@ -556,7 +556,7 @@ window.Screens = (function () {
       </div>` : "";
     const body = `
       <div class="ap-page-h">
-        <div class="ap-ph-l"><i>${SVG.back}</i><div><b>Franchise connections</b><small>Platform account map · config table in 11:11</small></div></div>
+        <div class="ap-ph-l"><i>${SVG.back}</i><div><b>Franchise connections</b><small>Platform account map in 11:11 · lookups through franconnect-sapi and psa-sapi</small></div></div>
         <div class="ap-ph-r">${stage === 0 ? `<button class="sbtn brand" data-tap="new">+ Connect franchise</button>` : ""}</div>
       </div>
       ${done ? `<div class="ap-toast ok">${SVG.check} <b>OH-0731 connected</b> · First jobs flow on the next 5-minute cycle · no deployment needed</div>` : ""}
@@ -574,14 +574,14 @@ window.Screens = (function () {
       <div class="ap-sect">
         <div class="ap-sh">No deployment required · adding a row triggers the next poll cycle</div>
       </div>`;
-    return frame("it", lx("Runtime Manager", ["Applications", "Alerts", "Franchises"], "Franchises", body, { kind: "anypoint", avatar: "PC" }), { clock: "2:08 PM" });
+    return admin("it", "Franchises", body, "2:08 PM");
   }
 
-  /* ------------------------------------------------------------ Anypoint Exchange (step 5.3) */
-  /* stage: 0 catalog · 1 template page · 2 new asset scaffolded · 3 deployed */
+  /* ------------------------------------------------------------ Anypoint Exchange, then Runtime Manager (step 5.3) */
+  /* stage: 0 Exchange catalog · 1 template page · 2 Runtime Manager deploy form · 3 deployed */
   function anypointExchange(stage, o = {}) {
     stage = stage === true ? 3 : stage || 0;
-    const added = stage === 3;
+    if (stage >= 2) return runtimeDeploy(stage === 3, o);
     const assets = [
       { n: "dash-sapi", t: "REST API", v: "1.4" },
       { n: "psa-sapi", t: "REST API", v: "1.2" },
@@ -596,31 +596,47 @@ window.Screens = (function () {
     const li = (t, s) => `<div class="ex-li"><span>${SVG.check}</span><div><b>${t}</b><small>${s}</small></div></div>`;
     const detail = stage === 1
       ? `<div class="ap-sect ex-page">
-          <div class="ex-ph"><span class="ex-tag">Template</span><b>spar-system-api</b><small>v1.0 \u00b7 owner PuroClean IT</small><button class="sbtn brand" data-tap="add">Create from template</button></div>
+          <div class="ex-ph"><span class="ex-tag">Template</span><b>spar-system-api</b><small>v1.0 \u00b7 owner PuroClean IT</small><button class="sbtn brand" data-tap="add">Open in Code Builder</button></div>
           ${li("Scaffold", "System API project with change-feed polling, watermark and retries")}
           ${li("Depends on", "puroclean-canonical-job v1.3 \u00b7 dq-rules-restoration v1.1")}
-          ${li("Policies", "client ID, OAuth 2.0, JSON threat protection, rate limit")}
-        </div>`
-      : stage === 2
-      ? `<div class="ap-sect ex-page">
-          <div class="ex-ph"><span class="ex-tag new">Draft</span><b class="ex-name">${o.typing ? "" : "new-sapi"}</b><small>v1.0 \u00b7 from spar-system-api</small><button class="sbtn brand" data-tap="deploy">Deploy to sandbox</button></div>
-          ${li("Inherited", "polling, watermark, retries, policies, canonical model")}
-          ${li("To write", "new-to-canonical.dwl \u00b7 the new platform\u2019s field names \u2192 18 PuroLogic Dates")}
-          ${li("Target", "CloudHub 2.0 \u00b7 Sandbox \u00b7 job-sync-papi unchanged")}
+          ${li("Security", "API autodiscovery built in \u00b7 API Manager applies the same four policies on deploy")}
         </div>`
       : "";
     const body = `
       <div class="ap-page-h">
-        <div class="ap-ph-l"><div><b>Exchange · PuroClean</b><small>${added ? "10" : "9"} assets · spar-system-api template available</small></div></div>
+        <div class="ap-ph-l"><div><b>Exchange · PuroClean</b><small>9 assets · spar-system-api template available</small></div></div>
       </div>
-      ${added ? `<div class="ap-toast ok">${SVG.check} <b>new-sapi deployed to sandbox</b> · canonical model, Process API, quality rules, 11:11 and Tableau: 0 changes</div>` : ""}
       ${detail}
       <div class="ex-grid">
         ${stage === 0 ? `<div class="ex-asset tpl" data-tap="tpl"><div class="ex-an">spar-system-api</div><div class="ex-at">Template · v1.0</div><div class="ex-ad">starting point for a new SPAR platform</div></div>` : ""}
-        ${added ? `<div class="ex-asset new"><div class="ex-an">new-sapi</div><div class="ex-at">REST API · v1.0 · In test</div><div class="ex-ad">from spar-system-api template · new mapping</div></div>` : ""}
-        ${assets.slice(0, stage === 1 || stage === 2 ? 3 : assets.length).map((a) => `<div class="ex-asset"><div class="ex-an">${a.n}</div><div class="ex-at">${a.t} · v${a.v}</div><div class="ex-ad">spec · owner · runbook</div></div>`).join("")}
+        ${assets.slice(0, stage === 1 ? 3 : assets.length).map((a) => `<div class="ex-asset"><div class="ex-an">${a.n}</div><div class="ex-at">${a.t} · v${a.v}</div><div class="ex-ad">spec · owner · runbook</div></div>`).join("")}
       </div>`;
     return frame("it", lx("Exchange", [], "", body, { kind: "anypoint", avatar: "PC" }), { clock: "2:10 PM" });
+  }
+
+  function runtimeDeploy(deployed, o = {}) {
+    const fr = (l, v) => `<div class="ap-fr"><label>${l}</label><div>${v}</div></div>`;
+    const app = (n, st, r, u, cls = "") => `<tr class="${cls}"><td>${n}</td><td><span class="ap-badge ok">${st}</span></td><td>${r}</td><td>${u}</td></tr>`;
+    const body = deployed
+      ? `<div class="ap-page-h"><div class="ap-ph-l"><div><b>Applications</b><small>Sandbox \u00b7 CloudHub 2.0</small></div></div></div>
+        <div class="ap-toast ok">${SVG.check} <b>new-sapi deployed to Sandbox</b> \u00b7 0 changes downstream</div>
+        <div class="ap-sect"><table class="ap-tbl"><thead><tr><th>Application</th><th>Status</th><th>Replicas</th><th>Last change</th></tr></thead><tbody>
+          ${app("new-sapi", "Running", 1, "just now \u00b7 v1.0", "new")}
+          ${app("job-sync-papi", "Running", 1, "unchanged")}
+          ${app("dash-sapi", "Running", 1, "unchanged")}
+          ${app("psa-sapi", "Running", 1, "unchanged")}
+          <tr class="mut"><td colspan="4">\u00b7 \u00b7 \u00b7 Sandbox copies of every Stage 1 app</td></tr>
+        </tbody></table></div>`
+      : `<div class="ap-page-h"><div class="ap-ph-l"><i>${SVG.back}</i><div><b>Deploy application</b><small>Built in Anypoint Code Builder from spar-system-api \u00b7 mapping written and tested</small></div></div></div>
+        <div class="ap-sect ap-form">
+          ${fr("Application name", `<span class="ap-inp"><span class="ex-name">${o.typing ? "" : "new-sapi"}</span></span>`)}
+          ${fr("Deployment target", "CloudHub 2.0 \u00b7 Sandbox")}
+          ${fr("Application file", "new-sapi v1.0 \u00b7 published to Exchange")}
+          ${fr("Replicas", "1 for testing")}
+          ${fr("API Manager", "autodiscovery on \u00b7 client ID, OAuth 2.0, JSON threat protection, rate limit")}
+          <div class="ap-fbtn"><button class="sbtn neutral">Cancel</button><button class="sbtn brand" data-tap="deploy">Deploy Application</button></div>
+        </div>`;
+    return frame("it", lx("Runtime Manager", ["Applications", "Private Spaces", "Alerts"], "Applications", body, { kind: "anypoint", avatar: "PC", env: "Sandbox" }), { clock: "2:10 PM" });
   }
 
   /* ------------------------------------------------------------ Anypoint API Manager (step 7.1) */

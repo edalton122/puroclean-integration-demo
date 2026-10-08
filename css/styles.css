@@ -381,6 +381,20 @@ svg text { font-family: "Source Sans 3", -apple-system, Helvetica, Arial, sans-s
 .cx-node.store rect { fill: #1f2733; stroke: #7f97b5; }
 .cx-node.viz rect { fill: #2d2219; stroke: var(--bio); }
 .cx-node.ops rect { fill: #1b2a1f; stroke: #59a14f; }
+.cx-node.exp rect { fill: #241a30; stroke: #b07ee8; }
+.cx-lane { stroke-width: 1; }
+.cx-lane.sys { fill: rgba(79,179,176,.06); stroke: rgba(79,179,176,.38); }
+.cx-lane.proc { fill: rgba(90,169,230,.06); stroke: rgba(90,169,230,.38); }
+.cx-lane.exp { fill: rgba(176,126,232,.07); stroke: rgba(176,126,232,.42); }
+.cx-lane-label { font-size: 14px; font-weight: 700; letter-spacing: .03em; }
+.cx-lane-label.sys { fill: #7fd3d0; }
+.cx-lane-label.proc { fill: #8cc6f0; }
+.cx-lane-label.exp { fill: #cfa8f5; }
+.cx-legend .lg { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin: 0 5px -1px 12px; }
+.cx-legend .lg:first-child { margin-left: 0; }
+.cx-legend .lg.sys { background: #4fb3b0; }
+.cx-legend .lg.proc { background: #5aa9e6; }
+.cx-legend .lg.exp { background: #b07ee8; }
 .cx-node.dim { opacity: .35; }
 .cx-node.active rect { stroke: var(--red); stroke-width: 2.6; fill: #3a1418; filter: url(#glow); }
 .cx-node.ok rect { stroke: var(--cx-ok); }

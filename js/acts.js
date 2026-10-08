@@ -174,7 +174,7 @@ window.Acts = (function () {
     });
     const edges = [["src", "q"]];
     [0, 1, 2, 3].forEach((i) => edges.push(["q", "w" + i], ["w" + i, "lake"]));
-    return { w: 1000, h: 360, compact: true, groups: [{ label: "CloudHub 2.0 \u00b7 replicas + autoscaling", x: 220, y: 4, w: 500, h: 350 }], nodes, edges };
+    return { w: 1000, h: 360, compact: true, groups: [{ label: "CloudHub 2.0 \u00b7 Process API replicas + autoscaling", x: 220, y: 4, w: 500, h: 350 }], nodes, edges };
   };
 
   const pulseGraph = () => ({
@@ -194,7 +194,7 @@ window.Acts = (function () {
     const sub = (p) => (p.startsWith("JSON") ? "JSON policy" : "API Manager policy");
     const nodes = [{ id: "req", label: "Inbound call", sub: "webhook or app", x: 10, y: 60, w: 120, h: 56, kind: "src" }];
     P.forEach((p, i) => nodes.push({ id: "p" + i, label: short(p), sub: sub(p), x: 150 + i * 145, y: 60, w: 130, h: 56, kind: "proc" }));
-    nodes.push({ id: "api", label: "psa-sapi", sub: "webhook endpoint", x: 150 + P.length * 145, y: 60, w: 120, h: 56, kind: "sys" });
+    nodes.push({ id: "api", label: "psa-sapi", sub: "System API \u00b7 webhook", x: 150 + P.length * 145, y: 60, w: 120, h: 56, kind: "sys" });
     const ids = nodes.map((n) => n.id);
     return { w: 1000, h: 140, groups: [{ label: "Anypoint API Manager \u00b7 policies on every inbound call, no code changes", x: 140, y: 6, w: 600, h: 126 }], nodes, edges: ids.slice(1).map((b, i) => [ids[i], b]), _ids: ids };
   };
@@ -441,7 +441,7 @@ window.Acts = (function () {
         const N = (a, b) => C.narrate(a, b, x.t);
         x.left(S.slaAlert(false));
         const g = C.baseGraph();
-        g.nodes.forEach((n) => { if (n.id === "notify") n.kind = "proc"; });
+        g.nodes.forEach((n) => { if (n.id === "notify") n.kind = "exp"; });
         C.graph(g); C.tab("flow"); C.setClock("10:02:00");
         C.caption("A scheduled SLA check finds a Sacramento job past 30 minutes. The notification layer routes it by region.");
         C.ambient(x.t, POLLS, { every: 650 });
@@ -830,7 +830,7 @@ window.Acts = (function () {
     {
       id: "5.2", act: "5", short: false, title: "Onboarding a franchise is configuration, not code",
       desc: "PuroClean corporate connects a franchise that already exists in FranConnect by mapping its job-platform account. Its open jobs start flowing on the next 5-minute cycle.", why: "Onboarding is configuration, not a development project, so growing to 900 locations doesn't require a bigger team.",
-      powered: ["Platform account map in 11:11", "FranConnect reference data", "Anypoint Monitoring"],
+      powered: ["Integration Admin (illustrative)", "Reused System APIs", "Platform account map in 11:11"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
         x.left(S.anypointOnboard(0));
@@ -870,7 +870,7 @@ window.Acts = (function () {
     {
       id: "5.3", act: "5", short: false, title: "Add a fifth platform",
       desc: "PuroClean approves a fifth SPAR platform. MuleSoft creates a new System API from the Exchange template and deploys it to a sandbox. The canonical model, quality rules, Process API, data lake and dashboards are reused as they are.", why: "Each new platform becomes a small, predictable piece of work instead of a new integration project.",
-      powered: ["Anypoint Exchange", "API-led connectivity"],
+      powered: ["Anypoint Exchange", "Anypoint Code Builder", "Runtime Manager", "API-led connectivity"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
         x.left(S.anypointExchange(0));
@@ -882,7 +882,7 @@ window.Acts = (function () {
         x.left(S.anypointExchange(1));
         ["s-dash", "s-psa", "s-albi", "s-jobsite"].forEach((n) => C.ring(n));
         await N("exchange \u00b7 spar-system-api v1.0 \u00b7 the pattern all four System APIs share: change-feed polling, watermark, retries, policies \u00b7 depends on puroclean-canonical-job v1.3", "The four existing connectors were built from one pattern");
-        C.caption("Click Create from template.");
+        C.caption("Click Open in Code Builder.");
         await x.tap("add");
         amb.stop();
         x.left(S.anypointExchange(2, { typing: true }));
@@ -890,20 +890,20 @@ window.Acts = (function () {
         x.left(S.anypointExchange(2));
         const g2 = C.baseGraph({
           addNodes: [
-            { id: "new", label: "New platform", sub: "5th SPAR option", x: 14, y: 384, w: 118, h: 46, kind: "src new" },
-            { id: "s-new", label: "new-sapi", sub: "System API + mapping", x: 186, y: 384, w: 150, h: 46, kind: "sys new" },
+            { id: "new", label: "New platform", sub: "5th SPAR option", x: 14, y: 428, w: 118, h: 46, kind: "src new" },
+            { id: "s-new", label: "new-sapi", sub: "System API + mapping", x: 186, y: 428, w: 150, h: 46, kind: "sys new" },
           ],
           addEdges: [["new", "s-new"], ["s-new", "proc"]],
         });
-        g2.groups[0].h = 430;
+        g2.groups[0].h = 476;
         C.graph(g2);
         C.ring("new", "new"); C.ring("s-new", "new");
-        await N("Exchange \u00b7 new-sapi scaffolded from spar-system-api \u00b7 only new-to-canonical.dwl to write: the new platform's field names \u2192 18 PuroLogic Dates", "One new connector and its mapping, from a template");
-        C.caption("Once the mapping is written and tested, click Deploy to sandbox.");
+        await N("code builder \u00b7 new-sapi scaffolded from spar-system-api \u00b7 only new-to-canonical.dwl to write: the new platform's field names \u2192 18 PuroLogic Dates \u00b7 published to Exchange", "One new connector and its mapping, from a template");
+        C.caption("The mapping is written and tested. In Runtime Manager, click Deploy Application.");
         await x.tap("deploy");
         x.left(S.anypointExchange(3));
         C.tag("s-new", "CloudHub 2.0 \u00b7 Sandbox", "new", { stay: true, dy: 2 });
-        await N("runtime manager \u00b7 deploy new-sapi v1.0 \u2192 CloudHub 2.0 Sandbox \u00b7 policies applied from the template", "Deployed to a sandbox for testing");
+        await N("runtime manager \u00b7 deploy new-sapi v1.0 \u2192 CloudHub 2.0 Sandbox \u00b7 API Manager applies the four policies through autodiscovery", "Deployed to a sandbox for testing");
         C.extra(`<div class="exch"><div class="ex-h">Anypoint Exchange</div><div class="ex-a"><b>puroclean-canonical-job</b> v1.3<small>used by 5 System APIs</small></div><div class="ex-a"><b>job-sync-papi</b> v2.0<small>reused</small></div><div class="ex-a"><b>dq-rules-restoration</b> v1.1<small>reused</small></div></div>`);
         await C.packet(["new", "s-new", "proc", "dq", "lake", "tab"], x.t, { kind: "new", onHop: async (b) => { if (["proc", "dq", "lake", "tab"].includes(b)) { C.tag(b, "reused \u00b7 0 changes", "ok", { stay: true }); } } });
         await N("downstream diff \u00b7 job-sync-papi 0 changes \u00b7 dq-rules 0 \u00b7 11:11 schema 0 \u00b7 Tableau 0", "Nothing downstream changed");
