@@ -2,7 +2,7 @@
    Keyed by step ID. Chapter question appears automatically in the talk bar.
    Handoff lines help you segue into the next beat. */
 window.NOTES = {
-  hero: "Welcome. This is a 13-stop short path or a full 30-minute run. Pick Short path to start — you can switch any time. Four people in the story: Alex the PM, Jordan the RD, CJ Bailey and Nick's IT team.",
+  hero: "Welcome. This is a 13-stop short path or a full 30-minute run. Pick Short path to start — you can switch any time. Four people in the story: Alex the PM, Jordan the RD, CJ Bailey and Nick Hindle, the CIO.",
   today: "The framing slide: why five connections don't mean five projects. Great to run before Chapter 1 if you have time.",
 
   "1.1": "Clicks: Water, Save, Accept job. The franchise's day doesn't change. Alex logs the job in Dash exactly as today; Dash stores Water as its own code. MuleSoft will pick it up on its own on the next five-minute cycle. Nothing to install, nothing to change.",
