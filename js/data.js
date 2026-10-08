@@ -22,6 +22,7 @@ window.PC = (function () {
     cj: { label: "CJ Bailey", sub: "VP, Software Management", color: "#00346D", device: "laptop" },
     rd: { label: "Regional Director", sub: "West Region \u00b7 CA, OR, WA, NV", color: "#00346D", device: "laptop" },
     rdPhone: { label: "Regional Director", sub: "West Region \u00b7 CA, OR, WA, NV", color: "#00346D", device: "phone" },
+    it: { label: "IT team", sub: "PuroClean IT \u00b7 Nick\u2019s team", color: "#54698D", device: "laptop" },
     oncall: { label: "Integration on-call", sub: "PuroClean IT or partner managed service (TBD)", color: "#373536", device: "phone" },
     cjPhone: { label: "CJ Bailey", sub: "VP, Software Management", color: "#00346D", device: "phone" },
     corp: { label: "PuroClean corporate", sub: "Integration administration (illustrative)", color: "#373536", device: "laptop" },
@@ -286,6 +287,60 @@ window.PC = (function () {
     },
   ];
 
+  /* Persona vignettes shown on each chapter entry and persona handoff, keyed "chapter:persona". */
+  const vignettes = {
+    "1:pm": { matters: [
+      "Keep working in Dash, with no second app and no double entry",
+      "Hit the SLA milestones without extra paperwork",
+      "Corporate sees the work without anyone exporting a spreadsheet",
+    ] },
+    "2:rd": { matters: [
+      "Hear about a missed SLA before the customer or carrier calls",
+      "Only the alerts for my region, not the whole network",
+      "Get to the job details from my phone, wherever I am",
+    ] },
+    "3:pm": { matters: [
+      "Saving a job in Dash shouldn\u2019t break corporate reporting",
+      "Duplicates from multi-location accounts handled for me",
+      "Know when something I entered is incomplete",
+    ] },
+    "3:cj": { matters: [
+      "Numbers I can defend in front of the franchise network",
+      "One definition per KPI, so every dashboard agrees",
+      "Know which franchises\u2019 data is usable, and track it as a KPI",
+    ] },
+    "4:cj": { matters: [
+      "The whole network on one screen",
+      "Drill from the network to one job without an IT ticket",
+      "Answer new questions myself, on the same trusted data",
+    ] },
+    "4:rd": { matters: [
+      "The same dashboard as corporate, scoped to my region",
+      "A heads-up when on-time completion starts to slip",
+      "No separate report to build or wait for",
+    ] },
+    "5:it": { matters: [
+      "Grow to 900 locations without re-architecting",
+      "Add a franchise or a platform without a new custom project",
+      "Handle a storm surge without anyone babysitting it",
+    ] },
+    "6:it": { matters: [
+      "Know about a failure before the business does",
+      "Nothing lost while a vendor\u2019s system is down",
+      "A clear trail of what happened and when it recovered",
+    ] },
+    "7:it": { matters: [
+      "Security policies applied consistently, without code changes",
+      "Pass PuroClean\u2019s own security review",
+      "Keeping it running doesn\u2019t depend on one person",
+    ] },
+    "8:cj": { matters: [
+      "Insights come to me, instead of me going to find them",
+      "Know why a number moved, not just that it moved",
+      "Use the data every day, not only at month end",
+    ] },
+  };
+
   /* Journey stops for the ribbon on the entry page */
   const journeyRibbon = [
     { time: "6:21 AM",  label: "Job in Dash",      chapter: "1", persona: "pm" },
@@ -297,5 +352,5 @@ window.PC = (function () {
     { time: "Wed 7:30 AM", label: "Pulse digest",   chapter: "8", persona: "cj" },
   ];
 
-  return { meta, roles, franchise, job, milestones, vendors, canonical, openJobs, west, kansas, kpis, kpisWest, benchmark, scale, outage, security, scope, personas, journeyRibbon };
+  return { meta, roles, franchise, job, milestones, vendors, canonical, openJobs, west, kansas, kpis, kpisWest, benchmark, scale, outage, security, scope, personas, vignettes, journeyRibbon };
 })();

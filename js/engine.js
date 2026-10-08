@@ -21,9 +21,9 @@
     <main class="stage" id="stage">
       <section class="left" id="left"></section>
       <section class="right" id="right"></section>
+      <div class="vignette" id="vignette" hidden></div>
     </main>
     <main class="page" id="page" hidden></main>
-    <div class="chapter-card" id="chapterCard" hidden></div>
     <footer class="foot"><span>${esc(D.meta.disclaimer)}</span><span class="foot-tag">The Paramedics of Property Damage\u00ae</span><span class="foot-keys">\u2190 \u2192 step \u00b7 1\u20138 jump \u00b7 R reset${NOTES ? " \u00b7 N notes" : ""}</span></footer>`;
 
   const $ = (id) => document.getElementById(id);
@@ -65,6 +65,9 @@
 
   /* Leading persona for each chapter. */
   const CHAPTER_PERSONA = { "1": "pm", "2": "rd", "3": "cj", "4": "cj", "5": "it", "6": "it", "7": "it", "8": "cj" };
+  /* Steps whose persona differs from their chapter's lead. */
+  const STEP_PERSONA = { "3.1": "pm", "4.2": "rd" };
+  const stepPersona = (s) => STEP_PERSONA[s.id] || CHAPTER_PERSONA[s.act];
   const PERSONA_LABELS = { pm: "Project Manager", rd: "Regional Director", cj: "CJ Bailey", it: "IT" };
   const PERSONA_COLORS = { pm: "#C50A1D", rd: "#0176D3", cj: "#032D60", it: "#54698D" };
 
@@ -73,7 +76,7 @@
     const ch = chapterById[s.act];
     const seq = ALL.filter((x) => inPath(x) || x.act === s.act);
     const pos = seq.indexOf(s) + 1;
-    const persona = CHAPTER_PERSONA[s.act];
+    const persona = stepPersona(s);
     const clock = CLOCKS[s.id] || "";
     const q = ch && ch.question ? ch.question : "";
     const chLabel = ch && ch.n ? `Chapter ${ch.n} \u00b7 ${ch.title}` : ch ? ch.title : "";
@@ -107,7 +110,7 @@
       </div>`;
     $("btnPrev").onclick = prev;
     $("btnNext").onclick = next;
-    $("btnReset").onclick = () => go(state.i);
+    $("btnReset").onclick = () => go(state.i, { replay: true });
     if (NOTES) $("btnNotes").onclick = () => { document.body.classList.toggle("notes-off"); $("btnNotes").classList.toggle("on"); };
   }
 
@@ -126,18 +129,81 @@
     return -1;
   }
 
-  /* ------------------------------------------------------------ chapter title card */
-  let lastChapter = null;
-  function maybeShowChapterCard(s) {
-    const ch = chapterById[s.act];
-    if (!ch || !ch.n || ch.id === lastChapter) return;
-    lastChapter = ch.id;
-    const card = $("chapterCard");
-    card.hidden = false;
-    card.innerHTML = `<div class="cc-inner"><div class="cc-n">Chapter ${esc(ch.n)}</div><div class="cc-title">${esc(ch.title)}</div><div class="cc-q">\u201c${esc(ch.question)}\u201d</div></div>`;
-    card.classList.add("show");
-    setTimeout(() => { card.classList.remove("show"); setTimeout(() => { card.hidden = true; }, 500); }, 2200);
+  /* ------------------------------------------------------------ persona vignettes */
+  /* Shown on each chapter entry and persona handoff; the step waits until the presenter dismisses it. */
+  let lastKey = null;
+  let vig = null;
+
+  /* The upcoming in-path steps that share this step's chapter and persona. */
+  function segment(i) {
+    const s0 = ALL[i], p0 = stepPersona(s0), out = [];
+    for (let j = i; j < ALL.length; j++) {
+      const s = ALL[j];
+      if (s.act !== s0.act) break;
+      if (j > i && !inPath(s)) continue;
+      if (stepPersona(s) !== p0) break;
+      out.push(s);
+    }
+    return out;
   }
+
+  function vignette(s, t, handoff) {
+    const ch = chapterById[s.act];
+    const pid = stepPersona(s);
+    const p = D.personas.find((x) => x.id === pid);
+    const v = (D.vignettes || {})[`${s.act}:${pid}`];
+    if (!ch || !p || !v) return Promise.resolve();
+    const clock = CLOCKS[s.id] || "";
+    const who = pid === "it" ? "the IT team" : p.name.split(" ")[0];
+    const el = $("vignette");
+    el.innerHTML = `
+      <div class="vg-card" style="--pc:${p.color}">
+        <div class="vg-who">
+          <div class="vg-photo">${p.img ? `<img src="${p.img}" alt="${esc(p.name)}"/>` : esc(p.initials)}</div>
+          <div class="vg-name">${esc(p.name)}</div>
+          <div class="vg-role">${esc(p.role)}</div>
+          <div class="vg-org">${esc(p.org)}</div>
+        </div>
+        <div class="vg-body">
+          <div class="vg-eyebrow">${handoff ? "Handoff \u00b7 " : ""}Chapter ${esc(ch.n)} \u00b7 ${esc(ch.title)}${clock ? ` \u00b7 ${esc(clock)}` : ""}</div>
+          <div class="vg-q">\u201c${esc(ch.question)}\u201d</div>
+          <div class="vg-cols">
+            <div>
+              <div class="vg-h">What matters to ${esc(who)}</div>
+              <ul class="vg-matters">${v.matters.map((m) => `<li>${esc(m)}</li>`).join("")}</ul>
+            </div>
+            <div>
+              <div class="vg-h">What you\u2019ll see</div>
+              <ul class="vg-see">${segment(state.i).map((x) => `<li><span class="vg-id">${esc(x.id)}</span><span>${esc(x.title)}</span>${x.short ? '<span class="vg-star" title="Short path stop">\u2605</span>' : ""}</li>`).join("")}</ul>
+            </div>
+          </div>
+        </div>
+        <div class="vg-foot">
+          <div class="vg-dots">${stepperChapters.map((c) => `<span class="vg-dot${c.id === ch.id ? " on" : ""}${+c.n < +ch.n ? " past" : ""}">${esc(c.n)}</span>`).join("")}</div>
+          <div class="vg-hint">Click anywhere to continue</div>
+        </div>
+      </div>`;
+    el.hidden = false;
+    requestAnimationFrame(() => el.classList.add("show"));
+    document.body.dataset.vignette = "1";
+    return new Promise((resolve, reject) => {
+      vig = { t, resolve, reject };
+      if (AUTO) setTimeout(() => { if (vig && vig.t === t) closeVignette(true); }, 1200);
+    });
+  }
+
+  function closeVignette(ok) {
+    if (!vig) return;
+    const v = vig;
+    vig = null;
+    const el = $("vignette");
+    el.classList.remove("show");
+    delete document.body.dataset.vignette;
+    setTimeout(() => { if (!vig) { el.hidden = true; el.innerHTML = ""; } }, 300);
+    if (ok) v.resolve(); else v.reject(new Run.Cancelled());
+  }
+
+  $("vignette").addEventListener("click", (e) => { e.stopPropagation(); closeVignette(true); });
 
   /* ------------------------------------------------------------ guided taps */
   function applyPulse() {
@@ -182,6 +248,7 @@
   /* ------------------------------------------------------------ run a step */
   async function go(i, opt = {}) {
     cancelPending();
+    closeVignette(false);
     const t = Run.next();
     state.i = Math.max(0, Math.min(ALL.length - 1, i));
     state.done = false;
@@ -193,6 +260,7 @@
     renderTalk();
 
     if (s.layout === "full") {
+      lastKey = `page:${s.id}`;
       stage.hidden = true;
       page.hidden = false;
       page.innerHTML = PAGES[s.page]();
@@ -203,20 +271,27 @@
       return;
     }
 
-    maybeShowChapterCard(s);
+    const key = `${s.act}:${stepPersona(s)}`;
+    const handoff = !!lastKey && lastKey.split(":")[0] === s.act;
+    const showVignette = key !== lastKey && opt.dir !== "back" && !opt.replay;
+    lastKey = key;
+
     stage.hidden = false;
     page.hidden = true;
     C.reset();
-    left.innerHTML = `<div class="left-ui" id="leftUI"></div>${s.desc ? `<div class="left-desc"><div class="ld-h"><span class="ld-k">What\u2019s happening</span><span class="ld-s">Step ${esc(s.id)}</span></div><div class="ld-b"><p class="ld-m">${esc(s.desc)}</p>${s.why ? `<p class="ld-w"><b>Why it matters</b> ${esc(s.why)}</p>` : ""}</div></div>` : ""}`;
-    const leftUI = $("leftUI");
-    const ctx = {
-      t,
-      C,
-      left(html) { if (Run.alive(t)) { leftUI.innerHTML = html; applyPulse(); } },
-      tap: (names) => tap(names, t),
-      sleep: (ms) => Run.sleep(ms, t),
-    };
+    left.innerHTML = "";
     try {
+      if (showVignette) await vignette(s, t, handoff);
+      if (!Run.alive(t)) return;
+      left.innerHTML = `<div class="left-ui" id="leftUI"></div>${s.desc ? `<div class="left-desc"><div class="ld-h"><span class="ld-k">What\u2019s happening</span><span class="ld-s">Step ${esc(s.id)}</span></div><div class="ld-b"><p class="ld-m">${esc(s.desc)}</p>${s.why ? `<p class="ld-w"><b>Why it matters</b> ${esc(s.why)}</p>` : ""}</div></div>` : ""}`;
+      const leftUI = $("leftUI");
+      const ctx = {
+        t,
+        C,
+        left(html) { if (Run.alive(t)) { leftUI.innerHTML = html; applyPulse(); } },
+        tap: (names) => tap(names, t),
+        sleep: (ms) => Run.sleep(ms, t),
+      };
       await s.run(ctx);
       if (Run.alive(t)) {
         state.done = true;
@@ -230,9 +305,10 @@
   }
 
   function next() { const j = nextIndex(); if (j >= 0) go(j); }
-  function prev() { const j = prevIndex(); if (j >= 0) go(j); }
+  function prev() { const j = prevIndex(); if (j >= 0) go(j, { dir: "back" }); }
   function goAct(actId) {
-    let j = ALL.findIndex((s) => s.act === actId);
+    let j = ALL.findIndex((s) => s.act === actId && inPath(s));
+    if (j < 0) j = ALL.findIndex((s) => s.act === actId);
     if (j < 0) j = ALL.findIndex((s) => s.id === actId);
     if (j >= 0) go(j);
   }
@@ -246,7 +322,7 @@
       state.path = p.dataset.path;
       const cur = ALL[state.i];
       if (cur.act === "hero" || cur.act === "today") return goAct("1");
-      return go(state.i);
+      return go(state.i, { replay: true });
     }
     const g = e.target.closest("[data-go]");
     if (g) return goAct(g.dataset.go);
@@ -255,14 +331,19 @@
   document.addEventListener("keydown", (e) => {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.target.matches("input, textarea")) return;
-    if (e.key === "ArrowRight" || e.key === " ") {
+    if (vig) {
+      /* Presentation clickers send arrow, space or page keys. */
+      if (["ArrowRight", " ", "Enter", "PageDown"].includes(e.key)) { e.preventDefault(); return closeVignette(true); }
+      if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); return prev(); }
+    }
+    if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") {
       e.preventDefault();
       if (state.pending) state.pending.resolve(state.pending.names[0]);
       else if (state.done) next();
-    } else if (e.key === "ArrowLeft") { e.preventDefault(); prev(); }
+    } else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); prev(); }
     else if (/^[1-8]$/.test(e.key)) goAct(e.key);
     else if (e.key === "0") goAct("hero");
-    else if (e.key === "r" || e.key === "R") go(state.i);
+    else if (e.key === "r" || e.key === "R") go(state.i, { replay: true });
     else if ((e.key === "n" || e.key === "N") && NOTES) $("btnNotes").click();
     else if (e.key === "e" || e.key === "E") { const d = document.querySelector(`.cx-depth button:not(.on)`); if (d) d.click(); }
     else if (e.key === "t" || e.key === "T") goAct("today");
@@ -356,8 +437,10 @@
         const beats = BEATS[p.id] || {};
         const cells = CHAPTERS.map((c) => {
           const b = beats[c.id];
+          const mine = ALL.filter((s) => s.act === c.id && stepPersona(s) === p.id);
+          const target = (mine.find(inPath) || mine[0] || { id: c.id }).id;
           if (b) return `<div class="jmap-cell">
-            <div class="jmap-box${b.s ? " jmap-box-s" : ""}" style="--pc:${p.color}" data-go="${c.id}">
+            <div class="jmap-box${b.s ? " jmap-box-s" : ""}" style="--pc:${p.color}" data-go="${target}">
               ${b.s ? '<span class="jmb-star">\u2605</span>' : ""}
               <div class="jmb-a">${b.a}</div>
               <div class="jmb-b">${b.b}</div>
