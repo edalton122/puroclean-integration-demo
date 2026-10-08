@@ -17,7 +17,7 @@ window.NOTES = {
   "3.2": "CJ's data health dashboard. Usable data started below 20 percent in November — it's at 64 percent now. The 'Integrations working' KPI is CJ's own addition to the Data Collection sheet. Pause here if Nick wants to see the held-record drill-down.",
 
   "4.1": "Network to one job in three clicks. Every click is a live query to 11:11 through Tableau Bridge — the SLA milestones are minutes old. This is the view that doesn't exist today.",
-  "4.2": "Same dashboard. Jordan signs in as the West RD and only sees West Region rows. One dashboard, zero copies. The RD can also subscribe for a weekly digest and set a data-driven alert if on-time completion drops below 80 percent.",
+  "4.2": "Same dashboard. Jordan signs in as the West RD and only sees West Region rows. One dashboard, zero copies. Click Subscribe & create alert: that creates two automations, a weekly digest and a data-driven alert if on-time completion drops below 80 percent. Then click Preview alert email to show what Jordan receives.",
   "4.3": "Wichita East versus the network on CJ's six KPIs from the Data Collection sheet. The network average only counts franchises with usable data.",
   "4.4": "CJ asks where the on-time completion number comes from. The Catalog lineage traces it back through Tableau, through MuleSoft, to the exact field name in PSA. When someone asks 'is this number right?' there's a precise answer.",
   "4.5": "CJ asks Tableau Agent a question in plain English. No IT ticket, no new pipeline, no extract. The certified data source means his view is already filtered to West Region via RLS. This is a Tableau+ feature — worth flagging if they ask about licensing.",

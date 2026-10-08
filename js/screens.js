@@ -808,15 +808,27 @@ window.Screens = (function () {
         <div class="tv-foot">Source: Dash via MuleSoft (dash-sapi \u2192 job-sync-papi) \u00b7 11:11 curated.job_milestone \u00b7 Target Completion Feb 19</div>`,
         { sheet: "Jobs", filters: [["Job", D.job.id, true], ["Franchise", "Wichita East", true]] });
     }
-    if (view === "rd" || view === "rd-subscribe") {
+    if (view === "rd" || view === "rd-subscribe" || view === "rd-subscribed") {
       const rows = D.west.map((s) => ({ k: { CA: "California", OR: "Oregon", WA: "Washington", NV: "Nevada" }[s], v: D.openJobs[s], c: "#346fa9" })).sort((a, b) => b.v - a.v);
-      const subscribeDialog = view === "rd-subscribe" ? `<div class="tv-dialog">
+      const autos = `<div class="tv-dialog tv-autos ${opt.preview ? "pv" : ""}">
+        <div class="tv-dh ok">${SVG.check} Automations created</div>
+        <div class="ta-item"><span class="ta-ico">${SVG.mail}</span><div><b>Subscription \u00b7 Network Operations (West)</b><small>Weekly \u00b7 Mondays 7:00 AM PT \u00b7 email</small></div><span class="lx-badge ok">Active</span></div>
+        <div class="ta-item"><span class="ta-ico">${SVG.bell}</span><div><b>Data-driven alert \u00b7 On-time completion (West)</b><small>When it falls below 80% \u00b7 checked on every data refresh \u00b7 email + Tableau Mobile</small></div><span class="lx-badge ok">Active</span></div>
+        ${opt.preview
+          ? `<div class="ta-mail"><div class="ta-mh"><span class="ta-from">Tableau Cloud \u00b7 alert email</span><span>preview</span></div>
+              <b>Data alert: On-time completion (West) is 79.4%, below 80%</b>
+              <div class="ta-mv">${spark([84, 84, 83, 83, 82, 82, 81, 80.5, 79.4], { c: "#e15759", w: 200, h: 26 })}<span>79.4%</span></div>
+              <small>Example of what Jordan receives if West slips (today: 84%) \u00b7 opens this view, filtered to West</small>
+              <button class="sbtn brand xs">View in Tableau</button></div>`
+          : `<div class="tv-dbtns"><button class="sbtn neutral" ${opt.tapPreview ? 'data-tap="preview"' : ""}>Preview alert email</button></div>`}
+      </div>`;
+      const subscribeDialog = view === "rd-subscribed" ? autos : view === "rd-subscribe" ? `<div class="tv-dialog">
         <div class="tv-dh">Subscribe to this view</div>
         <div class="tv-drow"><label>Frequency</label><select><option>Weekly &#9660;</option></select></div>
         <div class="tv-drow"><label>Day &amp; time</label><select><option>Mondays, 7:00 AM PT &#9660;</option></select></div>
         <div class="tv-drow"><label>Send by</label><div class="sbtn-group"><button class="on">Email</button><button>Tableau Mobile</button></div></div>
         <div class="tv-dalert"><b>Also create a data-driven alert</b><br/><small>On-time completion (West) falls below</small> <span class="tv-thres">80%</span> <small>&#8594; email me</small></div>
-        <div class="tv-dbtns"><button class="sbtn neutral">Cancel</button><button class="sbtn brand">Subscribe &amp; create alert</button></div>
+        <div class="tv-dbtns"><button class="sbtn neutral">Cancel</button><button class="sbtn brand" ${opt.tapSub ? 'data-tap="subscribe"' : ""}>Subscribe &amp; create alert</button></div>
       </div>` : "";
       return tabShell("Network Operations", ["West Region"], `${bans(D.kpisWest)}
         <div class="tv-g g-map">

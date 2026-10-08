@@ -470,7 +470,7 @@ window.Acts = (function () {
     },
     {
       id: "4.2", act: "4", short: false, title: "Same dashboard, the regional director's view",
-      desc: "A regional director, on Pacific time, opens the exact same dashboard. Row-level security filters it to their own region automatically. The RD also subscribes and sets a data-driven alert.", why: "One dashboard serves corporate and every region: no copies, no exports, and no one sees data they shouldn't.",
+      desc: "A regional director, on Pacific time, opens the exact same dashboard. Row-level security filters it to their own region automatically. The RD then clicks Subscribe & create alert, which sets up two automations: a weekly digest, and an alert that fires if on-time completion drops below 80%.", why: "One dashboard serves corporate and every region: no copies, no exports, and no one sees data they shouldn't.",
       powered: ["Tableau row-level security", "Entitlement table in 11:11", "Tableau subscriptions"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
@@ -486,8 +486,26 @@ window.Acts = (function () {
         await N("data source filter [Username] = USERNAME() \u2192 SQL: JOIN ref.user_region u ON u.region = j.region WHERE u.username = 'rd.west@\u2026'", "Only West Region rows are allowed");
         await query(x, ["user", "tabd", "rls", "bridge", "views"], { rows: "137 rows", ms: "164 ms", sql: "v_open_jobs \u2229 region West \u2192 CA 74 \u00b7 OR 19 \u00b7 WA 28 \u00b7 NV 16 = 137", exec: "137 open jobs in the West Region" });
         C.clock([{ l: "States visible", n: 4, v: "{n} of 51" }, { l: "Open jobs", n: 137, v: "{n}", state: "ok" }, { l: "Copies of the dashboard", n: 1, v: "{n}" }]);
-        x.left(S.tableau("rd-subscribe"));
-        await N("RD subscribes to the view \u00b7 weekly digest every Monday 7 AM Pacific \u00b7 and sets a data-driven alert: on-time completion (West) < 80%", "One subscription and one alert \u2014 no exports needed");
+        x.left(S.tableau("rd-subscribe", { tapSub: true }));
+        C.caption("Click \u201cSubscribe & create alert\u201d to set up the automation.");
+        await N("RD opens Subscribe \u00b7 weekly digest every Monday 7 AM Pacific \u00b7 plus a data-driven alert: on-time completion (West) < 80%", "The RD sets a weekly digest and an alert threshold");
+        await x.tap("subscribe");
+        x.left(S.tableau("rd-subscribed", { tapPreview: true }));
+        C.tag("tabd", "1 subscription \u00b7 1 alert", "ok", { stay: true });
+        C.caption("Two automations, saved in Tableau Cloud. No code, no IT ticket.");
+        C.extra(linCard("Automations created by the RD", [
+          ["Subscription", "Network Operations (West) \u00b7 Mondays 7:00 AM PT \u00b7 email", "Tableau subscription"],
+          ["Alert trigger", "On-time completion (West) < 80%", "checked on every data refresh"],
+          ["Alert action", "Email + Tableau Mobile push to the RD, linked to this view", "data-driven alert"],
+        ], ["Row-level security", "The digest and the alert only ever contain West Region data", "same entitlement"]));
+        await N("tableau \u00b7 create subscription (weekly \u00b7 Mon 07:00 America/Los_Angeles) \u00b7 create data-driven alert on_time_completion_west < 80 \u00b7 owner rd.west", "Two automations saved in Tableau Cloud");
+        C.clock([{ l: "States visible", n: 4, v: "{n} of 51" }, { l: "Open jobs", n: 137, v: "{n}", state: "ok" }, { l: "Automations", n: 2, v: "{n} active", state: "ok" }, { l: "Copies of the dashboard", n: 1, v: "{n}" }]);
+        C.caption("Click \u201cPreview alert email\u201d to see what the RD gets when West slips.");
+        await x.tap("preview");
+        x.left(S.tableau("rd-subscribed", { preview: true }));
+        C.tag("tabd", "alert preview \u00b7 fires below 80%", "warn", { stay: true });
+        C.caption("If West slips below 80%, the alert reaches the RD by email and Tableau Mobile.");
+        await N("alert check on refresh \u00b7 on_time_completion_west = 79.4 < 80 \u2192 email + Tableau Mobile to rd.west (preview)", "When West slips below 80%, the RD hears about it first");
       },
     },
     {
