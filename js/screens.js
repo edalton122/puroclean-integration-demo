@@ -172,17 +172,52 @@ window.Screens = (function () {
     </div>`;
   }
 
+  /* Four franchises' own job apps side by side: the same moment, four labels, one PuroLogic Date. */
+  const PF_LOOK = {
+    dash: { c: "#23313a", a: "#4fae95", ref: "job_no" },
+    psa: { c: "#1d4f91", a: "#7fb2ef", ref: "JobNumber" },
+    albi: { c: "#4b2f8f", a: "#b9a3ef", ref: "projectId" },
+    jobsite: { c: "#b4501f", a: "#ffc49d", ref: "id" },
+  };
+  const PF_FR = { dash: "Wichita East", psa: "a franchise on PSA", albi: "a franchise on Albi", jobsite: "a franchise on JobSite" };
+  function platforms(st = {}) {
+    const keys = ["dash", "psa", "albi", "jobsite"];
+    const seen = st.seen || [];
+    const rowsFor = (v) => [["inspected", "7:52 AM"], ["started", "8:05 AM"]]
+      .map(([f, t]) => `<div class="pf-row ${f === "started" ? "hl" : ""}"><span>${esc((v.labels && v.labels[f]) || D.milestones.find((m) => m.field === f).label)}</span><b>${t}</b></div>`)
+      .join("");
+    const tiles = keys.map((k) => {
+      const v = D.vendors[k], L = PF_LOOK[k];
+      const raw = v.payload[v.fields.started];
+      const on = st.active === k, done = seen.includes(k), tap = st.next === k;
+      return `<div class="pf-dev ${on ? "on" : ""} ${done ? "done" : ""}" style="--pc:${L.c};--pa:${L.a}" ${tap ? `data-tap="v-${k}"` : ""}>
+        <div class="pf-cap">${done ? `<i>${SVG.check}</i>` : ""}<b>${v.name}</b><small>${esc(PF_FR[k])}</small></div>
+        <div class="pf-scr">
+          <div class="pf-bar"><span class="pf-logo">${v.name[0]}</span><b>${v.name}</b><em>simulated</em></div>
+          <div class="pf-job"><small>Job</small><b>${esc(v.payload[L.ref])}</b><span>${icon("Water")} ${esc(String(v.fields.loss_type.split(": ")[1]).replace(/"/g, ""))}</span></div>
+          ${rowsFor(v)}
+          <div class="pf-api"><span>API field</span><code>${esc(v.fields.started)}: ${esc(typeof raw === "number" ? raw : `"${raw}"`)}</code></div>
+        </div>
+      </div>`;
+    }).join("");
+    const chips = keys.map((k) => `<span class="pf-chip ${seen.includes(k) ? "ok" : ""}" style="--pc:${PF_LOOK[k].c}"><code>${esc(D.vendors[k].fields.started)}</code></span>`).join("");
+    return `<div class="pf">
+      <div class="pf-head"><b>Four franchises, four job apps</b><span>The same moment on the job, in each franchise\u2019s own app (simulated screens \u00b7 vendor labels illustrative)</span></div>
+      <div class="pf-grid">${tiles}</div>
+      <div class="pf-out">
+        <div class="pf-chips">${chips}</div>
+        <div class="pf-arrow"><b>MuleSoft</b>${seen.length} of 4 mapped</div>
+        <div class="pf-canon"><span>PuroLogic Date</span><b>Started</b><code>2027-02-16T14:05:00Z</code><em>one field, network-wide</em></div>
+      </div>
+    </div>`;
+  }
+
   function jobApp(st = {}) {
     const vKey = st.vendor || "dash";
     const v = D.vendors[vKey];
     const J = D.job;
     const set = st.dates || {};
     const ref = v.payload.job_no || v.payload.JobNumber || v.payload.projectId || v.payload.id;
-    const switcher = st.switcher
-      ? `<div class="lx-switch"><span>Source platform</span><div class="sbtn-group">${Object.entries(D.vendors)
-          .map(([k, x]) => `<button class="${k === vKey ? "on" : ""}" data-tap="v-${k}">${x.name}</button>`)
-          .join("")}</div><em>simulated screens \u00b7 vendor labels illustrative</em></div>`
-      : "";
     const fields = D.milestones
       .filter((m) => PATH_FIELDS.includes(m.field))
       .map((m) => {
@@ -201,7 +236,6 @@ window.Screens = (function () {
         <div><small>Category</small><b>${J.category.split(" \u00b7 ")[0]}</b></div>
         <div><small>Address</small><b>${esc(J.address.split(",")[0])}</b></div>
       </div>
-      ${switcher}
       ${path(set, vKey, st.flash)}
       ${st.activity ? activityCard(st.activity) : card("Job dates", `<div class="lx-fields">${fields}</div>`, { right: `${J.carrier} \u00b7 ${J.claim}` })}
       ${st.activity ? composer(st.activity) : ""}
@@ -1034,5 +1068,5 @@ window.Screens = (function () {
     return "";
   }
 
-  return { frame, jobApp, dashJobs, addPlatform, slaAlert, failAlert, pulse, pulseDetail, tableauMobile, tableau, scale, anypointScale, anypointOnboard, anypointExchange, anypointAPIManager, anypointExchangeCatalog, onboard, security, compare, whatsNext, money, icon };
+  return { frame, jobApp, platforms, dashJobs, addPlatform, slaAlert, failAlert, pulse, pulseDetail, tableauMobile, tableau, scale, anypointScale, anypointOnboard, anypointExchange, anypointAPIManager, anypointExchangeCatalog, onboard, security, compare, whatsNext, money, icon };
 })();

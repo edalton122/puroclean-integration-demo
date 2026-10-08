@@ -318,17 +318,19 @@ window.Acts = (function () {
     },
     {
       id: "1.5", act: "1", short: false, title: "Same job, four platforms, one language",
-      desc: "The same job as it would look in Dash, PSA, Albi or JobSite. Each platform can name a milestone differently: 'first on site', 'arrive on site', 'job began'.", why: "All of them map to the same 18 PuroLogic Dates that PuroClean defines. That shared language is what makes network-wide reporting possible.",
+      desc: "Franchises run on four different job apps. The same moment on the job is recorded as 'Started' in Dash, 'First On Site' in PSA, 'Arrive On Site' in Albi and 'Job Began' in JobSite. Click each franchise's app to see MuleSoft map it.", why: "All of them map to the same 18 PuroLogic Dates that PuroClean defines. That shared language is what makes network-wide reporting possible, without asking any franchise to change apps.",
       powered: ["DataWeave", "PuroClean canonical model", "Anypoint Exchange"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
+        const order = ["dash", "psa", "albi", "jobsite"];
         const show = (vk) => {
-          x.left(S.jobApp({ vendor: vk, switcher: true, dates: { ...datesUpTo("inspected"), started: "8:05 AM", target_completion: "Feb 19" }, flash: "started", clock: "8:05 AM" }));
+          const i = order.indexOf(vk);
+          x.left(S.platforms({ active: vk, seen: order.slice(0, i + 1), next: order[i + 1] }));
           C.extra(rosetta(vk));
         };
         const g = C.baseGraph(); g.compact = true;
         C.graph(g); C.tab("flow"); C.setClock("08:05:00");
-        C.caption("Each platform can label the same moment differently. All of them map to Started in the PuroLogic Dates.");
+        C.caption("Each franchise's app labels the same moment differently. Click the next franchise to see it mapped to Started.");
         C.payload({
           sources: ["dash", "psa", "albi", "jobsite"].map((k) => ({ title: `${V[k].name} (illustrative)`, obj: V[k].payload, hl: [V[k].fields.started, V[k].fields.loss_type.split(":")[0]], cls: "src" })),
           right: { title: "PuroClean canonical job (one record)", obj: D.canonical, hl: ["started", "loss_type"] },
