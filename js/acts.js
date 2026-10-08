@@ -7,6 +7,37 @@ window.Acts = (function () {
   const code = (s) => `<code>${C.esc(s)}</code>`;
   const pick = (o, keys) => Object.fromEntries(keys.filter((k) => k in o).map((k) => [k, o[k]]));
 
+  /* Types text into an element of the left app with a blinking caret. html:true keeps tags whole. */
+  const QUICK = /[?&]fast\b/.test(location.search);
+  async function typeIn(x, sel, text, opt = {}) {
+    const root = document.getElementById("leftUI");
+    const el = root && root.querySelector(sel);
+    if (!el) return;
+    const input = el.tagName === "INPUT" || el.tagName === "TEXTAREA";
+    const set = (s) => { if (input) el.value = s; else if (opt.html) el.innerHTML = s; else el.textContent = s; };
+    const reveal = () => { if (opt.reveal) root.querySelectorAll(".tw-hold").forEach((h) => h.classList.remove("tw-hold")); };
+    if (QUICK) { set(text); reveal(); return; }
+    const pane = root.parentElement, desc = pane.querySelector(".left-desc"), box = (opt.show && root.querySelector(opt.show)) || el;
+    if (desc && box.getBoundingClientRect().bottom > desc.getBoundingClientRect().top) {
+      pane.style.scrollPaddingBottom = `${desc.offsetHeight + 16}px`;
+      box.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+    const cuts = [];
+    for (let i = 0, n = 0; i < text.length;) {
+      if (opt.html && text[i] === "<") { i = text.indexOf(">", i) + 1 || text.length; continue; }
+      i++; n++;
+      if (n % (opt.chunk || 1) === 0 || i === text.length) cuts.push(i);
+    }
+    el.classList.add("typing");
+    for (const c of cuts) {
+      set(text.slice(0, c));
+      if (input) el.scrollLeft = el.scrollWidth;
+      await x.sleep(opt.ms || 30);
+    }
+    el.classList.remove("typing");
+    reveal();
+  }
+
   const chapters = [
     { id: "hero",  n: "",  title: "Overview",    question: "",                                               tip: "Story overview and cast" },
     { id: "today", n: "",  title: "Today",        question: "",                                               tip: "Today vs. the API-led approach" },
@@ -333,8 +364,11 @@ window.Acts = (function () {
         app({ composer: "pick", tap: "tpl" });
         C.caption("Pick the \u201cInitial contact\u201d template.");
         await x.tap("tpl");
-        app({ composer: "filled", tap: "send" });
-        C.caption("The template fills in the customer, claim and next steps. Click Send.");
+        app({ composer: "filled", blank: true, tap: "send" });
+        C.caption("The template fills in the customer, claim and next steps.");
+        await typeIn(x, ".ecmp-subj", S.EMAIL_TPL.subject, { ms: 22 });
+        await typeIn(x, ".ecmp-body", S.EMAIL_TPL.body, { html: true, ms: 12, chunk: 3 });
+        C.caption("Ready to go. Click Send.");
         await x.tap("send");
         x.left(S.jobApp({ dates: datesUpTo("contacted"), activity: { sent: true }, flash: "contacted", clock: "6:41 AM" }));
         C.caption("Sending the email logs it on the timeline and sets Contacted. That change is what MuleSoft picks up.");
@@ -511,6 +545,10 @@ window.Acts = (function () {
         await N("SELECT source_job_id, address, held_at FROM quarantine.job WHERE franchise_id = 'KS-0412' AND reason_code = 'DQ-014' \u2192 11 rows \u00b7 includes D-889301 from 10:12 AM", "Wichita East's held jobs, including the one from the last step");
         C.caption("Click Share to send this filtered view to the Central RD, who owns the follow-up.");
         await x.tap("share");
+        x.left(S.tableau("health", { clock: "10:32 AM", drill: "loss", rec: true, sharing: true }));
+        await typeIn(x, ".tv-to", S.SHARE.to, { ms: 26, show: ".tv-sharebox" });
+        await typeIn(x, ".tv-msg", S.SHARE.msg, { ms: 20 });
+        await x.sleep(250);
         x.left(S.tableau("health", { clock: "10:32 AM", drill: "loss", rec: true, shared: true }));
         C.tag("tab", "shared \u00b7 RD Central", "ok", { stay: true });
         await N("tableau \u00b7 share view Data Health (Reason = DQ-014, Franchise = KS-0412) \u2192 rd.central \u00b7 opens with the same filters \u00b7 row-level security: Central", "The RD gets a link to exactly these records");
@@ -696,18 +734,22 @@ window.Acts = (function () {
         C.ring("sem");
         await N("web authoring \u00b7 curated.job_milestone \u00b7 certified data source \u00b7 row-level security still applied", "CJ is in web authoring on the certified data source");
         await x.tap("agent-ask");
+        await typeIn(x, ".we-inp", S.AGENT.q, { ms: 34 });
+        await x.sleep(300);
         x.left(S.tableau("agent", { step: 1 }));
         await N("Tableau Agent \u00b7 query: 'Which West franchises were slowest to first contact last month?' \u00b7 parsing intent \u2192 Franchise, AVG(days to contacted), filter Region = West", "Agent parsed the intent and built the query");
         await C.packet(["user", "sem", "bridge", "views"], x.t, { kind: "q", dur: 420 });
         C.tag("views", "14 West franchises \u00b7 contact speed", "ok");
         await C.packet(["views", "bridge", "sem", "user"], x.t, { kind: "res", dur: 420 });
-        x.left(S.tableau("agent", { step: 2 }));
+        x.left(S.tableau("agent", { step: 2, typing: true }));
+        await typeIn(x, ".we-built", S.AGENT.built, { ms: 16, reveal: true });
         await N("Agent built a bar chart \u00b7 Franchise on rows \u00b7 Avg days to first contact on columns \u00b7 RLS filter Region = West already applied", "The view is ready in the browser");
         await x.tap("agent-drag");
         x.left(S.tableau("agent", { step: 3 }));
         await N("CJ drags Loss type onto Color \u00b7 0 new queries \u00b7 Tableau re-renders from the existing result set", "Loss type by color \u2014 same data, no new query");
         await x.tap("agent-save");
-        x.left(S.tableau("agent", { step: 4 }));
+        x.left(S.tableau("agent", { step: 4, typing: true }));
+        await typeIn(x, ".we-saved", S.AGENT.saved, { ms: 16 });
         await N("Saved to 'West franchise contact speed' \u00b7 published on the certified data source \u00b7 inherits the same RLS and Bridge connection", "Saved and published \u2014 no new pipeline, no extract");
         C.clock([{ l: "New extracts", n: 0, v: "{n}", state: "ok" }, { l: "New pipelines", n: 0, v: "{n}", state: "ok" }, { l: "Data source", v: "certified" }, { l: "RLS applied", v: "Region = West" }]);
       },
@@ -762,6 +804,9 @@ window.Acts = (function () {
         C.ambient(x.t, POLLS, { every: 650 });
         C.clock([{ l: "Franchises connected", n: 430, v: "{n}" }, { l: "Deployments", n: 0, v: "{n}" }, { l: "Jobs from OH-0731", n: 0, v: "{n}" }]);
         await x.tap("new");
+        x.left(S.anypointOnboard(1, { typing: true }));
+        await typeIn(x, ".ap-q", "Dayton", { ms: 90 });
+        await x.sleep(200);
         x.left(S.anypointOnboard(1));
         C.ring("s-fran", "new");
         await C.packet(["fran", "s-fran"], x.t, { kind: "ref", dur: 420 });
@@ -805,6 +850,8 @@ window.Acts = (function () {
         C.caption("Click Create from template.");
         await x.tap("add");
         amb.stop();
+        x.left(S.anypointExchange(2, { typing: true }));
+        await typeIn(x, ".ex-name", "new-sapi", { ms: 80 });
         x.left(S.anypointExchange(2));
         const g2 = C.baseGraph({
           addNodes: [
@@ -956,19 +1003,23 @@ window.Acts = (function () {
         C.caption("Every inbound call passes the same policy chain at the gateway. Click Send valid request.");
         const msgs = ["client_id 3f\u2026 valid", "token valid \u00b7 scope jobs:write", "payload depth 4 \u2264 10", "12 / 600 per min"];
         await x.tap("valid");
+        x.left(S.anypointAPIManager({ req: "valid", typing: true }));
+        await typeIn(x, ".ap-req", S.API_BODY.valid, { ms: 14 });
         await C.packet(pg._ids, x.t, { dur: 340, onHop: async (b) => { const i = Number(b.slice(1)); if (b[0] === "p") C.tag(b, msgs[i], "ok"); } });
-        x.left(S.anypointAPIManager({ sent: true, tap: "pol" }));
+        x.left(S.anypointAPIManager({ sent: true, req: "valid", tap: "pol" }));
         await N("api-manager \u00b7 client-id \u2713 \u2192 oauth2 \u2713 \u2192 json-threat-protection \u2713 \u2192 rate-limit \u2713 \u2192 200", "A normal request passes all four checks");
         pg._ids.forEach((id) => C.node(id, ""));
         C.caption("Click JSON Threat Protection to see its limits.");
         await x.tap("pol");
-        x.left(S.anypointAPIManager({ sent: true, pol: true, tap: "bad" }));
+        x.left(S.anypointAPIManager({ sent: true, req: "valid", pol: true, tap: "bad" }));
         C.ring("p2");
         await N("api-manager \u00b7 json-threat-protection config \u00b7 maxContainerDepth 10 \u00b7 maxStringValueLength 10240 \u00b7 maxObjectEntryCount 100 (illustrative values)", "Limits PuroClean sets in configuration, not code");
         C.caption("Now click Send malformed payload. It\u2019s stopped at JSON Threat Protection.");
         await x.tap("bad");
+        x.left(S.anypointAPIManager({ req: "bad", pol: true, typing: true }));
+        await typeIn(x, ".ap-req", S.API_BODY.bad, { ms: 12, chunk: 2 });
         await C.packet(pg._ids.slice(0, 4), x.t, { kind: "err", dur: 340, finalState: "err" });
-        x.left(S.anypointAPIManager({ blocked: true, pol: true }));
+        x.left(S.anypointAPIManager({ blocked: true, req: "bad", pol: true }));
         C.tag("p2", "depth 64 > 10 \u00b7 400", "err", { stay: true });
         await N("api-manager \u00b7 json-threat-protection \u00b7 max depth 64 > 10 \u2192 400 rejected \u00b7 never reaches psa-sapi", "A malicious payload is blocked at the gateway");
         await N("outbound polls \u00b7 TLS 1.2+ \u00b7 vendor credentials in secure properties \u00b7 response schema validated in each System API", "Polled vendors: encrypted, authenticated and validated");
@@ -1016,7 +1067,7 @@ window.Acts = (function () {
       powered: ["Tableau Pulse"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
-        x.left(S.pulse({}));
+        x.left(S.pulse({ blankSum: true }));
         C.graph(pulseGraph()); C.tab("flow"); C.setClock("07:30:00");
         C.caption("Wednesday, 7:30 AM. Pulse watches the metrics CJ follows and flags what changed.");
         await C.packet(["views", "sem"], x.t);
@@ -1028,6 +1079,8 @@ window.Acts = (function () {
         await C.packet(["ins", "dig"], x.t, { kind: "res" });
         C.tag("dig", "delivered 7:30 AM", "ok", { stay: true });
         await N("pulse \u00b7 digest \u2192 CJ \u00b7 email + Tableau Mobile \u00b7 7:30 AM", "The digest lands in CJ's inbox and on CJ's phone");
+        C.caption("Pulse writes CJ a plain-language summary of what changed.");
+        await typeIn(x, ".pz-sumt", S.PULSE_SUM, { html: true, ms: 14, chunk: 2 });
         x.left(S.pulse({ tap: true }));
         C.caption("Tap the Open water jobs card in CJ\u2019s digest.");
         await x.tap("card");

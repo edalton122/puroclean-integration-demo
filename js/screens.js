@@ -165,8 +165,8 @@ window.Screens = (function () {
       <div class="ecmp-h"><span>${SVG.mail} New Email</span><i>\u2013 \u2922 \u2715</i></div>
       <div class="ecmp-r"><label>From</label><span>Alex &lt;alex@pcwichitaeast.example&gt;</span></div>
       <div class="ecmp-r"><label>To</label><span class="ecmp-pill">${CUSTOMER.name}</span></div>
-      <div class="ecmp-r"><label>Subject</label><span>${filled ? EMAIL_TPL.subject : ""}</span></div>
-      <div class="ecmp-body ${filled ? "filled" : ""}">${filled ? EMAIL_TPL.body : ""}</div>
+      <div class="ecmp-r"><label>Subject</label><span class="ecmp-subj">${filled && !a.blank ? EMAIL_TPL.subject : ""}</span></div>
+      <div class="ecmp-body ${filled ? "filled" : ""}">${filled && !a.blank ? EMAIL_TPL.body : ""}</div>
       ${picker}
       <div class="ecmp-f"><span class="ecmp-tool ${a.composer === "pick" ? "on" : ""}">${TPL} Insert template</span><button class="sbtn brand" ${a.tap === "send" ? 'data-tap="send"' : ""}>Send</button></div>
     </div>`;
@@ -482,16 +482,16 @@ window.Screens = (function () {
 
   /* ------------------------------------------------------------ Anypoint Runtime Manager (step 5.2) */
   /* stage: 0 list · 1 pick from FranConnect · 2 map account · 3 connected */
-  function anypointOnboard(stage) {
+  function anypointOnboard(stage, o = {}) {
     stage = stage === true ? 3 : stage || 0;
     const done = stage === 3;
     const fr = (l, v, cls = "") => `<div class="ap-fr ${cls}"><label>${l}</label><div>${v}</div></div>`;
     const form = stage === 1 || stage === 2 ? `<div class="ap-sect ap-form">
         <div class="ap-sh">Connect a franchise \u00b7 step ${stage} of 2</div>
         ${stage === 1
-          ? `${fr("FranConnect franchise", `<span class="ap-inp">${SVG.search} Dayton</span>`)}
-             <div class="ap-pick" data-tap="pick"><b>OH-0731 \u00b7 PuroClean Dayton North</b><small>Central \u00b7 Open \u00b7 from FranConnect (nightly)</small></div>
-             <div class="ap-pick dim"><b>OH-0702 \u00b7 PuroClean Dayton South</b><small>Central \u00b7 already connected</small></div>`
+          ? `${fr("FranConnect franchise", `<span class="ap-inp">${SVG.search} <span class="ap-q">${o.typing ? "" : "Dayton"}</span></span>`)}
+             ${o.typing ? '<div class="ap-pick dim"><small>Type to search FranConnect franchises\u2026</small></div>' : `<div class="ap-pick" data-tap="pick"><b>OH-0731 \u00b7 PuroClean Dayton North</b><small>Central \u00b7 Open \u00b7 from FranConnect (nightly)</small></div>
+             <div class="ap-pick dim"><b>OH-0702 \u00b7 PuroClean Dayton South</b><small>Central \u00b7 already connected</small></div>`}`
           : `${fr("Franchise", "OH-0731 \u00b7 PuroClean Dayton North \u00b7 Central")}
              ${fr("SPAR platform", "PSA")}
              ${fr("Platform account", `PSA-T-55120 <span class="ap-badge ok">\u2713 found in PSA</span>`)}
@@ -523,7 +523,7 @@ window.Screens = (function () {
 
   /* ------------------------------------------------------------ Anypoint Exchange (step 5.3) */
   /* stage: 0 catalog · 1 template page · 2 new asset scaffolded · 3 deployed */
-  function anypointExchange(stage) {
+  function anypointExchange(stage, o = {}) {
     stage = stage === true ? 3 : stage || 0;
     const added = stage === 3;
     const assets = [
@@ -547,7 +547,7 @@ window.Screens = (function () {
         </div>`
       : stage === 2
       ? `<div class="ap-sect ex-page">
-          <div class="ex-ph"><span class="ex-tag new">Draft</span><b>new-sapi</b><small>v1.0 \u00b7 from spar-system-api</small><button class="sbtn brand" data-tap="deploy">Deploy to sandbox</button></div>
+          <div class="ex-ph"><span class="ex-tag new">Draft</span><b class="ex-name">${o.typing ? "" : "new-sapi"}</b><small>v1.0 \u00b7 from spar-system-api</small><button class="sbtn brand" data-tap="deploy">Deploy to sandbox</button></div>
           ${li("Inherited", "polling, watermark, retries, policies, canonical model")}
           ${li("To write", "new-to-canonical.dwl \u00b7 the new platform\u2019s field names \u2192 18 PuroLogic Dates")}
           ${li("Target", "CloudHub 2.0 \u00b7 Sandbox \u00b7 job-sync-papi unchanged")}
@@ -568,6 +568,10 @@ window.Screens = (function () {
   }
 
   /* ------------------------------------------------------------ Anypoint API Manager (step 7.1) */
+  const API_BODY = {
+    valid: '{"JobNumber":"P-24-55102","LossCategory":"Water","DateOfLoss":"02/16/2027 06:12"}',
+    bad: '{"job":{"job":{"job":{"job":{"job":{"job":{"job":{"job":{"job":{"job":{"job":{ \u2026 64 levels',
+  };
   function anypointAPIManager(o = {}) {
     const policies = D.security.policies;
     const res = o.blocked
@@ -580,7 +584,8 @@ window.Screens = (function () {
       </div>
       <div class="ap-try"><span class="ap-try-l">API console \u00b7 <code>POST /webhooks/jobs</code></span>
         <button class="sbtn neutral xs" ${o.tap === "valid" ? 'data-tap="valid"' : ""}>Send valid request</button>
-        <button class="sbtn neutral xs" ${o.tap === "bad" ? 'data-tap="bad"' : ""}>Send malformed payload</button>${res}</div>
+        <button class="sbtn neutral xs" ${o.tap === "bad" ? 'data-tap="bad"' : ""}>Send malformed payload</button>${res}
+        ${o.req ? `<div class="ap-body"><span>Body</span><code class="ap-req">${o.typing ? "" : esc(API_BODY[o.req])}</code></div>` : ""}</div>
       <div class="ap-sect">
         <div class="ap-sh">Applied policies (${policies.length})</div>
         <div class="ap-policies">
@@ -695,6 +700,13 @@ window.Screens = (function () {
   }
 
   /* ------------------------------------------------------------ Tableau Pulse (Tableau Mobile) */
+  const AGENT = {
+    q: "Which West franchises were slowest to first contact last month?",
+    built: "View built \u2022 14 franchises \u2022 Avg days to first contact \u2022 Region = West",
+    saved: "\u2713 Saved \u2022 \u201cWest franchise contact speed\u201d \u2022 published on certified data source",
+  };
+  const SHARE = { to: "RD, Central (rd.central)", msg: "11 Wichita East jobs held for missing loss type. Can you follow up with the franchise today?" };
+  const PULSE_SUM = "Open water jobs in Ohio are <b>up 38%</b> against the 4-week average, driven by Columbus and Dayton (Dayton includes a franchise connected Tuesday). Your other metrics are on track.";
   function pulse(o = {}) {
     const ohio = [41, 44, 42, 45, 43, 46, 44, 45, 47, 46, 52, 57, 61];
     const avg = 44.2;
@@ -714,7 +726,7 @@ window.Screens = (function () {
       `<div class="m-app">${mHead("Tableau Pulse")}
         <div class="m-body pz">
           <div class="pz-hi"><b>Good morning, CJ</b><small>Wednesday digest \u00b7 3 metrics you follow</small></div>
-          <div class="pz-sum"><div class="pz-sk"><i>\u2726</i> Insights summary</div><p>Open water jobs in Ohio are <b>up 38%</b> against the 4-week average, driven by Columbus and Dayton (Dayton includes a franchise connected Tuesday). Your other metrics are on track.</p></div>
+          <div class="pz-sum"><div class="pz-sk"><i>\u2726</i> Insights summary</div><p class="pz-sumt">${o.blankSum ? "" : PULSE_SUM}</p></div>
           <div class="pz-card hot" ${o.tap ? 'data-tap="card"' : ""}>
             <div class="pz-k">Open water jobs <span>Ohio \u00b7 daily</span></div>
             <div class="pz-v">61 <span class="pz-d up">\u25b2 38% vs 4-wk avg</span></div>
@@ -1098,9 +1110,13 @@ window.Screens = (function () {
       const recs = [["D-889301", "1180 S Webb Rd", "10:12 AM"], ["D-889288", "640 N Rock Rd", "9:41 AM"], ["D-889262", "3310 E Douglas", "Mon"]];
       const shareBtn = opt.shared
         ? '<span class="tv-shared">\u2713 Shared with RD, Central</span>'
+        : opt.sharing ? '<span class="tv-shared wait">Sharing\u2026</span>'
         : `<button class="sbtn neutral xs" ${opt.tapShare ? 'data-tap="share"' : ""}>Share</button>`;
+      const shareBox = opt.sharing || opt.shared
+        ? `<div class="tv-sharebox"><div><label>To</label><span class="tv-to">${opt.sharing ? "" : SHARE.to}</span></div><div><label>Message</label><span class="tv-msg">${opt.sharing ? "" : SHARE.msg}</span></div></div>`
+        : '<div class="tv-note">11 records \u00b7 DQ-014 \u00b7 each loads on its next Dash update</div>';
       const recSheet = sheet("KS-0412 \u00b7 held", `<table class="tv-table tv-held"><thead><tr><th>Job</th><th>Held</th><th>SLA clock</th></tr></thead><tbody>${recs
-        .map(([j, a, h], i) => `<tr class="${i === 0 ? "hl" : ""}"><td><b>${j}</b></td><td>${h}</td><td>running</td></tr>`).join("")}</tbody></table><div class="tv-note">11 records \u00b7 DQ-014 \u00b7 each loads on its next Dash update</div>`, { right: shareBtn });
+        .map(([j, a, h], i) => `<tr class="${i === 0 ? "hl" : ""}"><td><b>${j}</b></td><td>${h}</td><td>running</td></tr>`).join("")}</tbody></table>${shareBox}`, { right: shareBtn });
       const trend = sheet("Usable data, % of franchises", area(usable, { w: 230, h: 84, min: 0, max: 100, ticks: [0, 50, 100], fmt: (v) => v + "%", c: "#59a14f", ann: [[8, "Wave 1"], [11, "Wave 2"]], ref: 90, refL: "Goal 90% (illustrative)", lastL: "64%" }));
       return tabShell("Data Health & Integrations", drill ? ["All franchises", "Missing loss type"] : ["All franchises"], `${bans([
           { k: "Franchises with usable data", v: "64%", d: "+45 pts since Nov", tone: "good", s: usable },
@@ -1132,12 +1148,12 @@ window.Screens = (function () {
       const agentPanel = `<div class="we-agent ${step >= 1 ? "open" : ""}">
         <div class="we-ah">${TLOGO} Tableau Agent <span class="chip-new">Tableau+</span></div>
         ${step === 0 ? `<div class="we-ai"><input placeholder="Ask a question about your data…" data-tap="agent-ask" class="we-inp"/></div>` : ""}
-        ${step >= 1 ? `<div class="we-aq">"Which West franchises were slowest to first contact last month?"</div>` : ""}
+        ${step >= 1 ? `<div class="we-aq">\u201c${AGENT.q}\u201d</div>` : ""}
         ${step === 1 ? `<div class="we-ar">Building your view&hellip; <span class="we-spin"></span></div>` : ""}
-        ${step >= 2 ? `<div class="we-ar ok">View built &bull; 14 franchises &bull; Avg days to first contact &bull; Region = West</div>` : ""}
-        ${step >= 2 && step < 3 ? `<div class="we-hint">Drag &ldquo;Loss type&rdquo; onto Color to split by loss type <button class="sbtn neutral xs" data-tap="agent-drag">Do it</button></div>` : ""}
+        ${step >= 2 ? `<div class="we-ar ok we-built">${opt.typing && step === 2 ? "" : AGENT.built}</div>` : ""}
+        ${step === 2 ? `<div class="we-hint ${opt.typing ? "tw-hold" : ""}">Drag &ldquo;Loss type&rdquo; onto Color to split by loss type <button class="sbtn neutral xs" data-tap="agent-drag">Do it</button></div>` : ""}
         ${step === 3 ? `<div class="we-hint">Loss type added to Color. <button class="sbtn brand xs" data-tap="agent-save">Save view</button></div>` : ""}
-        ${step >= 4 ? `<div class="we-ar ok">&#10003; Saved &bull; "West franchise contact speed" &bull; published on certified data source</div>` : ""}
+        ${step >= 4 ? `<div class="we-ar ok we-saved">${opt.typing ? "" : AGENT.saved}</div>` : ""}
       </div>`;
       const certBadge = `<div class="we-cert">&#10003; Certified data source &bull; curated.job_milestone &bull; RLS applied</div>`;
       const body = `<div class="we-layout">
@@ -1184,5 +1200,5 @@ window.Screens = (function () {
     return "";
   }
 
-  return { frame, jobApp, platforms, dashJobs, addPlatform, slaAlert, failAlert, pulse, pulseDetail, tableauMobile, tableau, scale, anypointScale, anypointOnboard, anypointExchange, anypointAPIManager, anypointExchangeCatalog, onboard, security, compare, whatsNext, money, icon };
+  return { EMAIL_TPL, AGENT, SHARE, PULSE_SUM, API_BODY, frame, jobApp, platforms, dashJobs, addPlatform, slaAlert, failAlert, pulse, pulseDetail, tableauMobile, tableau, scale, anypointScale, anypointOnboard, anypointExchange, anypointAPIManager, anypointExchangeCatalog, onboard, security, compare, whatsNext, money, icon };
 })();

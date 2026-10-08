@@ -2153,3 +2153,20 @@ polyline.draw { stroke-dasharray: 600; stroke-dashoffset: 600; animation: draw 1
 .tv-a { margin-left: 6px; font-weight: 600; }
 .tv-shared { color: #2E844A; font-weight: 700; font-size: 10.5px; }
 .ex-fb.sel { background: #fdecec; border-radius: 3px; }
+
+/* ---------- typed-out text in the left apps */
+.typing::after { content: ""; display: inline-block; width: 1.5px; height: 1.05em; margin-left: 1px; vertical-align: -0.15em; background: currentColor; animation: caret .7s steps(1) infinite; }
+input.typing { border-color: #9050E9; box-shadow: 0 0 0 2px rgba(144, 80, 233, .15); }
+@keyframes caret { 50% { opacity: 0; } }
+.tw-hold { display: none !important; }
+.tv-shared.wait { color: #747474; font-weight: 600; }
+.ap-body { flex-basis: 100%; display: flex; gap: 8px; align-items: baseline; font-size: 11px; min-width: 0; }
+.ap-body > span { color: #747474; font-weight: 600; }
+.ap-req { font-family: var(--mono); font-size: 10.5px; color: #181818; background: #fff; border: 1px solid #e0e5ea; border-radius: 3px; padding: 2px 6px; word-break: break-all; min-width: 0; }
+.tv-sharebox { margin-top: 6px; border: 1px solid #d8dde6; border-radius: 4px; background: #fafbfc; font-size: 11px; }
+.tv-sharebox > div { display: grid; grid-template-columns: 56px 1fr; gap: 6px; padding: 4px 8px; }
+.tv-sharebox > div + div { border-top: 1px solid #e8ebf0; }
+.tv-sharebox label { color: #747474; font-weight: 600; }
+.tv-to { color: #1d4c80; font-weight: 600; }
+.pz-sumt:empty::before { content: "\2026"; color: #9a9a9a; }
+.pz-sumt.typing::before { content: none; }
