@@ -403,7 +403,7 @@
       { id: "eapi", t: "Experience API", s: "notification-api", d: "Sends SLA and integration alerts by region, by email to start. Tableau reads the curated views directly, so it doesn\u2019t need an API of its own." },
       { id: "dw", t: "Canonical model", s: "PuroClean job \u00b7 PuroLogic Dates", d: "Every platform\u2019s fields map to PuroClean\u2019s 18 PuroLogic Dates and standard loss types. PuroClean owns the definitions (owner to be agreed); MuleSoft enforces them." },
       { id: "dq", t: "Data quality", s: "Dedupe \u00b7 rules \u00b7 quarantine", d: "Duplicates from multi-location accounts are merged. Records that fail a rule are held back from the dashboards in quarantine.job with a reason code, not silently loaded, and their SLA clocks keep running." },
-      { id: "mon", t: "Monitoring + Visualizer", s: "Health \u00b7 alerts \u00b7 tracing", d: "Functional Monitoring checks each connection every 5 minutes. Dashboards, email alerts and tracing (depending on subscription tier) show what failed and where. Visualizer shows the live application network." },
+      { id: "mon", t: "Monitoring + Visualizer", s: "Health \u00b7 alerts \u00b7 tracing", d: "Functional Monitoring checks each connection every 5 minutes. Dashboards, email alerts and tracing show what failed and where. Visualizer shows the live application network." },
       { id: "apim", t: "API Manager", s: "Policies on inbound calls", d: "Client ID Enforcement, OAuth 2.0 Token Enforcement, JSON Threat Protection and Rate Limiting on every call into PuroClean\u2019s APIs, applied without code changes. Outbound polls use TLS and stored credentials." },
       { id: "exch", t: "Exchange", s: "Catalog + documentation", d: "Every API, the canonical model, the quality rules and the runbooks are documented and discoverable, so the knowledge stays with PuroClean." },
     ] },
@@ -414,7 +414,7 @@
     { col: "Tableau Cloud", blocks: [
       { id: "bridge", t: "Tableau Bridge", s: "Live queries to 11:11", d: "Runs inside the 11:11 network so Tableau Cloud can query the private SQL Server live, without extracts." },
       { id: "sem", t: "Certified data sources", s: "One definition per KPI", d: "One published, certified definition per KPI from the Data Collection sheet, so every dashboard agrees." },
-      { id: "rls", t: "Row-level security", s: "By region", d: "One dashboard for CJ and the RDs, each seeing their own region through an entitlement table. RD seats are sized to the license plan." },
+      { id: "rls", t: "Row-level security", s: "By region", d: "One dashboard for CJ and the RDs, each seeing their own region through an entitlement table." },
       { id: "dash", t: "Dashboards + Pulse", s: "Drill-down and digests", d: "Network to job in three clicks, with benchmarks, data health and Pulse digests." },
     ] },
   ];
