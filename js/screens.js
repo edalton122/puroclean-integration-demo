@@ -635,7 +635,7 @@ window.Screens = (function () {
       : o.sent ? `<span class="ap-res ok">200 OK \u00b7 4 / 4 policies passed</span>` : "";
     const body = `
       <div class="ap-page-h">
-        <div class="ap-ph-l"><i>${SVG.back}</i><div><b>psa-sapi v2.0</b><small>REST API · Production · all inbound calls</small></div></div>
+        <div class="ap-ph-l"><i>${SVG.back}</i><div><b>psa-sapi v1.2</b><small>REST API · Production · all inbound calls</small></div></div>
         <div class="ap-ph-r"><span class="ap-badge ok">Active</span></div>
       </div>
       <div class="ap-try"><span class="ap-try-l">API console \u00b7 <code>POST /webhooks/jobs</code></span>
@@ -662,7 +662,7 @@ window.Screens = (function () {
           <tr><td>job-sync-papi (outbound poller)</td><td><span class="ap-badge ok">Active</span></td><td>Jan 2027</td></tr>
         </tbody></table>
       </div>
-      <div class="ap-note">Outbound polls: TLS 1.2+ · vendor credentials in Anypoint Secrets Manager · response schema validated per System API.</div>`;
+      <div class="ap-note">Outbound polls: TLS 1.2+ · vendor credentials in encrypted secure properties · response schema validated per System API.</div>`;
     return frame("it", lx("API Manager", ["APIs", "Contracts", "Alerts"], "APIs", body, { kind: "anypoint", avatar: "PC" }), { clock: "2:40 PM" });
   }
 
@@ -758,7 +758,7 @@ window.Screens = (function () {
   /* ------------------------------------------------------------ Tableau Pulse (Tableau Mobile) */
   const AGENT = {
     q: "Which West franchises were slowest to first contact last month?",
-    built: "View built \u2022 14 franchises \u2022 Avg days to first contact \u2022 Region = West",
+    built: "View built \u2022 14 franchises \u2022 Avg minutes to first contact \u2022 Region = West",
     saved: "\u2713 Saved \u2022 \u201cWest franchise contact speed\u201d \u2022 published on certified data source",
   };
   const SHARE = { to: "RD, Central (rd.central)", msg: "11 Wichita East jobs held for missing loss type. Can you follow up with the franchise today?" };
@@ -1058,7 +1058,7 @@ window.Screens = (function () {
       const autos = `<div class="tv-dialog tv-autos ${opt.preview ? "pv" : ""}">
         <div class="tv-dh ok">${SVG.check} Automations created</div>
         <div class="ta-item"><span class="ta-ico">${SVG.mail}</span><div><b>Subscription \u00b7 Network Operations (West)</b><small>Weekly \u00b7 Mondays 7:00 AM PT \u00b7 email</small></div><span class="lx-badge ok">Active</span></div>
-        <div class="ta-item"><span class="ta-ico">${SVG.bell}</span><div><b>Data-driven alert \u00b7 On-time completion (West)</b><small>When it falls below 80% \u00b7 checked on every data refresh \u00b7 email + Tableau Mobile</small></div><span class="lx-badge ok">Active</span></div>
+        <div class="ta-item"><span class="ta-ico">${SVG.bell}</span><div><b>Data-driven alert \u00b7 On-time completion (West)</b><small>When it falls below 80% \u00b7 checked hourly on live data \u00b7 email + Tableau Mobile</small></div><span class="lx-badge ok">Active</span></div>
         ${opt.preview
           ? `<div class="ta-mail"><div class="ta-mh"><span class="ta-from">Tableau Cloud \u00b7 alert email</span><span>preview</span></div>
               <b>Data alert: On-time completion (West) is 79.4%, below 80%</b>
@@ -1096,14 +1096,14 @@ window.Screens = (function () {
           const pct = Math.round((Math.abs(b.fr - net) / net) * 100);
           const cyc = i === 1;
           const tap = cyc && opt.tap === "rank";
-          const tip = cyc && opt.rank ? `<div class="bu-tip">Cycle time 8.1 days \u00b7 rank 38 of 412 franchises (top 10%) \u00b7 network median 9.2 days</div>` : "";
+          const tip = cyc && opt.rank ? `<div class="bu-tip">Cycle time 8.1 days \u00b7 rank 27 of 275 franchises (top 10%) \u00b7 network median 9.2 days</div>` : "";
           return `<div class="bu-r ${tap ? "tap" : ""} ${cyc && opt.rank ? "sel" : ""}" ${tap ? 'data-tap="rank"' : ""}><span class="bu-k">${b.k}</span>
             <span class="bu-t"><span class="bu-band" style="width:${((net / max) * 100).toFixed(1)}%"></span><span class="bu-bar ${good ? "good" : "bad"}" style="width:${((b.fr / max) * 100).toFixed(1)}%"></span><span class="bu-ref" style="left:${((net / max) * 100).toFixed(1)}%"></span></span>
             <b>${b.fmt(b.fr)}</b><span class="bu-d ${good ? "good" : "bad"}">${good ? "\u25b2" : "\u25bc"} ${pct}% ${good ? "better" : "worse"}</span></div>${tip}`;
         })
         .join("");
       const who = opt.who
-        ? `<span class="bu-who on">${reg ? "96 of 101 Central franchises" : "412 of 430 franchises"} \u00b7 ${reg ? "5" : "18"} excluded by data health</span>`
+        ? `<span class="bu-who on">${reg ? "65 of 101 Central franchises" : "275 of 430 franchises"} \u00b7 ${reg ? "36" : "155"} excluded by data health</span>`
         : `<span class="bu-who" ${opt.tap === "who" ? 'data-tap="who"' : ""}>Who\u2019s in the average? \u203a</span>`;
       return tabShell("Franchise benchmarking", ["All franchises", "Kansas", D.franchise.name], `
         ${sheet(`${D.franchise.name} vs ${base.toLowerCase()}`, `<div class="bu-lg"><span><i class="bu-sw good"></i>Franchise</span><span><i class="bu-sw ref"></i>${base}</span><span><i class="bu-sw band"></i>0 to ${base.toLowerCase()}</span>${who}</div>${rows}`, { right: "KPIs from CJ's Data Collection sheet" })}
@@ -1116,8 +1116,8 @@ window.Screens = (function () {
         ${opt.down ? "" : `<div class="tg-i"><small>Definition <em>(illustrative)</em></small><span>Completed jobs where Majority Completion \u2264 Target Completion, \u00f7 completed jobs</span></div>`}
         <div class="tg-i ${opt.tapUp ? "tg-tap" : ""} ${opt.up ? "open" : ""}" ${opt.tapUp ? 'data-tap="up"' : ""}><small>Upstream table</small><span><code>curated.job_milestone</code> \u00b7 11:11 SQL Server \u00b7 live via Bridge${opt.up ? "" : " \u203a"}</span>
           ${opt.up ? `<span class="tg-x">Columns used: <code>majority_completion</code>, <code>target_completion</code><br/>Written by MuleSoft job-sync-papi \u00b7 last write 1:58 PM</span>` : ""}</div>
-        <div class="tg-i ${opt.tapDown ? "tg-tap" : ""} ${opt.down ? "open" : ""}" ${opt.tapDown ? 'data-tap="down"' : ""}><small>Downstream</small><span>6 workbooks \u00b7 3 Pulse metrics \u00b7 2 subscriptions${opt.down ? "" : " \u203a"}</span>
-          ${opt.down ? `<span class="tg-x">Network Operations \u00b7 Franchise benchmarking \u00b7 Data Health \u00b7 West contact speed \u00b7 +2<br/>Contact their owners from Catalog before changing the source</span>` : ""}</div>
+        <div class="tg-i ${opt.tapDown ? "tg-tap" : ""} ${opt.down ? "open" : ""}" ${opt.tapDown ? 'data-tap="down"' : ""}><small>Downstream</small><span>6 workbooks \u00b7 3 Pulse metrics \u00b7 owners${opt.down ? "" : " \u203a"}</span>
+          ${opt.down ? `<span class="tg-x">Network Operations \u00b7 Franchise benchmarking \u00b7 Data Health \u00b7 Regional scorecard \u00b7 +2<br/>Contact their owners from Catalog before changing the source</span>` : ""}</div>
         <div class="tg-i"><small>Owner</small><span>PuroClean (owner to be agreed)</span></div></div>`;
       return tabShell("Network Operations", ["All franchises"], `${bans(D.kpis, { tapLineage: opt.tap, hl: opt.tap ? null : "On-time completion" })}
         <div class="tv-g g-lin">
@@ -1189,20 +1189,20 @@ window.Screens = (function () {
     }
     if (view === "agent") {
       const step = opt.step || 0;
-      const fields = ["Abc Franchise", "Abc Region", "Abc Loss type", "# Days to contacted", "# Cycle time", "# Estimate"].map((f) => `<div class="we-f">${f}</div>`).join("");
+      const fields = ["Abc Franchise", "Abc Region", "Abc Loss type", "# Minutes to contacted", "# Cycle time", "# Estimate"].map((f) => `<div class="we-f">${f}</div>`).join("");
       const shelves = [
-        ["Columns", "Avg days to first contact"],
+        ["Columns", "Avg minutes to first contact"],
         ["Rows", "Franchise"],
         ["Color", step >= 3 ? "Loss type" : "—"],
         ["Filters", "Region = West, Last month"],
       ];
       const bars = ["CA-0219 Sacramento N.", "CA-0714 Riverside", "CA-0881 Long Beach", "NV-0220 Las Vegas", "OR-0312 Portland", "WA-0115 Seattle"].map((f, i) => {
-        const v = [14.2, 12.8, 11.4, 10.9, 9.6, 8.1][i];
+        const v = [41, 37, 33, 29, 24, 18][i];
         const c = step >= 3 ? ["#4e79a7", "#4e79a7", "#e15759", "#e15759", "#59a14f", "#59a14f"][i] : "#4e79a7";
-        return `<div class="we-br"><span class="we-bk">${f}</span><span class="we-bt"><span style="width:${(v / 16) * 100}%;background:${c}"></span></span><b>${v}d</b></div>`;
+        return `<div class="we-br"><span class="we-bk">${f}</span><span class="we-bt"><span style="width:${(v / 46) * 100}%;background:${c}"></span></span><b>${v} min</b></div>`;
       }).join("");
       const agentPanel = `<div class="we-agent ${step >= 1 ? "open" : ""}">
-        <div class="we-ah">${TLOGO} Tableau Agent <span class="chip-new">Tableau+</span></div>
+        <div class="we-ah">${TLOGO} Tableau Agent</div>
         ${step === 0 ? `<div class="we-ai"><input placeholder="Ask a question about your data…" data-tap="agent-ask" class="we-inp"/></div>` : ""}
         ${step >= 1 ? `<div class="we-aq">\u201c${AGENT.q}\u201d</div>` : ""}
         ${step === 1 ? `<div class="we-ar">Building your view&hellip; <span class="we-spin"></span></div>` : ""}
@@ -1234,7 +1234,7 @@ window.Screens = (function () {
     if (view === "explain-data") {
       const open = !!opt.expand;
       const dayton = open
-        ? `<div class="ex-fr">${[["OH-0731 Dayton North", 7, "new"], ["OH-0702 Dayton South", 5], ["OH-0745 Springfield", 3]]
+        ? `<div class="ex-fr">${[["OH-0731 Dayton North", 5, "new"], ["OH-0702 Dayton South", 4], ["OH-0745 Springfield", 3]]
             .map(([f, v, n]) => `<div class="ex-fb ${n ? "new" : ""} ${n && opt.tapNew ? "tap" : ""} ${n && opt.records ? "sel" : ""}" ${n && opt.tapNew ? 'data-tap="dn"' : ""}><span>${f}</span><i><s style="width:${(v / 8) * 100}%"></s></i><b>${v}</b>${n ? `<em>${opt.records ? "23 jobs \u00b7 first synced Tue 2:10 PM via MuleSoft psa-sapi" : "connected Tue \u00b7 view data \u203a"}</em>` : ""}</div>`)
             .join("")}<div class="ex-dd">${opt.records ? "Jobs dated before Tuesday that corporate couldn\u2019t see until the connection. Not a real surge." : "Without Dayton North, Dayton is in its normal range. The jobs were always there; now corporate sees them."}</div></div>`
         : `<div class="ex-dd">OH-0731 (Dayton North) connected Tuesday \u00b7 first 23 jobs now visible</div>${opt.tapDayton ? '<div class="ex-more">See franchises \u203a</div>' : ""}`;

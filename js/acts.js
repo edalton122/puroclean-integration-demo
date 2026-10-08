@@ -276,7 +276,7 @@ window.Acts = (function () {
         C.ring("dash"); C.tag("dash", "accepted_at", "new");
         await N("Dash \u00b7 UPDATE D-889214 SET accepted_at 12:24:00Z \u00b7 same poll window", "The franchise accepts the dispatched job");
         await C.log([{ lvl: "info", at: "06:24:00", raw: "Dash \u00b7 job D-889214 accepted (franchise side) \u00b7 dispatch and accept times set", exec: "The franchise accepted the dispatched job" }], x.t);
-        C.clock([{ l: "Polls today", n: 312, v: "{n}", s: "4 SPAR platforms" }, { l: "Changed in Dash", n: 1, v: "{n} job \u00b7 3 dates", state: "run" }, { l: "Connections", v: "5", s: "4 SPAR + FranConnect", state: "ok" }, { l: "Next Dash poll", v: "6:25 AM", state: "run" }]);
+        C.clock([{ l: "Polls today", n: 308, v: "{n}", s: "4 SPAR platforms" }, { l: "Changed in Dash", n: 1, v: "{n} job \u00b7 3 dates", state: "run" }, { l: "Connections", v: "5", s: "4 SPAR + FranConnect", state: "ok" }, { l: "Next Dash poll", v: "6:25 AM", state: "run" }]);
       },
     },
     {
@@ -470,7 +470,7 @@ window.Acts = (function () {
         C.caption("Tap Call franchise. The RD calls Sacramento North while the customer is still waiting.");
         await x.tap("call");
         x.left(S.tableauMobile({ acked: true, called: true, clock: "8:06" }));
-        await C.log([{ lvl: "info", at: "10:06:00", raw: "PSA \u00b7 JOB-CA-11902 \u00b7 franchise logs the customer call \u00b7 FirstContactDT = 16:06Z", exec: "After the RD's call, the franchise contacts the customer" }], x.t);
+        await C.log([{ lvl: "info", at: "10:06:00", raw: "PSA \u00b7 JOB-CA-11902 \u00b7 franchise logs the customer call \u00b7 ContactDT = 16:06Z", exec: "After the RD's call, the franchise contacts the customer" }], x.t);
         C.setClock("10:10:00");
         await C.packet(["psa", "s-psa", "proc"], x.t, { dur: 420 });
         C.tag("proc", "CONTACT_30 closed \u00b7 38 min", "warn");
@@ -515,7 +515,7 @@ window.Acts = (function () {
         C.caption("The 10:15 poll picks up the three saves from the multi-location account.");
         await C.packet(["s-dash", "dash"], x.t, { kind: "q", dur: 380, finalState: "active" });
         C.tag("dash", "200 OK \u00b7 3 changed", "ok");
-        await N("dash-sapi \u00b7 GET /v2/jobs?updated_since=15:10:00Z \u2192 3 changes on DASH-M-0412", "Three changes picked up from Dash");
+        await N("dash-sapi \u00b7 GET /v2/jobs?updated_since=16:10:00Z \u2192 3 changes on DASH-M-0412", "Three changes picked up from Dash");
         await C.packet(["dash", "s-dash", "proc", "dq"], x.t, { finalState: "warn" });
         C.tag("dq", "DUPLICATE \u00b7 merged", "warn");
         await N("dedupe \u00b7 D-889305 matches JOB-KS-24817 on (address, date_of_loss, carrier_claim) \u00b7 MERGE \u00b7 0 new rows", "Duplicate caught and merged; no double count");
@@ -534,7 +534,7 @@ window.Acts = (function () {
     },
     {
       id: "3.2", act: "3", short: true, title: "Data health, CJ's own KPI",
-      desc: "CJ's data health dashboard shows the share of franchises with usable data, how many records are being held back, and the top reasons they were held. CJ clicks the top reason to see exactly which franchises' records are held, including the job from the last step.", why: "Usable data climbs from under 20% as each wave goes live, and CJ can see exactly who to follow up with next.",
+      desc: "CJ's data health dashboard shows the share of franchises with usable data, how many records are being held back, and the top reasons they were held. CJ clicks the top reason to see exactly which franchises' records are held, including a Wichita East job saved at 10:12 AM with no loss type.", why: "Usable data climbs from under 20% as each wave goes live, and CJ can see exactly who to follow up with next.",
       powered: ["Tableau Cloud", "11:11 curated views", "Certified data source"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
@@ -557,7 +557,7 @@ window.Acts = (function () {
         await x.tap("ks");
         x.left(S.tableau("health", { clock: "10:31 AM", drill: "loss", rec: true, tapShare: true }));
         C.ring("quar");
-        await N("SELECT source_job_id, address, held_at FROM quarantine.job WHERE franchise_id = 'KS-0412' AND reason_code = 'DQ-014' \u2192 11 rows \u00b7 includes D-889301 from 10:12 AM", "Wichita East's held jobs, including the one from the last step");
+        await N("SELECT source_job_id, address, held_at FROM quarantine.job WHERE franchise_id = 'KS-0412' AND reason_code = 'DQ-014' \u2192 11 rows \u00b7 includes D-889301 from 10:12 AM", "Wichita East's held jobs, including D-889301, saved at 10:12 AM without a loss type");
         C.caption("Click Share to send this filtered view to the Central RD, who owns the follow-up.");
         await x.tap("share");
         x.left(S.tableau("health", { clock: "10:32 AM", drill: "loss", rec: true, sharing: true }));
@@ -635,7 +635,7 @@ window.Acts = (function () {
         C.caption("Two automations, saved in Tableau Cloud. No code, no IT ticket.");
         C.extra(linCard("Automations created by the RD", [
           ["Subscription", "Network Operations (West) \u00b7 Mondays 7:00 AM PT \u00b7 email", "Tableau subscription"],
-          ["Alert trigger", "On-time completion (West) < 80%", "checked on every data refresh"],
+          ["Alert trigger", "On-time completion (West) < 80%", "checked hourly on live data"],
           ["Alert action", "Email + Tableau Mobile push to the RD, linked to this view", "data-driven alert"],
         ], ["Row-level security", "The digest and the alert only ever contain West Region data", "same entitlement"]));
         await N("tableau \u00b7 create subscription (weekly \u00b7 Mon 07:00 America/Los_Angeles) \u00b7 create data-driven alert on_time_completion_west < 80 \u00b7 owner rd.west", "Two automations saved in Tableau Cloud");
@@ -645,7 +645,7 @@ window.Acts = (function () {
         x.left(S.tableau("rd-subscribed", { preview: true }));
         C.tag("tabd", "alert preview \u00b7 fires below 80%", "warn", { stay: true });
         C.caption("If West slips below 80%, the alert reaches the RD by email and Tableau Mobile.");
-        await N("alert check on refresh \u00b7 on_time_completion_west = 79.4 < 80 \u2192 email + Tableau Mobile to rd.west (preview)", "When West slips below 80%, the RD hears about it first");
+        await N("hourly alert check \u00b7 on_time_completion_west = 79.4 < 80 \u2192 email + Tableau Mobile to rd.west (preview)", "When West slips below 80%, the RD hears about it first");
       },
     },
     {
@@ -664,16 +664,16 @@ window.Acts = (function () {
         C.caption("Click the Cycle time row to see where Wichita East ranks.");
         await x.tap("rank");
         x.left(S.tableau("bench", { rank: true, tap: "who" }));
-        await query(x, Q, { rows: "412 rows", ms: "96 ms", sql: "tableau calc \u00b7 RANK(AVG([Cycle time]), 'asc') over franchises with usable data \u2192 KS-0412 rank 38 of 412", exec: "Wichita East: 38th fastest of 412 franchises" });
+        await query(x, Q, { rows: "275 rows", ms: "96 ms", sql: "tableau calc \u00b7 RANK(AVG([Cycle time]), 'asc') over franchises with usable data \u2192 KS-0412 rank 27 of 275", exec: "Wichita East: 27th fastest of 275 franchises" });
         C.caption("Click \u201cWho\u2019s in the average?\u201d to see which franchises count.");
         await x.tap("who");
         x.left(S.tableau("bench", { rank: true, who: true, tap: "cmp" }));
         C.ring("views");
-        await query(x, Q, { rows: "430 rows", ms: "74 ms", sql: "SELECT usable_data, COUNT(*) FROM curated.v_franchise_health GROUP BY usable_data \u2192 412 included \u00b7 18 excluded", exec: "18 franchises are left out until their data passes the quality rules" });
+        await query(x, Q, { rows: "430 rows", ms: "74 ms", sql: "SELECT usable_data, COUNT(*) FROM curated.v_franchise_health GROUP BY usable_data \u2192 275 included \u00b7 155 excluded", exec: "155 franchises are left out until their data passes the quality rules" });
         C.caption("Switch Compare to: Central region, Wichita East\u2019s own region.");
         await x.tap("cmp");
         x.left(S.tableau("bench", { rank: true, who: true, cmp: "central" }));
-        await query(x, Q, { rows: "6 KPIs", ms: "118 ms", sql: "\u2026 { FIXED [Region], [KPI] : AVG(...) } WHERE region = 'Central' AND usable_data = 1 \u2192 96 franchises", exec: "Same KPIs, compared with the Central region" });
+        await query(x, Q, { rows: "6 KPIs", ms: "118 ms", sql: "\u2026 { FIXED [Region], [KPI] : AVG(...) } WHERE region = 'Central' AND usable_data = 1 \u2192 65 franchises", exec: "Same KPIs, compared with the Central region" });
         C.extra(linCard('"Network average" \u00b7 how it\'s calculated', [
           ["Grain", "per franchise, trailing 90 days", "illustrative"],
           ["Network average", "mean across franchises with usable data", "excludes held records"],
@@ -731,13 +731,13 @@ window.Acts = (function () {
         x.left(S.tableau("lineage", { up: true, down: true }));
         C.ring("tab", "new");
         C.tag("tab", "6 workbooks \u00b7 3 Pulse metrics", "ok", { stay: true, dy: 70 });
-        await N("tableau catalog \u00b7 impact analysis \u00b7 curated.job_milestone \u2192 6 workbooks, 3 Pulse metrics, 2 subscriptions \u00b7 owners listed", "Everything that would be affected if this source changed");
+        await N("tableau catalog \u00b7 impact analysis \u00b7 curated.job_milestone \u2192 6 workbooks, 3 Pulse metrics \u00b7 owners listed", "Everything that would be affected if this source changed");
         C.caption("From CJ's KPI, through Tableau and MuleSoft, back to each platform's field and API, and forward to everything that uses it.");
       },
     },
     {
       id: "4.5", act: "4", short: true, title: "Tableau Agent: ask a question, get a view",
-      desc: "CJ asks Tableau Agent which West franchises were slowest to first contact last month. The agent builds a bar chart on the certified data source. He drags Loss type onto Color, switches to a bar chart, and saves it \u2014 all in the browser, without an extract.", why: "CJ gets a new insight without waiting for IT or building from scratch. Row-level security still applies, and no new pipeline is needed.",
+      desc: "CJ asks Tableau Agent which West franchises were slowest to first contact last month. The agent builds a bar chart on the certified data source. He drags Loss type onto Color and saves it \u2014 all in the browser, without an extract.", why: "CJ gets a new insight without waiting for IT or building from scratch. Row-level security still applies, and no new pipeline is needed.",
       powered: ["Tableau Agent", "Tableau web authoring", "Certified data source"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
@@ -752,13 +752,13 @@ window.Acts = (function () {
         await typeIn(x, ".we-inp", S.AGENT.q, { ms: 34 });
         await x.sleep(300);
         x.left(S.tableau("agent", { step: 1 }));
-        await N("Tableau Agent \u00b7 query: 'Which West franchises were slowest to first contact last month?' \u00b7 parsing intent \u2192 Franchise, AVG(days to contacted), filter Region = West", "Agent parsed the intent and built the query");
+        await N("Tableau Agent \u00b7 query: 'Which West franchises were slowest to first contact last month?' \u00b7 parsing intent \u2192 Franchise, AVG(minutes to contacted), filter Region = West", "Agent parsed the intent and built the query");
         await C.packet(["user", "sem", "bridge", "views"], x.t, { kind: "q", dur: 420 });
         C.tag("views", "14 West franchises \u00b7 contact speed", "ok");
         await C.packet(["views", "bridge", "sem", "user"], x.t, { kind: "res", dur: 420 });
         x.left(S.tableau("agent", { step: 2, typing: true }));
         await typeIn(x, ".we-built", S.AGENT.built, { ms: 16, reveal: true });
-        await N("Agent built a bar chart \u00b7 Franchise on rows \u00b7 Avg days to first contact on columns \u00b7 RLS filter Region = West already applied", "The view is ready in the browser");
+        await N("Agent built a bar chart \u00b7 Franchise on rows \u00b7 Avg minutes to first contact on columns \u00b7 filter Region = West from the question \u00b7 CJ's row-level security: all regions", "The view is ready in the browser");
         await x.tap("agent-drag");
         x.left(S.tableau("agent", { step: 3 }));
         await N("CJ drags Loss type onto Color \u00b7 0 new queries \u00b7 Tableau re-renders from the existing result set", "Loss type by color \u2014 same data, no new query");
@@ -766,7 +766,7 @@ window.Acts = (function () {
         x.left(S.tableau("agent", { step: 4, typing: true }));
         await typeIn(x, ".we-saved", S.AGENT.saved, { ms: 16 });
         await N("Saved to 'West franchise contact speed' \u00b7 published on the certified data source \u00b7 inherits the same RLS and Bridge connection", "Saved and published \u2014 no new pipeline, no extract");
-        C.clock([{ l: "New extracts", n: 0, v: "{n}", state: "ok" }, { l: "New pipelines", n: 0, v: "{n}", state: "ok" }, { l: "Data source", v: "certified" }, { l: "RLS applied", v: "Region = West" }]);
+        C.clock([{ l: "New extracts", n: 0, v: "{n}", state: "ok" }, { l: "New pipelines", n: 0, v: "{n}", state: "ok" }, { l: "Data source", v: "certified" }, { l: "Row-level security", v: "applied", s: "CJ sees all regions" }]);
       },
     },
 
@@ -967,7 +967,7 @@ window.Acts = (function () {
     {
       id: "6.2", act: "6", short: false, title: "The alert, the trace and the recovery",
       desc: "The on-call owner gets an email alert, opens the trace and sees exactly which call failed and why. When PSA recovers, the next poll catches up everything that changed since 2:13 PM, in order.", why: "Seventeen minutes of outage, zero data lost, and no manual cleanup afterwards.",
-      powered: ["Anypoint Monitoring alerts", "Dashboards", "Tracing (tier-dependent)"],
+      powered: ["Anypoint Monitoring alerts", "Dashboards", "Distributed tracing"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
         const O = D.outage;
@@ -989,7 +989,7 @@ window.Acts = (function () {
         dash("alert"); C.tab("monitor");
         C.caption("The alert names the API, the error, the franchises on PSA and the runbook.");
         C.clock([{ l: "Outage", v: "running", state: "err" }, { l: "Watermark", v: `held at ${O.watermark}` }, { l: "Lost", n: 0, v: "{n}", state: "ok" }]);
-        await N("anypoint-monitoring \u00b7 alert psa-sapi error count > 5 in 5 min \u2192 email on-call \u00b7 notification-api adds franchise context", "The on-call owner gets an email");
+        await N("anypoint-monitoring \u00b7 alert psa-sapi error count > 3 in 5 min \u2192 email on-call \u00b7 notification-api adds franchise context", "The on-call owner gets an email");
         C.caption("Tap the alert to open it.");
         await x.tap("openAlert");
         x.left(S.failAlert(true));
@@ -1166,7 +1166,7 @@ window.Acts = (function () {
         await x.tap("dayton");
         x.left(S.tableau("explain-data", { expand: true, tapNew: true }));
         C.caption("Dayton's jump is the franchise that just connected. Click Dayton North to view its data.");
-        await N("drill Dayton metro \u2192 franchise \u00b7 OH-0731 Dayton North 7 (first sync Tuesday \u00b7 23 jobs now in Tableau) \u00b7 OH-0702 5 \u00b7 OH-0745 3", "Dayton's jump is the franchise that just connected");
+        await N("drill Dayton metro \u2192 franchise \u00b7 OH-0731 Dayton North 5 (first sync Tuesday \u00b7 23 jobs now in Tableau) \u00b7 OH-0702 4 \u00b7 OH-0745 3", "Dayton's jump is the franchise that just connected");
         C.clock([{ l: "Ohio open water", n: 61, v: "{n}", state: "warn" }, { l: "Columbus", v: "+9 seasonal" }, { l: "Dayton", v: "+6 \u00b7 OH-0731 new" }, { l: "Cincinnati", v: "+2" }]);
         await x.tap("dn");
         x.left(S.tableau("explain-data", { expand: true, records: true }));

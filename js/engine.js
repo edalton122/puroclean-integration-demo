@@ -426,7 +426,7 @@
     { q: "Can everyone see what matters, at their level?", a: "Yes. One dashboard, row-level security, and three clicks from the network to one job. CJ can ask Tableau Agent and save a new view \u2014 no IT ticket." },
     { q: "Will it hold at 900 locations and new platforms?", a: "Yes. CloudHub 2.0 replicas and Anypoint MQ handle the load. Adding a franchise is configuration; adding a platform is a new System API from an Exchange template." },
     { q: "What happens when something breaks?", a: "MuleSoft retries, then pauses. The watermark holds the position. When the source recovers, it catches up in order. Nothing is lost, and CJ sees it before anyone reports it." },
-    { q: "Is it secure, and does it depend on one person?", a: "Yes. API Manager applies four policies to every inbound call. Everything is documented in Exchange. Monitoring and alerts mean no single point of failure." },
+    { q: "Is it secure, and does it depend on one person?", a: "Secure, yes: API Manager applies four policies to every inbound call. Dependent on one person, no: everything is documented in Exchange, and monitoring and alerts mean no single point of failure." },
     { q: "Will leaders actually use the data every day?", a: "Yes. Pulse sends CJ a morning digest of what changed. He follows an insight to the dashboard, clicks a state, and Explain Data shows the driver." },
   ];
 
@@ -443,7 +443,7 @@
         cj: { "3": { a: "Certified data source",       b: "DQ warning \u00b7 data health KPI",     s: true  },
               "4": { a: "Network map \u00b7 Tableau Agent", b: "Self-service web authoring",        s: true  },
               "8": { a: "Pulse digest",                 b: "Explain Data on Ohio",                  s: true  } },
-        it: { "5": { a: "Runtime Manager",             b: "50 \u2192 900 locations \u00b7 same config", s: true },
+        it: { "5": { a: "Anypoint Monitoring",         b: "50 \u2192 900 locations \u00b7 storm surge", s: true },
               "6": { a: "PSA outage \u00b7 2:14 PM",   b: "Recovery \u00b7 2:31 PM",               s: true  },
               "7": { a: "API Manager \u00b7 4 policies", b: "Exchange catalog \u00b7 9 assets",     s: true  } },
       };
@@ -532,7 +532,7 @@
           ${personaRows}
           <div class="jmap-bts">
             <div class="jmbt-lbl">Behind the scenes</div>
-            <div class="jmbt-body">MuleSoft Anypoint Platform \u00b7 CloudHub 2.0 runtime \u00b7 Anypoint MQ \u00b7 DataWeave \u00b7 Tableau Cloud \u00b7 11:11 SQL Server lake \u00b7 Tableau REST API</div>
+            <div class="jmbt-body">MuleSoft Anypoint Platform \u00b7 CloudHub 2.0 runtime \u00b7 Anypoint MQ \u00b7 DataWeave \u00b7 Tableau Cloud \u00b7 Tableau Bridge \u00b7 11:11 SQL Server lake</div>
           </div>
         </div>
 
@@ -554,14 +554,14 @@
           <div class="today-col today-left">
             <div class="today-h">Today</div>
             ${[
-              ["Data arrives", "Manually exported or via one-off scripts built per-platform"],
+              ["Data arrives", "One hand-coded Dash feed, every couple of hours \u00b7 other platforms not connected"],
               ["Field names", "Different in every system \u00b7 staff reconcile on spreadsheets"],
               ["Duplicates", "From multi-location accounts \u00b7 cleaned by hand"],
               ["SLA breach", "Shows up in tomorrow\u2019s report"],
               ["Network view", "Doesn\u2019t exist"],
               ["Usable data", "<20\u202f% of franchises"],
-              ["Add a platform", "New custom integration project, 6\u201312+ months"],
-              ["Add 470 more locations", "At current scale, years of data-cleanup work"],
+              ["Add a platform", "Another hand-built feed to write, run and maintain"],
+              ["Add 470 more locations", "More mapping and clean-up by hand as the network grows"],
             ].map(([k, v]) => `<div class="td-row"><div class="td-k">${k}</div><div class="td-v dim">${v}</div></div>`).join("")}
           </div>
           <div class="today-col today-right">
@@ -605,7 +605,7 @@
     close: () => `
       <div class="close">
         <h2>Your questions, answered.</h2>
-        <p class="lede">Every chapter addressed one question Nick\u2019s team would ask before saying yes.</p>
+        <p class="lede">Every chapter answered one question PuroClean would ask before saying yes.</p>
         <div class="close-answers">
           ${ANSWERS.map((a, i) => `<div class="ca-row"><div class="ca-n">${i + 1}</div><div class="ca-q">\u201c${esc(a.q)}\u201d</div><div class="ca-a">${esc(a.a)}</div></div>`).join("")}
         </div>
