@@ -8,7 +8,7 @@ window.NOTES = {
   "1.1": "The franchise's day doesn't change. Alex logs the job in Dash exactly as today. MuleSoft will pick it up on its own on the next five-minute cycle. Nothing to install, nothing to change.",
   "1.2": "The Dash System API did two things: translated the field names and normalized the timezone. DataWeave ran in about 30 milliseconds. The franchise never sees any of this.",
   "1.3": "The job is in 11:11 within the same five-minute cycle — 41 seconds after MuleSoft picked it up, 1 minute 41 seconds after the franchise accepted. The SLA clock is running.",
-  "1.4": "Only the four SLA milestones ride the fast lane — contacted, inspected, dispatch, received. Everything else syncs at 2 AM. Fast where it matters, cheap everywhere else.",
+  "1.4": "Click Email, pick the Initial contact template, Send. The PM never types a time: logging the email sets Contacted, and that's the change MuleSoft picks up. Only the four SLA milestones ride the fast lane — contacted, inspected, dispatch, received. Everything else syncs at 2 AM. Fast where it matters, cheap everywhere else.",
   "1.5": "Same job, four platforms. PSA calls it 'First On Site', Albi calls it 'Arrive On Site'. All four map to 'Started' in the PuroLogic Dates. One mapping per platform, built once, reused forever. Meanwhile, it's now 8:05 AM.",
 
   "2.1": "The RD is on Pacific time — it's 8:02 AM in California. The alert arrived in under half a second. Jordan taps it and lands on the exact job in Tableau Mobile with row-level security already filtering to West Region only.",

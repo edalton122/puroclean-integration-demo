@@ -88,13 +88,13 @@ window.Screens = (function () {
     date_of_loss: { keys: ["date_of_loss", "loss"], tip: "Record when the loss happened, from the customer or the carrier\u2019s assignment." },
     dispatch: { keys: ["dispatch", "carrier"], tip: "Log the time the carrier or TPA dispatched the job to your office." },
     received_accepted: { keys: ["dispatch", "received_accepted"], tip: "Accept the job as soon as you receive it. The 30-minute customer-contact clock starts at acceptance (illustrative SLA)." },
-    contacted: { keys: ["received_accepted", "contacted"], tip: "Call the customer within 30 minutes of accepting the job and set a time for the inspection." },
+    contacted: { keys: ["received_accepted", "contacted"], tip: "Contact the customer within 30 minutes of accepting the job. Email or call from Activity; Contacted is set when it\u2019s logged." },
     inspected: { keys: ["contacted", "inspected"], tip: "Inspect the loss, capture photos and moisture readings, then record the inspection time." },
     started: { keys: ["inspected", "started"], tip: "Record when mitigation work began on site." },
     target_completion: { keys: ["started", "target_completion"], tip: "Set a completion date the customer and the carrier can plan around." },
   };
 
-  function path(set, vKey) {
+  function path(set, vKey, flash) {
     const v = D.vendors[vKey];
     const lbl = (f) => (v.labels && v.labels[f]) || (D.milestones.find((m) => m.field === f) || {}).label;
     const ms = D.milestones.filter((m) => PATH_FIELDS.includes(m.field));
@@ -103,18 +103,72 @@ window.Screens = (function () {
     const g = GUIDE[focus.field];
     const keyVal = (k) =>
       k === "loss" ? ["Loss type", D.job.loss] : k === "carrier" ? ["Carrier", D.job.carrier] : [lbl(k), set[k] || "\u2014"];
-    const keys = g.keys.map(keyVal).map(([a, b]) => `<div class="lx-kf"><small>${esc(a)}</small><span>${esc(b)}</span></div>`).join("");
+    const keys = g.keys.map((k) => [k, ...keyVal(k)]).map(([k, a, b]) => `<div class="lx-kf ${k === flash ? "flash" : ""}"><small>${esc(a)}</small><span>${esc(b)}</span></div>`).join("");
     return `<div class="lx-pathc">
       <div class="lx-path"><span class="lx-ptog" title="Hide guidance">${SVG.chev}</span><div class="lx-ptrack">${ms
         .map((m, i) => {
           const st = set[m.field] ? "done" : i === cur ? "cur" : "todo";
-          return `<div class="lx-pi ${st}" title="${esc(lbl(m.field))}">${st === "done" ? `<i>${SVG.check}</i>` : `<span>${esc(lbl(m.field))}</span>`}</div>`;
+          return `<div class="lx-pi ${st} ${m.field === flash ? "just" : ""}" title="${esc(lbl(m.field))}">${st === "done" ? `<i>${SVG.check}</i>` : `<span>${esc(lbl(m.field))}</span>`}</div>`;
         })
         .join("")}</div></div>
       <div class="lx-coach">
         <div><div class="lx-ct">Key Fields <a>Edit</a></div><div class="lx-kfs">${keys}</div></div>
         <div><div class="lx-ct">Guidance for Success <a>Edit</a></div><p>${esc(g.tip)}</p></div>
       </div>
+    </div>`;
+  }
+
+  const PHONE = '<svg viewBox="0 0 24 24"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z" fill="currentColor"/></svg>';
+  const TPL = '<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 8h8M8 12h8M8 16h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+  const CUSTOMER = { name: "Dana Whitfield", email: "dana.whitfield@example.com" };
+  const EMAIL_TPL = {
+    subject: "PuroClean: next steps on your water damage claim",
+    body: `Hi Dana, this is Alex, your project manager at PuroClean Wichita East. We\u2019ve received your claim (${D.job.claim}) and our crew is ready to help.<br/><br/>Reply or call (316) 555-0142 to confirm an inspection window this morning.<br/>\u2014 Alex`,
+  };
+
+  /* Activity timeline + docked email composer. a = { composer: "pick" | "filled", sent, tap } */
+  function activityCard(a) {
+    const item = (k, ico, title, sub, time, cls = "") =>
+      `<div class="at-i ${cls}"><span class="at-ic ${k}">${ico}</span><div class="at-t"><b>${title}</b><small>${sub}</small></div><time>${time}</time></div>`;
+    const upcoming = a.sent
+      ? ""
+      : `<div class="at-sec">Upcoming &amp; Overdue</div>${item("task", SVG.check, "Contact customer", "Due 6:54 AM \u00b7 30 min after acceptance (illustrative SLA)", "6:54 AM", "due")}`;
+    const sent = a.sent ? item("email", SVG.mail, `Email: ${EMAIL_TPL.subject}`, `To ${CUSTOMER.name} \u00b7 template \u201cInitial contact \u00b7 water loss\u201d \u00b7 Contacted set`, "6:41 AM", "new") : "";
+    return `<div class="lx-card at-card">
+      <div class="at-tabs"><span class="on">Activity</span><span>Job dates</span><span>Notes</span></div>
+      <div class="at-acts">
+        <button class="at-btn" ${a.tap === "email" ? 'data-tap="email"' : ""}>${SVG.mail} Email</button>
+        <button class="at-btn">${PHONE} Log a Call</button>
+        <button class="at-btn">${SVG.check} New Task</button>
+      </div>
+      ${upcoming}
+      <div class="at-sec">Today \u00b7 ${D.job.day.replace(", 2027", "")}</div>
+      <div class="at-list">
+        ${sent}
+        ${item("task", SVG.check, "Job accepted", "Alex \u00b7 Received/Accepted set", "6:24 AM")}
+        ${item("call", PHONE, `Dispatched by ${D.job.carrier}`, `Claim ${D.job.claim}`, "6:20 AM")}
+        ${item("event", SVG.bell, "Loss reported", `${D.job.loss} \u00b7 ${D.job.category.split(" \u00b7 ")[1] || ""}`, "6:12 AM")}
+      </div>
+    </div>`;
+  }
+
+  function composer(a) {
+    if (!a.composer) return "";
+    const filled = a.composer === "filled";
+    const tpls = [["Initial contact \u00b7 water loss", "First outreach after acceptance", "tpl"], ["Inspection reminder", "Day-before reminder"], ["Estimate ready for review", "Sends the estimate link"]];
+    const picker = a.composer === "pick"
+      ? `<div class="ecmp-pick"><div class="ecmp-ph">Insert email template</div><div class="ecmp-search">${SVG.search}<span>Search templates\u2026</span></div>${tpls
+          .map(([n, d, tap]) => `<div class="ecmp-tpl" ${tap && a.tap === "tpl" ? `data-tap="${tap}"` : ""}><b>${n}</b><small>${d}</small></div>`)
+          .join("")}</div>`
+      : "";
+    return `<div class="ecmp">
+      <div class="ecmp-h"><span>${SVG.mail} New Email</span><i>\u2013 \u2922 \u2715</i></div>
+      <div class="ecmp-r"><label>From</label><span>Alex &lt;alex@pcwichitaeast.example&gt;</span></div>
+      <div class="ecmp-r"><label>To</label><span class="ecmp-pill">${CUSTOMER.name}</span></div>
+      <div class="ecmp-r"><label>Subject</label><span>${filled ? EMAIL_TPL.subject : ""}</span></div>
+      <div class="ecmp-body ${filled ? "filled" : ""}">${filled ? EMAIL_TPL.body : ""}</div>
+      ${picker}
+      <div class="ecmp-f"><span class="ecmp-tool ${a.composer === "pick" ? "on" : ""}">${TPL} Insert template</span><button class="sbtn brand" ${a.tap === "send" ? 'data-tap="send"' : ""}>Send</button></div>
     </div>`;
   }
 
@@ -134,9 +188,8 @@ window.Screens = (function () {
       .map((m) => {
         const lbl = (v.labels && v.labels[m.field]) || m.label;
         const val = set[m.field];
-        const setBtn = st.tapDate === m.field ? `<button class="sbtn brand xs" data-tap="d-${m.field}">Set now</button>` : "";
         return `<div class="lx-f ${st.flash === m.field ? "flash" : ""}"><label>${esc(lbl)}</label>
-          <div class="lx-fv">${val ? esc(val) : setBtn || '<span class="mut">\u2014</span>'}</div></div>`;
+          <div class="lx-fv">${val ? esc(val) : '<span class="mut">\u2014</span>'}</div></div>`;
       })
       .join("");
     const actions = (st.actions || []).map((a) => btn(a.label, a.tap, a.kind === "ghost" ? "neutral" : "brand")).join("") || btn("Edit");
@@ -149,8 +202,10 @@ window.Screens = (function () {
         <div><small>Address</small><b>${esc(J.address.split(",")[0])}</b></div>
       </div>
       ${switcher}
-      ${path(set, vKey)}
-      ${card("Job dates", `<div class="lx-fields">${fields}</div>`, { right: `${J.carrier} \u00b7 ${J.claim}` })}`;
+      ${path(set, vKey, st.flash)}
+      ${st.activity ? activityCard(st.activity) : card("Job dates", `<div class="lx-fields">${fields}</div>`, { right: `${J.carrier} \u00b7 ${J.claim}` })}
+      ${st.activity ? composer(st.activity) : ""}
+      ${st.activity && st.activity.sent ? `<div class="sf-toast">${SVG.check}<span>Email was sent. <small>Contacted set to 6:41 AM</small></span></div>` : ""}`;
     return frame(st.role || "pm", lx(v.name, ["Jobs", "Schedule", "Estimates"], "Jobs", body, { kind: "vendor", tag: "simulated", avatar: "PM" }), { clock: st.clock || "6:21 AM" });
   }
 

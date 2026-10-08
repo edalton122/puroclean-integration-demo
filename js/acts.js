@@ -285,19 +285,30 @@ window.Acts = (function () {
     },
     {
       id: "1.4", act: "1", short: false, title: "Two lanes: near-real-time and daily",
-      desc: "6:41 AM. Not every field needs to be live. The four milestones tied to customer-response SLAs (illustrative, to confirm with CJ) sync every five minutes; everything else, like closures and franchise reference data, syncs once a night.", why: "Real-time effort goes only where the SLA needs it, which keeps the integration fast and inexpensive to run.",
-      powered: ["MuleSoft Scheduler + Batch", "Watermark incremental sync"],
+      desc: "6:41 AM. The project manager contacts the customer the way they normally would: Email from the job, pick the template, send. Logging that email sets Contacted, one of the four milestones tied to customer-response SLAs (illustrative, to confirm with CJ) that sync every five minutes. Everything else, like closures and franchise reference data, syncs once a night.", why: "Nobody types a milestone time; doing the work records it. Real-time effort goes only where the SLA needs it, which keeps the integration fast and inexpensive to run.",
+      powered: ["Franchise's SPAR platform", "MuleSoft Scheduler + Batch", "Watermark incremental sync"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
-        x.left(S.jobApp({ dates: datesUpTo("received_accepted"), tapDate: "contacted", clock: "6:41 AM" }));
+        const dates = datesUpTo("received_accepted");
+        const app = (activity, extra = {}) => x.left(S.jobApp({ dates, activity, clock: "6:41 AM", ...extra }));
+        app({ tap: "email" });
         C.graph(slaGraph()); C.tab("flow"); C.setClock("06:41:00");
         C.caption("6:41 AM. The four SLA milestones ride the 5-minute lane; the rest waits for the 2:00 AM batch.");
         C.ambient(x.t, [["m1", "fast"], ["m2", "fast"], ["m4", "fast"]], { every: 800 });
         C.tag("batch", "idle \u00b7 next run 02:00", "", { stay: true });
         C.clock([{ l: "SLA timer", v: "Contacted due 6:54", state: "run", s: "30 min (illustrative)" }, { l: "SLA lane", v: "every 5 min" }, { l: "Daily lane", v: "2:00 AM" }]);
         await N("job-sync-papi \u00b7 SLA lane \u00b7 cron */5 \u00b7 4 milestones \u00b7 watermark 12:40:00Z", "The fast lane checks the four SLA milestones every 5 minutes");
-        await x.tap("d-contacted");
-        x.left(S.jobApp({ dates: datesUpTo("contacted"), flash: "contacted", clock: "6:41 AM" }));
+        C.caption("Click Email to contact the customer from the job.");
+        await x.tap("email");
+        app({ composer: "pick", tap: "tpl" });
+        C.caption("Pick the \u201cInitial contact\u201d template.");
+        await x.tap("tpl");
+        app({ composer: "filled", tap: "send" });
+        C.caption("The template fills in the customer, claim and next steps. Click Send.");
+        await x.tap("send");
+        x.left(S.jobApp({ dates: datesUpTo("contacted"), activity: { sent: true }, flash: "contacted", clock: "6:41 AM" }));
+        C.caption("Sending the email logs it on the timeline and sets Contacted. That change is what MuleSoft picks up.");
+        await C.log([{ lvl: "info", at: "06:41:12", raw: "Dash \u00b7 activity EMAIL logged on D-889214 \u00b7 contacted_at = 12:41:12Z (set by the email, not typed)", exec: "The email is logged and Contacted is set automatically" }], x.t);
         C.ring("m3");
         await C.packet(["m3", "fast", "rule", "lake1"], x.t, { onHop: async (b) => { if (b === "rule") C.tag("rule", "17 min \u2264 30 \u2713", "ok"); } });
         await N("job-sync-papi \u00b7 contacted 12:41Z picked up by the 12:45 poll \u00b7 rule CONTACT_30 \u00b7 17 min \u2192 PASS", "Contact time picked up within the cycle; SLA met");
