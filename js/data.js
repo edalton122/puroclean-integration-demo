@@ -1,7 +1,7 @@
 /* Single source of demo data. Everything here is fictional or illustrative unless marked confirmed. */
 window.PC = (function () {
   const meta = {
-    title: "Every franchise job, one trusted record.",
+    title: "Corporate visibility into every franchise job.",
     northStar:
       "One connected view of every franchise, so PuroClean can see, trust, and act on its data \u2014 no matter which approved platform franchisees use day to day.",
     preparedFor: "Prepared for PuroClean \u00b7 October 12, 2026",
@@ -18,16 +18,16 @@ window.PC = (function () {
   };
 
   const roles = {
-    pm: { label: "Project Manager", sub: "PuroClean Wichita East", color: "#C50A1D", device: "tablet" },
+    pm: { label: "Franchise Project Manager", sub: "PuroClean Wichita East", color: "#C50A1D", device: "tablet" },
     cj: { label: "CJ Bailey", sub: "VP, Software Management", color: "#00346D", device: "laptop" },
-    rd: { label: "Regional Director", sub: "West Region \u00b7 CA, OR, WA, NV", color: "#00346D", device: "laptop" },
-    rdPhone: { label: "Regional Director", sub: "West Region \u00b7 CA, OR, WA, NV", color: "#00346D", device: "phone" },
+    rd: { label: "Regional Director", sub: "PuroClean Corporate \u00b7 West Region", color: "#00346D", device: "laptop" },
+    rdPhone: { label: "Regional Director", sub: "PuroClean Corporate \u00b7 West Region", color: "#00346D", device: "phone" },
     it: { label: "Nick Hindle", sub: "CIO, Head of Growth", color: "#54698D", device: "laptop" },
     oncall: { label: "Integration on-call", sub: "PuroClean IT or partner managed service (TBD)", color: "#373536", device: "phone" },
     cjPhone: { label: "CJ Bailey", sub: "VP, Software Management", color: "#00346D", device: "phone" },
     corp: { label: "PuroClean corporate", sub: "Integration administration (illustrative)", color: "#373536", device: "laptop" },
     platform: { label: "Platform review", sub: "PuroClean IT + Salesforce", color: "#373536", device: "laptop" },
-    sync: { label: "Project Manager", sub: "PuroClean Wichita East \u00b7 Derby office", color: "#C50A1D", device: "tablet" },
+    sync: { label: "Franchise Project Manager", sub: "PuroClean Wichita East \u00b7 Derby office", color: "#C50A1D", device: "tablet" },
   };
 
   const franchise = {
@@ -240,10 +240,10 @@ window.PC = (function () {
     {
       id: "pm",
       name: "Alex",
-      role: "Project Manager",
+      role: "Franchise Project Manager",
       org: "PuroClean Wichita East",
-      question: "Will franchises have to change anything?",
-      need: "Keep using Dash exactly as today",
+      question: "As a franchisee, what\u2019s changed for me?",
+      need: "Keep using Dash or another approved job management platform, exactly as today",
       chapters: ["1"],
       color: "#C50A1D",
       initials: "PM",
@@ -253,7 +253,7 @@ window.PC = (function () {
       id: "rd",
       name: "Jordan",
       role: "Regional Director",
-      org: "West Region \u00b7 CA, OR, WA, NV",
+      org: "PuroClean Corporate \u00b7 West Region",
       question: "Will I know before my customer complains?",
       need: "Live SLA alerts routed by region, in Tableau Mobile",
       chapters: ["2", "4"],
@@ -287,10 +287,11 @@ window.PC = (function () {
     },
   ];
 
-  /* Persona vignettes shown on each chapter entry and persona handoff, keyed "chapter:persona". */
+  /* Persona vignettes shown on each chapter entry and persona handoff, keyed "chapter:persona".
+     q overrides the chapter question as the vignette quote. */
   const vignettes = {
-    "1:pm": { matters: [
-      "Keep working in Dash, with no second app and no double entry",
+    "1:pm": { q: "As a franchisee, what\u2019s changed for me?", matters: [
+      "Keep working in Dash or another approved job management platform, with no double entry",
       "Hit the SLA milestones without extra paperwork",
       "Corporate sees the work without anyone exporting a spreadsheet",
     ] },
@@ -299,7 +300,7 @@ window.PC = (function () {
       "Only the alerts for my region, not the whole network",
       "Get to the job details from my phone, wherever I am",
     ] },
-    "3:pm": { matters: [
+    "3:pm": { q: "How does this help me?", matters: [
       "Saving a job in Dash shouldn\u2019t break corporate reporting",
       "Duplicates from multi-location accounts handled for me",
       "Know when something I entered is incomplete",

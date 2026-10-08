@@ -63,7 +63,7 @@ window.Acts = (function () {
     { id: "5",     n: "5", title: "Scale",        question: "Will it hold at 900 locations and new platforms?", tip: "CloudHub 2.0 replicas, Anypoint MQ, config-driven onboarding, Exchange template" },
     { id: "6",     n: "6", title: "Recovery",     question: "What happens when something breaks?",            tip: "Retries, circuit-breaker, watermark catch-up, monitoring alerts in seconds" },
     { id: "7",     n: "7", title: "Security",     question: "Is it secure, and does it depend on one person?", tip: "API Manager policies, Trust Center certs, Exchange-documented runbooks" },
-    { id: "8",     n: "8", title: "Everyday",     question: "Will leaders actually use the data every day?",  tip: "Pulse digest, metric insights, Explain Data – the dashboard comes to CJ" },
+    { id: "8",     n: "8", title: "See it daily", question: "Will leaders actually use the data every day?",  tip: "Pulse digest, metric insights, Explain Data – the dashboard comes to CJ" },
     { id: "arch",  n: "",  title: "Architecture", question: "",                                               tip: "End-to-end reference architecture" },
     { id: "close", n: "",  title: "Next Steps",   question: "",                                               tip: "Wave 1 scope and answers to the eight questions" },
   ];
@@ -174,6 +174,10 @@ window.Acts = (function () {
     });
     const edges = [["src", "q"]];
     [0, 1, 2, 3].forEach((i) => edges.push(["q", "w" + i], ["w" + i, "lake"]));
+    if (surge) {
+      nodes.push({ id: "notify", label: "notification-api", sub: "Experience API \u00b7 storm alert", x: 790, y: 262, w: 190, h: 56, kind: "exp dim" });
+      edges.push(["w3", "notify"]);
+    }
     return { w: 1000, h: 360, compact: true, groups: [{ label: "CloudHub 2.0 \u00b7 Process API replicas + autoscaling", x: 220, y: 4, w: 500, h: 350 }], nodes, edges };
   };
 
@@ -242,7 +246,7 @@ window.Acts = (function () {
 
   /* ================================================================ steps */
   const steps = [
-    { id: "hero",  act: "hero",  layout: "full", short: true,  title: "Every franchise job, one trusted record", page: "hero", powered: [] },
+    { id: "hero",  act: "hero",  layout: "full", short: true,  title: "Corporate visibility into every franchise job", page: "hero", powered: [] },
     { id: "today", act: "today", layout: "full", short: true,  title: "Today vs. the API-led approach", page: "today", powered: [] },
 
     /* ---------- Chapter 1: Adoption */
@@ -259,7 +263,7 @@ window.Acts = (function () {
         C.ambient(x.t, POLLS, { every: 520 });
         C.clock([{ l: "Polls today", n: 308, v: "{n}", s: "4 SPAR platforms" }, { l: "SLA lane", v: "every 5 min", s: "4 SLA milestones (illustrative)" }, { l: "Connections", v: "5", s: "4 SPAR + FranConnect", state: "ok" }, { l: "Before MuleSoft", v: "Dash every ~2 hrs", s: "for comparison" }]);
         await N("job-sync-papi \u00b7 scheduler */5 \u00b7 4 SPAR System APIs \u00b7 GET ?updated_since={watermark}", "MuleSoft checks every platform for changes");
-        C.caption("The PM fills in the new job the way they always do. Pick Water as the loss type.");
+        C.caption("The franchise PM fills in the new job the way they always do. Pick Water as the loss type.");
         await x.tap("loss");
         x.left(S.jobApp({ isNew: true, dates: logged, flash: "loss", actions: [{ label: "Save", tap: "save" }], clock: "6:21 AM" }));
         C.ring("dash"); C.tag("dash", "loss_type \"H2O\"", "");
@@ -773,8 +777,8 @@ window.Acts = (function () {
     /* ---------- Chapter 5: Scale */
     {
       id: "5.1", act: "5", short: true, title: "From 50 locations to 900",
-      desc: "The network grows from 50 connected locations to all 430 and then 900, and a hailstorm quadruples job volume for an afternoon. The design stays the same; capacity scales out only when it's needed.", why: "Growth and storm surges are handled by scaling, not rebuilding. Spikes are queued and drained, so nothing is dropped.",
-      powered: ["CloudHub 2.0", "Clustered replicas + autoscaling", "Anypoint MQ"],
+      desc: "The network grows from 50 connected locations to all 430 and then 900, and a hailstorm quadruples job volume for an afternoon. The design stays the same; capacity scales out only when it's needed, and the regional director and local franchise owners get a storm alert.", why: "Growth and storm surges are handled by scaling, not rebuilding. Spikes are queued and drained, so nothing is dropped, and the people on the ground hear about the storm in minutes.",
+      powered: ["CloudHub 2.0", "Clustered replicas + autoscaling", "Anypoint MQ", "MuleSoft notification-api"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
         let idx = 0, surge = false, amb, prev = null;
@@ -824,7 +828,17 @@ window.Acts = (function () {
           if (badge) { badge.textContent = "Cooling down"; badge.classList.replace("warn", "ok"); }
         };
         await Promise.all([drain(), N("surge 4x \u00b7 57,200 updates/day rate \u00b7 Anypoint MQ absorbs the burst \u00b7 CPU autoscaling 2 \u2192 4 replicas \u00b7 drained in ~6 min \u00b7 0 dropped", "The queue absorbs the spike and capacity scales out; nothing is dropped")]);
-        C.caption("Capacity grew only for the storm, then returns to two replicas. Same APIs, same canonical model, same 11:11 tables at every size.");
+        C.tag("q", "drained \u00b7 0 dropped", "ok", { stay: true });
+        C.caption("The same spike triggers a storm alert. The Process API sees DFW job intake at 4\u00d7 normal, and notification-api tells the people who need to act.");
+        await C.packet(["w3", "notify"], x.t, { kind: "hot", finalState: "warn" });
+        C.tag("notify", "email \u00b7 RD + 24 DFW owners", "warn", { stay: true });
+        await N("job-sync-papi \u00b7 intake by metro \u00b7 DFW 4.1\u00d7 the Tuesday norm (alert at 3\u00d7, illustrative) \u2192 notification-api \u00b7 POST /alerts \u00b7 FranConnect region \u2192 DFW regional director + 24 DFW franchise owners \u00b7 channel email \u00b7 202 Accepted", "A storm alert reaches the DFW regional director and franchise owners");
+        C.clock([{ l: "Locations", v: "900" }, { l: "Replicas", v: "4", state: "ok" }, { l: "Storm alert", v: "RD + 24 owners", state: "warn" }, { l: "Dropped", v: "0", state: "ok" }]);
+        C.extra(linCard("Storm alert \u00b7 same notification-api as the SLA alerts", [
+          ["Detected", "DFW job intake at 4\u00d7 normal", "job-sync-papi \u00b7 threshold illustrative"],
+          ["Sent to", "DFW regional director + owners of the 24 DFW locations \u00b7 email: \u201cHail in DFW: job volume 4\u00d7 normal. Plan crews and equipment.\u201d", "FranConnect region \u00b7 illustrative"],
+        ], ["After Stage 1", "An AI agent watches the forecast and warns franchises before the hail arrives", "roadmap \u00b7 What\u2019s next"])).querySelector(".lin").scrollIntoView({ block: "start", behavior: "smooth" });
+        C.caption("Capacity grew only for the storm, then returns to two replicas, and the people on the ground heard about it in minutes. Same APIs, same canonical model, same 11:11 tables at every size.");
       },
     },
     {
@@ -1095,7 +1109,7 @@ window.Acts = (function () {
       },
     },
 
-    /* ---------- Chapter 8: Everyday use */
+    /* ---------- Chapter 8: See it daily */
     {
       id: "8.1", act: "8", short: true, title: "Tableau Pulse: the dashboard comes to CJ",
       desc: "Each morning, Tableau Pulse sends CJ a short digest of the metrics that changed, like Wednesday's jump in open water jobs in Ohio. He follows the insight to the metric's detail page and sees exactly which metros drove the spike.", why: "CJ hears about what matters without having to go looking for it.",

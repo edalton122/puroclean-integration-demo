@@ -68,7 +68,7 @@
   /* Steps whose persona differs from their chapter's lead. */
   const STEP_PERSONA = { "3.1": "pm", "4.2": "rd" };
   const stepPersona = (s) => STEP_PERSONA[s.id] || CHAPTER_PERSONA[s.act];
-  const PERSONA_LABELS = { pm: "Project Manager", rd: "Regional Director", cj: "CJ Bailey", it: "Nick Hindle" };
+  const PERSONA_LABELS = { pm: "Franchise Project Manager", rd: "Regional Director", cj: "CJ Bailey", it: "Nick Hindle" };
   const PERSONA_COLORS = { pm: "#C50A1D", rd: "#0176D3", cj: "#032D60", it: "#54698D" };
 
   function renderTalk() {
@@ -166,7 +166,7 @@
         </div>
         <div class="vg-body">
           <div class="vg-eyebrow">${handoff ? "Handoff \u00b7 " : ""}Chapter ${esc(ch.n)} \u00b7 ${esc(ch.title)}${clock ? ` \u00b7 ${esc(clock)}` : ""}</div>
-          <div class="vg-q">\u201c${esc(ch.question)}\u201d</div>
+          <div class="vg-q">\u201c${esc(v.q || ch.question)}\u201d</div>
           <div class="vg-cols">
             <div>
               <div class="vg-h">What matters to ${esc(who)}</div>
