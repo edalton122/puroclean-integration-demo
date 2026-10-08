@@ -211,19 +211,39 @@
     if (!state.pending) return;
     state.pending.names.forEach((n) => left.querySelectorAll(`[data-tap="${n}"]`).forEach((e) => e.classList.add("pulse")));
     const first = left.querySelector(".pulse");
-    const desc = left.querySelector(".left-desc");
     if (!first) return;
-    left.style.scrollPaddingBottom = `${(desc ? desc.offsetHeight : 0) + 16}px`;
+    revealTarget(first, "smooth");
+    /* Smooth scrolling can be cut short by a re-render; settle it so the target is never left under the card. */
+    setTimeout(() => { if (first.isConnected && first.classList.contains("pulse")) revealTarget(first, "auto"); }, 650);
+  }
+
+  /* Scrolls inner app screens, then the pane, so the target clears the sticky "What's happening" card. */
+  function revealTarget(el, behavior) {
+    const desc = left.querySelector(".left-desc");
     const lr = left.getBoundingClientRect();
-    const r = first.getBoundingClientRect();
-    const covered = desc ? desc.getBoundingClientRect().top : lr.bottom;
-    if (r.bottom > covered || r.top < lr.top) first.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    const floor = (desc ? desc.getBoundingClientRect().top : lr.bottom) - 14;
+    const paneRoom = left.scrollHeight - left.clientHeight - left.scrollTop;
+    for (let a = el.parentElement; a && a !== left; a = a.parentElement) {
+      if (!/auto|scroll/.test(getComputedStyle(a).overflowY) || a.scrollHeight <= a.clientHeight + 1) continue;
+      const ar = a.getBoundingClientRect(), r = el.getBoundingClientRect();
+      const limit = Math.min(ar.bottom - 6, floor + paneRoom);
+      let d = r.bottom > limit ? r.bottom - limit : 0;
+      if (r.top - d < ar.top + 6) d = r.top - ar.top - 6;
+      if (Math.abs(d) > 1) a.scrollTop += d;
+    }
+    const { top, bottom } = el.getBoundingClientRect();
+    let dy = bottom > floor ? bottom - floor : 0;
+    if (top - dy < lr.top + 8) dy = top - lr.top - 8;
+    if (Math.abs(dy) > 1) left.scrollTo({ top: left.scrollTop + dy, behavior });
   }
 
   const AUTO = /[?&]auto\b/.test(location.search);
 
   function tap(names, t) {
     names = [].concat(names);
+    const early = state.early;
+    state.early = null;
+    if (early && early.t === t && names.includes(early.name)) return Promise.resolve(early.name);
     return new Promise((resolve, reject) => {
       state.pending = { names, t, resolve: (n) => { state.pending = null; applyPulse(); resolve(n); }, reject };
       applyPulse();
@@ -241,13 +261,20 @@
 
   left.addEventListener("click", (e) => {
     const el = e.target.closest("[data-tap]");
-    if (!el || !state.pending) return;
+    if (!el) return;
+    if (!state.pending) {
+      /* Clicked before the step asked for it (e.g. while the console is still typing): hold it for the next tap. */
+      state.early = { name: el.dataset.tap, t: Run.token };
+      el.classList.add("tapped");
+      return;
+    }
     if (state.pending.names.includes(el.dataset.tap)) state.pending.resolve(el.dataset.tap);
   });
 
   /* ------------------------------------------------------------ run a step */
   async function go(i, opt = {}) {
     cancelPending();
+    state.early = null;
     closeVignette(false);
     const t = Run.next();
     state.i = Math.max(0, Math.min(ALL.length - 1, i));

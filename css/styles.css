@@ -137,8 +137,13 @@ code { font-family: var(--mono); font-size: .92em; }
 g.pulse { animation: none; cursor: pointer; }
 g.pulse rect:first-child, g.pulse > path:first-child { stroke: var(--red); stroke-width: 3; animation: tileStroke 1.1s ease-in-out infinite; }
 @keyframes tileStroke { 50% { stroke-width: 7; stroke-opacity: .35; } }
-tr.pulse { animation: rowPulse 1.3s ease-in-out infinite; box-shadow: none; }
-@keyframes rowPulse { 50% { background: #fbe3e5; } }
+tr.pulse { animation: none; box-shadow: none; }
+tr.pulse > td { animation: rowPulse 1.3s ease-in-out infinite; }
+tr.pulse > td:first-child { box-shadow: inset 3px 0 0 var(--red); }
+@keyframes rowPulse { 50% { background: #f8d2d6; } }
+tr[data-tap]:hover > td { background: #eef4fa; }
+[data-tap].tapped:not(tr) { outline: 2px solid #0176D3; outline-offset: -2px; }
+tr.tapped > td { background: #e3eefa; }
 [data-tap] { cursor: pointer; }
 
 /* ------------------------------------------------------------ role badge + devices */
