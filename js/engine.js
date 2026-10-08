@@ -476,6 +476,18 @@
     it: { short: "Scales, recovers and is secured, with no single point of failure.", full: "Scales by configuration, recovers on its own, and stays secure and documented." },
   };
 
+  /* The understood problem each chapter answers, so every moment ties back to a pain. */
+  const WRAP_CHALLENGE = {
+    "1": "Corporate sees under 20% of jobs, and no franchise will switch apps.",
+    "2": "A missed SLA surfaces in tomorrow\u2019s report, after the customer complains.",
+    "3": "Duplicates and missing fields leave numbers no one trusts.",
+    "4": "No way to go from the whole network down to a single job.",
+    "5": "Every new platform or location means another hand-built feed.",
+    "6": "When a vendor\u2019s system fails, data is lost and no one notices.",
+    "7": "The integration lives in one person\u2019s head, reviewed by no one.",
+    "8": "Leaders have to go hunting for the numbers, so they don\u2019t.",
+  };
+
   const WRAP_TECH = "MuleSoft Anypoint Platform \u00b7 CloudHub 2.0 \u00b7 Anypoint MQ \u00b7 DataWeave \u00b7 Tableau Cloud \u00b7 Tableau Bridge \u00b7 11:11 SQL Server lake";
 
   const WRAP_ROADMAP = [
@@ -666,9 +678,13 @@
         const pid = CHAPTER_PERSONA[c.id];
         const col = PERSONA_COLORS[pid] || "#0176D3";
         const lines = steps.map((s) => `<li>${esc(WRAP_PROOF[s.id])}</li>`).join("");
+        const chal = WRAP_CHALLENGE[c.id] || "";
         return `<div class="wrap-ch" style="--pc:${col}">
           <div class="wrap-ch-h"><span class="wrap-ch-n">${esc(c.n)}</span>${esc(c.title)}</div>
-          <ul class="wrap-ch-pts">${lines}</ul>
+          ${chal ? `<div class="wrap-ch-chal"><span class="wrap-ch-lbl chal">The challenge</span>${esc(chal)}</div>` : ""}
+          <div class="wrap-ch-now"><span class="wrap-ch-lbl now">What changed</span>
+            <ul class="wrap-ch-pts">${lines}</ul>
+          </div>
         </div>`;
       }).join("");
 
