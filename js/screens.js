@@ -94,7 +94,7 @@ window.Screens = (function () {
     target_completion: { keys: ["started", "target_completion"], tip: "Set a completion date the customer and the carrier can plan around." },
   };
 
-  function path(set, vKey, flash) {
+  function path(set, vKey, flash, tapCur) {
     const v = D.vendors[vKey];
     const lbl = (f) => (v.labels && v.labels[f]) || (D.milestones.find((m) => m.field === f) || {}).label;
     const ms = D.milestones.filter((m) => PATH_FIELDS.includes(m.field));
@@ -108,7 +108,7 @@ window.Screens = (function () {
       <div class="lx-path"><span class="lx-ptog" title="Hide guidance">${SVG.chev}</span><div class="lx-ptrack">${ms
         .map((m, i) => {
           const st = set[m.field] ? "done" : i === cur ? "cur" : "todo";
-          return `<div class="lx-pi ${st} ${m.field === flash ? "just" : ""}" title="${esc(lbl(m.field))}">${st === "done" ? `<i>${SVG.check}</i>` : `<span>${esc(lbl(m.field))}</span>`}</div>`;
+          return `<div class="lx-pi ${st} ${m.field === flash ? "just" : ""}" title="${esc(lbl(m.field))}" ${tapCur && st === "cur" ? `data-tap="${tapCur}"` : ""}>${st === "done" ? `<i>${SVG.check}</i>` : `<span>${esc(lbl(m.field))}</span>`}</div>`;
         })
         .join("")}</div></div>
       <div class="lx-coach">
@@ -218,25 +218,34 @@ window.Screens = (function () {
     const J = D.job;
     const set = st.dates || {};
     const ref = v.payload.job_no || v.payload.JobNumber || v.payload.projectId || v.payload.id;
+    const mapped = st.mapped || [];
+    const spot = (k, cls = "") => `class="${cls} ${mapped.includes(k) ? "mapped" : ""} ${st.flash === k ? "flash" : ""}" ${st.tapF === k ? `data-tap="f-${k}"` : ""}`;
     const fields = D.milestones
       .filter((m) => PATH_FIELDS.includes(m.field))
       .map((m) => {
         const lbl = (v.labels && v.labels[m.field]) || m.label;
         const val = set[m.field];
-        return `<div class="lx-f ${st.flash === m.field ? "flash" : ""}"><label>${esc(lbl)}</label>
+        const k = m.field === "received_accepted" ? "accepted" : m.field;
+        return `<div ${spot(k, `lx-f ${st.flash === m.field ? "flash" : ""}`)}><label>${esc(lbl)}</label>
           <div class="lx-fv">${val ? esc(val) : '<span class="mut">\u2014</span>'}</div></div>`;
       })
       .join("");
+    const lossCell = st.pickLoss
+      ? `<div class="lx-pickf"><small>Loss type</small><b class="lx-sel">Select loss type <i>\u25be</i></b><div class="lx-menu">${["Water", "Fire", "Mold", "Biohazard"]
+          .map((k) => `<span ${k === "Water" ? 'data-tap="loss"' : ""}>${icon(k)} ${k}</span>`).join("")}</div></div>`
+      : st.noLoss
+      ? `<div class="lx-miss"><small>Loss type</small><b>\u2014 None \u2014</b></div>`
+      : `<div ${spot("loss")}><small>Loss type</small><b>${icon(J.loss)} ${J.loss}</b></div>`;
     const actions = (st.actions || []).map((a) => btn(a.label, a.tap, a.kind === "ghost" ? "neutral" : "brand")).join("") || btn("Edit");
     const body = `
       ${pageHead("#5f7480", houseSvg, `${v.name} job`, st.isNew ? "New job" : ref, actions)}
       <div class="lx-hl">
-        <div><small>Franchise</small><b class="lnk">${esc(st.franchise || D.franchise.name)}</b></div>
-        <div><small>Loss type</small><b>${icon(J.loss)} ${J.loss}</b></div>
+        <div ${spot("franchise")}><small>Franchise</small><b class="lnk">${esc(st.franchise || D.franchise.name)}</b></div>
+        ${lossCell}
         <div><small>Category</small><b>${J.category.split(" \u00b7 ")[0]}</b></div>
-        <div><small>Address</small><b>${esc(J.address.split(",")[0])}</b></div>
+        <div ${spot("address")}><small>Address</small><b>${esc(st.address || J.address.split(",")[0])}</b></div>
       </div>
-      ${path(set, vKey, st.flash)}
+      ${path(set, vKey, st.flash, st.tapF === "path" ? "f-path" : null)}
       ${st.activity ? activityCard(st.activity) : card("Job dates", `<div class="lx-fields">${fields}</div>`, { right: `${J.carrier} \u00b7 ${J.claim}` })}
       ${st.activity ? composer(st.activity) : ""}
       ${st.activity && st.activity.sent ? `<div class="sf-toast">${SVG.check}<span>Email was sent. <small>Contacted set to 6:41 AM</small></span></div>` : ""}`;
@@ -244,19 +253,21 @@ window.Screens = (function () {
   }
 
   /* Recent changes on a Dash multi-location account, as the franchise sees them. */
-  function dashJobs() {
+  function dashJobs(o = {}) {
+    const edit = !o.saved;
     const rows = [
-      ["D-889305", "/01 Derby", "2417 N Rock Rd", "Water", "Created 10:12 AM"],
-      ["D-889301", "/01 Derby", "1180 S Webb Rd", "\u2014", "Created 10:09 AM"],
-      ["D-889297", "/03 Andover", "905 E Central Ave", "Fire", "Inspected set 10:04 AM"],
+      ["D-889305", "/01 Derby", "2417 N Rock Rd", "Water", "Created 10:11 AM"],
+      ["D-889301", "/01 Derby", "1180 S Webb Rd", "\u2014", "Created 10:12 AM"],
+      ["D-889297", "/03 Andover", "905 E Central Ave", "Fire", edit ? '<span class="lx-inl">Inspected <b>10:13 AM</b> \u270e</span>' : "Inspected set 10:13 AM"],
     ];
+    const bar = edit ? `<div class="lx-inlbar"><span>1 item edited</span>${btn("Cancel")}${btn("Save", o.tap ? "inline-save" : null, "brand")}</div>` : "";
     const body = `
       ${pageHead("#5f7480", houseSvg, "Dash jobs", "Recently changed", btn("New job"), "Account DASH-M-0412 \u00b7 3 locations")}
       ${card("3 jobs \u00b7 sorted by last modified", `<table class="lx-dt"><thead><tr><th>Job</th><th>Location</th><th>Address</th><th>Loss type</th><th>Last change</th></tr></thead><tbody>${rows
         .map((r) => `<tr><td class="lnk">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td class="mut">${r[4]}</td></tr>`)
-        .join("")}</tbody></table>`)}
+        .join("")}</tbody></table>${bar}`)}
       <p class="lx-note">D-889305 repeats the address, date of loss and claim of D-889214, logged earlier at the main office. D-889301 was saved without a loss type.</p>`;
-    return frame("sync", lx("Dash", ["Jobs", "Schedule", "Estimates"], "Jobs", body, { kind: "vendor", tag: "simulated", avatar: "PM" }), { clock: "10:15 AM" });
+    return frame("sync", lx("Dash", ["Jobs", "Schedule", "Estimates"], "Jobs", body, { kind: "vendor", tag: "simulated", avatar: "PM" }), { clock: o.clock || "10:15 AM" });
   }
 
   /* ------------------------------------------------------------ PuroClean integration admin (illustrative) */
@@ -324,13 +335,15 @@ window.Screens = (function () {
     return admin("platform", "Home", body, "2:45 PM");
   }
 
-  function whatsNext() {
+  function whatsNext(o = {}) {
+    const seen = o.seen || [];
+    const stage = (n, t, d) => `<div class="rm-s ${seen.includes(n) ? "on" : ""}" ${o.tap === n ? `data-tap="st${n}"` : ""}><div class="rm-n">Stage ${n}</div><div class="rm-t">${t}</div><div class="rm-d">${d}</div></div>`;
     return `<div class="roadmap-card">
       <div class="rm-h">Stage roadmap</div>
       <div class="rm-stages">
-        <div class="rm-s on"><div class="rm-n">Stage 1</div><div class="rm-t">Visibility &amp; adoption</div><div class="rm-d">Every job, one record, Tableau. This project.</div></div>
-        <div class="rm-s"><div class="rm-n">Stage 2</div><div class="rm-t">Compliance</div><div class="rm-d">Jobs moving on time. Nothing stuck in limbo.</div></div>
-        <div class="rm-s"><div class="rm-n">Stage 3</div><div class="rm-t">Profitability</div><div class="rm-d">QuickBooks Online. Margin by job and franchise.</div></div>
+        ${stage(1, "Visibility &amp; adoption", "Every job, one record, Tableau. This project.")}
+        ${stage(2, "Compliance", "Jobs moving on time. Nothing stuck in limbo.")}
+        ${stage(3, "Profitability", "QuickBooks Online. Margin by job and franchise.")}
       </div>
       <div class="rm-extras">
         <div class="rm-ex"><div class="rm-et">Weather overlays</div><small>Storm and hail layers on job volume</small></div>
@@ -343,7 +356,12 @@ window.Screens = (function () {
   }
 
   /* ------------------------------------------------------------ Tableau Mobile */
-  function tableauMobile() {
+  function tableauMobile(o = {}) {
+    const c = o.contacted;
+    const acts = `<div class="tm-acts">
+        <button class="sbtn ${o.acked ? "neutral" : "brand"} xs" ${o.tap === "ack" ? 'data-tap="ack"' : ""}>${o.acked ? "\u2713 Acknowledged" : "Acknowledge alert"}</button>
+        <button class="sbtn neutral xs" ${o.tap === "call" ? 'data-tap="call"' : ""}>${PHONE} ${o.called ? "Called \u00b7 2 min" : "Call franchise"}</button>
+      </div>`;
     return phone(
       "rdPhone",
       `<div class="m-app">
@@ -353,25 +371,25 @@ window.Screens = (function () {
           <div class="tm-job">
             <div class="tm-row"><span>Job</span><b>JOB-CA-11902</b></div>
             <div class="tm-row"><span>Franchise</span><b>PuroClean Sacramento North</b></div>
-            <div class="tm-row"><span>Loss type</span><b>Water</b></div>
-            <div class="tm-row sla"><span>Contact SLA</span><b class="err">34 min &nbsp;·&nbsp; MISSED (30 min)</b></div>
-            <div class="tm-row"><span>Received/Accepted</span><b>10:28 AM PT</b></div>
-            <div class="tm-row"><span>Contacted</span><b class="mut">— (not yet)</b></div>
+            <div class="tm-row sla"><span>Contact SLA</span><b class="err">${c ? "38 min &nbsp;·&nbsp; late, now contacted" : "34 min &nbsp;·&nbsp; MISSED (30 min)"}</b></div>
+            <div class="tm-row"><span>Received/Accepted</span><b>7:28 AM PT</b></div>
+            <div class="tm-row"><span>Contacted</span>${c ? "<b>8:06 AM PT</b>" : '<b class="mut">— (not yet)</b>'}</div>
           </div>
+          ${acts}
           <div class="tm-ml"><div class="tm-mlh">Milestones</div>
             ${["Date of Loss", "Dispatch", "Received/Accepted", "Contacted"].map((m, i) => {
-              const done = i < 3;
-              return `<div class="tm-mi ${done ? "done" : "open"}"><i>${done ? SVG.check : ""}</i><span>${m}</span>${done ? "" : "<b class='err'>SLA missed</b>"}</div>`;
+              const done = i < 3 || c;
+              return `<div class="tm-mi ${done ? "done" : "open"}"><i>${done ? SVG.check : ""}</i><span>${m}</span>${done ? (i === 3 ? "<b class='late'>38 min</b>" : "") : "<b class='err'>SLA missed</b>"}</div>`;
             }).join("")}
           </div>
           <div class="tm-foot"><span class="cert">&#9998; Certified data source</span><small>Live via Tableau Bridge</small></div>
         </div></div>`,
-      "10:02"
+      o.clock || "8:03"
     );
   }
 
   /* ------------------------------------------------------------ Tableau Pulse metric detail */
-  function pulseDetail() {
+  function pulseDetail(o = {}) {
     const ohio = [41, 44, 42, 45, 43, 46, 44, 45, 47, 46, 52, 57, 61];
     const avg = 44.2;
     const W = 230, H = 64, P = 4, mn = 36, mx = 64;
@@ -403,8 +421,12 @@ window.Screens = (function () {
           </div>
           ${chart}
           <div class="pz-sec">Top contributors this week</div>
-          ${contribs.map((c) => `<div class="pz-contrib"><div class="pz-ck">${c.metro}</div><div class="pz-cd warn">${c.delta} vs expected</div>${c.note ? `<div class="pz-cn">${c.note}</div>` : ""}</div>`).join("")}
-          <div class="pz-follow"><button class="sbtn brand xs">Follow this metric</button></div>
+          ${contribs.map((c) => {
+            const d = c.metro === "Dayton";
+            const open = d && o.dayton;
+            return `<div class="pz-contrib ${open ? "open" : ""}" ${d && o.tap === "dayton" ? 'data-tap="dayton"' : ""}><div class="pz-ck">${c.metro}${d && !o.dayton ? " <span class=\"pz-more\">Details \u203a</span>" : ""}</div><div class="pz-cd warn">${c.delta} vs expected</div>${open ? '<div class="pz-cn">OH-0731 Dayton North connected Tuesday (MuleSoft) \u00b7 its first 23 open jobs now count \u00b7 without it, Dayton is +1</div>' : c.note && !d ? `<div class="pz-cn">${c.note}</div>` : ""}</div>`;
+          }).join("")}
+          <div class="pz-follow"><button class="sbtn neutral xs">\u2713 Following</button> <button class="sbtn brand xs" ${o.tap === "open" ? 'data-tap="open"' : ""}>Open in Tableau</button></div>
         </div></div>`,
       "7:30"
     );
@@ -459,13 +481,30 @@ window.Screens = (function () {
   }
 
   /* ------------------------------------------------------------ Anypoint Runtime Manager (step 5.2) */
-  function anypointOnboard(done) {
+  /* stage: 0 list · 1 pick from FranConnect · 2 map account · 3 connected */
+  function anypointOnboard(stage) {
+    stage = stage === true ? 3 : stage || 0;
+    const done = stage === 3;
+    const fr = (l, v, cls = "") => `<div class="ap-fr ${cls}"><label>${l}</label><div>${v}</div></div>`;
+    const form = stage === 1 || stage === 2 ? `<div class="ap-sect ap-form">
+        <div class="ap-sh">Connect a franchise \u00b7 step ${stage} of 2</div>
+        ${stage === 1
+          ? `${fr("FranConnect franchise", `<span class="ap-inp">${SVG.search} Dayton</span>`)}
+             <div class="ap-pick" data-tap="pick"><b>OH-0731 \u00b7 PuroClean Dayton North</b><small>Central \u00b7 Open \u00b7 from FranConnect (nightly)</small></div>
+             <div class="ap-pick dim"><b>OH-0702 \u00b7 PuroClean Dayton South</b><small>Central \u00b7 already connected</small></div>`
+          : `${fr("Franchise", "OH-0731 \u00b7 PuroClean Dayton North \u00b7 Central")}
+             ${fr("SPAR platform", "PSA")}
+             ${fr("Platform account", `PSA-T-55120 <span class="ap-badge ok">\u2713 found in PSA</span>`)}
+             ${fr("Sync lanes", "SLA every 5 min \u00b7 nightly 2:00 AM")}
+             <div class="ap-fbtn"><button class="sbtn neutral">Cancel</button><button class="sbtn brand" data-tap="golive">Connect</button></div>`}
+      </div>` : "";
     const body = `
       <div class="ap-page-h">
         <div class="ap-ph-l"><i>${SVG.back}</i><div><b>Franchise connections</b><small>Platform account map · config table in 11:11</small></div></div>
-        <div class="ap-ph-r">${done ? "" : `<button class="sbtn brand" data-tap="golive">+ Connect franchise</button>`}</div>
+        <div class="ap-ph-r">${stage === 0 ? `<button class="sbtn brand" data-tap="new">+ Connect franchise</button>` : ""}</div>
       </div>
       ${done ? `<div class="ap-toast ok">${SVG.check} <b>OH-0731 connected</b> · First jobs flow on the next 5-minute cycle · no deployment needed</div>` : ""}
+      ${form}
       <div class="ap-sect">
         <div class="ap-sh">Franchise · ${done ? "431" : "430"} connected</div>
         <table class="ap-tbl"><thead><tr><th>Franchise ID</th><th>Name</th><th>Platform</th><th>Account</th><th>Status</th></tr></thead>
@@ -483,7 +522,10 @@ window.Screens = (function () {
   }
 
   /* ------------------------------------------------------------ Anypoint Exchange (step 5.3) */
-  function anypointExchange(added) {
+  /* stage: 0 catalog · 1 template page · 2 new asset scaffolded · 3 deployed */
+  function anypointExchange(stage) {
+    stage = stage === true ? 3 : stage || 0;
+    const added = stage === 3;
     const assets = [
       { n: "dash-sapi", t: "REST API", v: "1.4" },
       { n: "psa-sapi", t: "REST API", v: "1.2" },
@@ -495,34 +537,60 @@ window.Screens = (function () {
       { n: "puroclean-canonical-job", t: "DataWeave", v: "1.3" },
       { n: "dq-rules-restoration", t: "DataWeave", v: "1.1" },
     ];
+    const li = (t, s) => `<div class="ex-li"><span>${SVG.check}</span><div><b>${t}</b><small>${s}</small></div></div>`;
+    const detail = stage === 1
+      ? `<div class="ap-sect ex-page">
+          <div class="ex-ph"><span class="ex-tag">Template</span><b>spar-system-api</b><small>v1.0 \u00b7 owner PuroClean IT</small><button class="sbtn brand" data-tap="add">Create from template</button></div>
+          ${li("Scaffold", "System API project with change-feed polling, watermark and retries")}
+          ${li("Depends on", "puroclean-canonical-job v1.3 \u00b7 dq-rules-restoration v1.1")}
+          ${li("Policies", "client ID, OAuth 2.0, JSON threat protection, rate limit")}
+        </div>`
+      : stage === 2
+      ? `<div class="ap-sect ex-page">
+          <div class="ex-ph"><span class="ex-tag new">Draft</span><b>new-sapi</b><small>v1.0 \u00b7 from spar-system-api</small><button class="sbtn brand" data-tap="deploy">Deploy to sandbox</button></div>
+          ${li("Inherited", "polling, watermark, retries, policies, canonical model")}
+          ${li("To write", "new-to-canonical.dwl \u00b7 the new platform\u2019s field names \u2192 18 PuroLogic Dates")}
+          ${li("Target", "CloudHub 2.0 \u00b7 Sandbox \u00b7 job-sync-papi unchanged")}
+        </div>`
+      : "";
     const body = `
       <div class="ap-page-h">
         <div class="ap-ph-l"><div><b>Exchange · PuroClean</b><small>${added ? "10" : "9"} assets · spar-system-api template available</small></div></div>
-        <div class="ap-ph-r">${added ? "" : `<button class="sbtn brand" data-tap="add">+ From template</button>`}</div>
       </div>
       ${added ? `<div class="ap-toast ok">${SVG.check} <b>new-sapi deployed to sandbox</b> · canonical model, Process API, quality rules, 11:11 and Tableau: 0 changes</div>` : ""}
+      ${detail}
       <div class="ex-grid">
+        ${stage === 0 ? `<div class="ex-asset tpl" data-tap="tpl"><div class="ex-an">spar-system-api</div><div class="ex-at">Template · v1.0</div><div class="ex-ad">starting point for a new SPAR platform</div></div>` : ""}
         ${added ? `<div class="ex-asset new"><div class="ex-an">new-sapi</div><div class="ex-at">REST API · v1.0 · In test</div><div class="ex-ad">from spar-system-api template · new mapping</div></div>` : ""}
-        ${assets.map((a) => `<div class="ex-asset"><div class="ex-an">${a.n}</div><div class="ex-at">${a.t} · v${a.v}</div><div class="ex-ad">spec · owner · runbook</div></div>`).join("")}
+        ${assets.slice(0, stage === 1 || stage === 2 ? 3 : assets.length).map((a) => `<div class="ex-asset"><div class="ex-an">${a.n}</div><div class="ex-at">${a.t} · v${a.v}</div><div class="ex-ad">spec · owner · runbook</div></div>`).join("")}
       </div>`;
     return frame("it", lx("Exchange", [], "", body, { kind: "anypoint", avatar: "PC" }), { clock: "2:10 PM" });
   }
 
   /* ------------------------------------------------------------ Anypoint API Manager (step 7.1) */
-  function anypointAPIManager() {
+  function anypointAPIManager(o = {}) {
     const policies = D.security.policies;
+    const res = o.blocked
+      ? `<span class="ap-res err">400 \u00b7 blocked by JSON Threat Protection</span>`
+      : o.sent ? `<span class="ap-res ok">200 OK \u00b7 4 / 4 policies passed</span>` : "";
     const body = `
       <div class="ap-page-h">
         <div class="ap-ph-l"><i>${SVG.back}</i><div><b>psa-sapi v2.0</b><small>REST API · Production · all inbound calls</small></div></div>
         <div class="ap-ph-r"><span class="ap-badge ok">Active</span></div>
       </div>
+      <div class="ap-try"><span class="ap-try-l">API console \u00b7 <code>POST /webhooks/jobs</code></span>
+        <button class="sbtn neutral xs" ${o.tap === "valid" ? 'data-tap="valid"' : ""}>Send valid request</button>
+        <button class="sbtn neutral xs" ${o.tap === "bad" ? 'data-tap="bad"' : ""}>Send malformed payload</button>${res}</div>
       <div class="ap-sect">
         <div class="ap-sh">Applied policies (${policies.length})</div>
         <div class="ap-policies">
-          ${policies.map((p, i) => `<div class="ap-pol">
-            <div class="ap-pol-n"><span class="ap-badge ok">${i + 1}</span> <b>${p}</b></div>
-            <div class="ap-pol-s">API Manager · enforced at the gateway · no code changes</div>
-          </div>`).join("")}
+          ${policies.map((p, i) => {
+            const jt = p.startsWith("JSON");
+            return `<div class="ap-pol ${jt && o.pol ? "open" : ""} ${jt && o.blocked ? "hit" : ""}" ${jt && o.tap === "pol" ? 'data-tap="pol"' : ""}>
+            <div class="ap-pol-n"><span class="ap-badge ok">${i + 1}</span> <b>${p}</b>${jt && !o.pol ? ' <small class="ap-cfg">Configure \u203a</small>' : ""}</div>
+            <div class="ap-pol-s">${jt && o.pol ? "Max depth 10 \u00b7 max string 10 KB \u00b7 max object entries 100 \u00b7 reject with 400 (illustrative)" : "API Manager · enforced at the gateway · no code changes"}</div>
+          </div>`;
+          }).join("")}
         </div>
       </div>
       <div class="ap-sect">
@@ -538,7 +606,7 @@ window.Screens = (function () {
   }
 
   /* ------------------------------------------------------------ Anypoint Exchange catalog (step 7.2) */
-  function anypointExchangeCatalog() {
+  function anypointExchangeCatalog(o = {}) {
     const assets = [
       { n: "dash-sapi", t: "REST API", v: "1.4", doc: "spec · account map · runbook RB-DASH-01" },
       { n: "psa-sapi", t: "REST API", v: "1.2", doc: "spec · webhook config · runbook RB-PSA-01" },
@@ -550,19 +618,38 @@ window.Screens = (function () {
       { n: "puroclean-canonical-job", t: "DataWeave", v: "1.3", doc: "18 PuroLogic Dates · canonical spec · owner" },
       { n: "dq-rules-restoration", t: "DataWeave", v: "1.1", doc: "14 rules · reason codes · quarantine logic" },
     ];
+    const kv = (k, v) => `<div class="ex-kv"><label>${k}</label><div>${v}</div></div>`;
+    const runbook = `<ol class="ex-rb">
+        <li>Confirm on the PSA functional monitor and the vendor status page</li>
+        <li>No action needed for data: polls pause, the watermark holds</li>
+        <li>After recovery, confirm the catch-up count on the jobs-synced dashboard</li>
+      </ol>`;
+    const list = `<table class="ap-tbl wide"><thead><tr><th>Asset</th><th>Type</th><th>Version</th><th>Documentation</th></tr></thead>
+        <tbody>${assets.map((a) => `<tr class="${a.n === "psa-sapi" && o.tap === "asset" ? "tap" : ""}" ${a.n === "psa-sapi" && o.tap === "asset" ? 'data-tap="asset"' : ""}><td class="lnk">${a.n}</td><td class="mut">${a.t}</td><td class="mut">v${a.v}</td><td class="mut">${a.doc}</td></tr>`).join("")}
+        </tbody></table>`;
+    const detail = `<div class="ex-det">
+        <div class="ex-ph"><span class="ex-tag">REST API</span><b>psa-sapi</b><small>v1.2 \u00b7 Production</small></div>
+        ${kv("Owner", "PuroClean IT \u00b7 Nick\u2019s team")}
+        ${kv("Spec", "OAS 3 \u00b7 4 endpoints \u00b7 webhook config")}
+        ${kv("Consumers", "job-sync-papi \u00b7 psa-webhook-service")}
+        ${kv("Runbook", o.runbook ? "<b>RB-PSA-01 \u00b7 PSA outage</b>" : `<a class="lnk" ${o.tap === "runbook" ? 'data-tap="runbook"' : ""}>RB-PSA-01 \u00b7 PSA outage \u203a</a>`)}
+        ${o.runbook ? runbook : ""}
+      </div>`;
+    const mons = ["Dash", "PSA", "Albi", "JobSite", "FranConnect"].map((n) => {
+      const psa = n === "PSA";
+      return `<div class="ap-mon ok ${psa && o.mon ? "open" : ""}" ${psa && o.tap === "mon" ? 'data-tap="mon"' : ""}><span class="ap-dot ok"></span>${n}<small>${psa && o.mon ? "2:42 PM \u00b7 200 \u00b7 212 ms" : "every 5 min"}</small></div>`;
+    }).join("");
     const body = `
       <div class="ap-page-h">
         <div class="ap-ph-l"><div><b>Exchange · PuroClean organization</b><small>9 assets · all documented · all monitored</small></div></div>
       </div>
       <div class="ap-sect">
-        <div class="ap-sh">Assets (9 / 9 documented)</div>
-        <table class="ap-tbl wide"><thead><tr><th>Asset</th><th>Type</th><th>Version</th><th>Documentation</th></tr></thead>
-        <tbody>${assets.map((a) => `<tr><td class="lnk">${a.n}</td><td class="mut">${a.t}</td><td class="mut">v${a.v}</td><td class="mut">${a.doc}</td></tr>`).join("")}
-        </tbody></table>
+        <div class="ap-sh">${o.asset ? "Exchange \u203a psa-sapi" : "Assets (9 / 9 documented)"}</div>
+        ${o.asset ? detail : list}
       </div>
       <div class="ap-sect">
         <div class="ap-sh">Monitoring coverage (5 functional monitors · one per connection)</div>
-        <div class="ap-mon-row">${["Dash", "PSA", "Albi", "JobSite", "FranConnect"].map((n) => `<div class="ap-mon ok"><span class="ap-dot ok"></span>${n}<small>every 5 min</small></div>`).join("")}</div>
+        <div class="ap-mon-row">${mons}</div>
       </div>`;
     return frame("it", lx("Exchange", ["Browse", "My assets"], "Browse", body, { kind: "anypoint", avatar: "PC" }), { clock: "2:42 PM" });
   }
@@ -587,16 +674,17 @@ window.Screens = (function () {
     );
   }
 
-  function failAlert(open) {
+  function failAlert(open, o = {}) {
     const O = D.outage;
     return phone(
       "oncall",
       open
         ? `<div class="m-app">${mHead("Alert email")}
             <div class="m-body">
-              <div class="m-card err"><span class="lx-badge err">Critical</span><b>psa-sapi \u00b7 polls failing (503)</b><p>Since ${O.start} \u00b7 ${O.franchises} franchises on PSA</p><p>Jobs wait in PSA \u00b7 watermark held at ${O.watermark} \u00b7 <b>0 lost</b></p></div>
+              <div class="m-card err"><span class="lx-badge ${o.acked ? "warn" : "err"}">${o.acked ? "Acknowledged" : "Critical"}</span><b>psa-sapi \u00b7 polls failing (503)</b><p>Since ${O.start} \u00b7 ${O.franchises} franchises on PSA</p><p>Jobs wait in PSA \u00b7 watermark held at ${O.watermark} \u00b7 <b>0 lost</b></p></div>
               <div class="m-card"><small>Automatic handling</small><div>1. 3 retries, 10 s apart</div><div>2. PSA polls paused (circuit-breaker pattern)</div><div>3. Catch-up from the watermark when PSA recovers</div></div>
-              <button class="sbtn brand block" data-tap="trace">View trace</button>
+              <button class="sbtn ${o.acked ? "neutral" : "brand"} block m-ack" ${o.acked ? "" : 'data-tap="ack"'}>${o.acked ? "\u2713 Acknowledged by on-call" : "Acknowledge"}</button>
+              <button class="sbtn ${o.acked ? "brand" : "neutral"} block" ${o.acked ? 'data-tap="trace"' : ""}>View trace</button>
               <a class="m-link">Runbook RB-PSA-01: PSA outage \u203a</a>
             </div></div>`
         : `<div class="ph-lock"><div class="ph-time">2:15</div><div class="ph-date">Tuesday, February 16</div>
@@ -607,7 +695,7 @@ window.Screens = (function () {
   }
 
   /* ------------------------------------------------------------ Tableau Pulse (Tableau Mobile) */
-  function pulse() {
+  function pulse(o = {}) {
     const ohio = [41, 44, 42, 45, 43, 46, 44, 45, 47, 46, 52, 57, 61];
     const avg = 44.2;
     const W = 230, H = 64, P = 4, mn = 36, mx = 64;
@@ -627,7 +715,7 @@ window.Screens = (function () {
         <div class="m-body pz">
           <div class="pz-hi"><b>Good morning, CJ</b><small>Wednesday digest \u00b7 3 metrics you follow</small></div>
           <div class="pz-sum"><div class="pz-sk"><i>\u2726</i> Insights summary</div><p>Open water jobs in Ohio are <b>up 38%</b> against the 4-week average, driven by Columbus and Dayton (Dayton includes a franchise connected Tuesday). Your other metrics are on track.</p></div>
-          <div class="pz-card hot">
+          <div class="pz-card hot" ${o.tap ? 'data-tap="card"' : ""}>
             <div class="pz-k">Open water jobs <span>Ohio \u00b7 daily</span></div>
             <div class="pz-v">61 <span class="pz-d up">\u25b2 38% vs 4-wk avg</span></div>
             ${chart}
@@ -672,12 +760,12 @@ window.Screens = (function () {
     return `<div class="tv-bans n${list.length}">${list
       .map((k) => {
         const m = k.s ? k : SERIES[k.k] || {};
-        const tap = k.lineage && opt.tapLineage;
-        const hl = opt.hl === k.k || tap;
+        const tap = k.lineage && opt.tapLineage ? "lineage" : k.tap || null;
+        const hl = opt.hl === k.k || (tap && !k.tap);
         const d = k.d || "";
         const arrow = /^\+/.test(d) ? "\u25b2" : /^[\u2212-]/.test(d) ? "\u25bc" : "";
         const tone = k.tone || m.tone || "neu";
-        return `<div class="tv-ban ${tap ? "tappable" : ""} ${hl ? "hl" : ""} ${k.cls || ""}" ${tap ? 'data-tap="lineage"' : ""}>
+        return `<div class="tv-ban ${tap ? "tappable" : ""} ${hl ? "hl" : ""} ${k.cls || ""}" ${tap ? `data-tap="${tap}"` : ""}>
           <div class="tv-bk">${esc(k.k)}</div>
           <div class="tv-bv">${k.v}</div>
           <div class="tv-bd ${arrow ? tone : "mut"}">${arrow ? `<i>${arrow}</i>` : ""}${esc(d.replace(/^[+\u2212-]/, ""))}</div>
@@ -772,11 +860,11 @@ window.Screens = (function () {
 
   function tabShell(title, crumbs, body, opt = {}) {
     const filters = (opt.filters || [["Region", "All"], ["Loss type", "All"], ["Period", "Last 13 weeks"]])
-      .map(([l, v, on]) => `<div class="tv-f ${on ? "on" : ""}"><label>${l}</label><span>${esc(v)}<i>\u25be</i></span></div>`)
+      .map(([l, v, on, tap]) => `<div class="tv-f ${on ? "on" : ""}" ${tap ? `data-tap="${tap}"` : ""}><label>${l}</label><span>${esc(v)}<i>\u25be</i></span></div>`)
       .join("");
     const viz = `
       <div class="lx-card tv-wrap">
-        <div class="tv-cmp">${TLOGO}<b>${esc(title)}</b><span class="tv-src">Live via Tableau Bridge</span><span class="fresh">\u25cf ${opt.fresh || "SLA data 4 min ago \u00b7 rest as of 2:00 AM"}</span></div>
+        <div class="tv-cmp">${TLOGO}<b>${esc(title)}</b><span class="tv-src">Live via Tableau Bridge</span>${opt.tools || ""}<span class="fresh">\u25cf ${opt.fresh || "SLA data 4 min ago \u00b7 rest as of 2:00 AM"}</span></div>
         <div class="tv-tabs">${SHEETS.map((s) => `<span class="${s === (opt.sheet || "Overview") ? "on" : ""}">${s}</span>`).join("")}</div>
         <div class="tv-dash">
           <div class="tv-top">
@@ -926,30 +1014,42 @@ window.Screens = (function () {
             ${sheet("West Region \u00b7 open jobs by state", hbars(rows))}
             ${sheet("On-time completion \u00b7 13 weeks", area([79, 80, 80, 81, 81, 82, 82, 83, 82, 83, 84, 84, 84], { w: 210, h: 64, min: 76, max: 86, ticks: [78, 84], fmt: (v) => v + "%", ref: 82, refL: "Network 82%", lastL: "84%" }))}
           </div>
-        </div>${subscribeDialog}`, { role: "rd", clock: "12:03 PM", viewAs: "Regional Director, West", sheet: "Regions", filters: [["Region", "West", true], ["Loss type", "All"], ["Period", "Last 13 weeks"]] });
+        </div>${subscribeDialog}`, { role: "rd", clock: "12:03 PM", tools: `<span class="tv-tools"><button class="tv-tool ${view !== "rd" ? "on" : ""}" ${opt.tapWatch ? 'data-tap="watch"' : ""}>${SVG.mail} Subscribe</button><button class="tv-tool">${SVG.bell} Alerts</button></span>`, viewAs: "Regional Director, West", sheet: "Regions", filters: [["Region", "West", true], ["Loss type", "All"], ["Period", "Last 13 weeks"]] });
     }
     if (view === "bench") {
+      const reg = opt.cmp === "central";
+      const REG = [12.3, 9.1, 84, 11.6, 3.0, 4.4];
+      const base = reg ? "Central region average" : "Network average";
       const rows = D.benchmark
-        .map((b) => {
-          const max = Math.max(b.fr, b.net) * 1.3;
-          const good = b.better === "high" ? b.fr >= b.net : b.fr <= b.net;
-          const pct = Math.round((Math.abs(b.fr - b.net) / b.net) * 100);
-          return `<div class="bu-r"><span class="bu-k">${b.k}</span>
-            <span class="bu-t"><span class="bu-band" style="width:${((b.net / max) * 100).toFixed(1)}%"></span><span class="bu-bar ${good ? "good" : "bad"}" style="width:${((b.fr / max) * 100).toFixed(1)}%"></span><span class="bu-ref" style="left:${((b.net / max) * 100).toFixed(1)}%"></span></span>
-            <b>${b.fmt(b.fr)}</b><span class="bu-d ${good ? "good" : "bad"}">${good ? "\u25b2" : "\u25bc"} ${pct}% ${good ? "better" : "worse"}</span></div>`;
+        .map((b, i) => {
+          const net = reg ? REG[i] : b.net;
+          const max = Math.max(b.fr, net) * 1.3;
+          const good = b.better === "high" ? b.fr >= net : b.fr <= net;
+          const pct = Math.round((Math.abs(b.fr - net) / net) * 100);
+          const cyc = i === 1;
+          const tap = cyc && opt.tap === "rank";
+          const tip = cyc && opt.rank ? `<div class="bu-tip">Cycle time 8.1 days \u00b7 rank 38 of 412 franchises (top 10%) \u00b7 network median 9.2 days</div>` : "";
+          return `<div class="bu-r ${tap ? "tap" : ""} ${cyc && opt.rank ? "sel" : ""}" ${tap ? 'data-tap="rank"' : ""}><span class="bu-k">${b.k}</span>
+            <span class="bu-t"><span class="bu-band" style="width:${((net / max) * 100).toFixed(1)}%"></span><span class="bu-bar ${good ? "good" : "bad"}" style="width:${((b.fr / max) * 100).toFixed(1)}%"></span><span class="bu-ref" style="left:${((net / max) * 100).toFixed(1)}%"></span></span>
+            <b>${b.fmt(b.fr)}</b><span class="bu-d ${good ? "good" : "bad"}">${good ? "\u25b2" : "\u25bc"} ${pct}% ${good ? "better" : "worse"}</span></div>${tip}`;
         })
         .join("");
+      const who = opt.who
+        ? `<span class="bu-who on">${reg ? "96 of 101 Central franchises" : "412 of 430 franchises"} \u00b7 ${reg ? "5" : "18"} excluded by data health</span>`
+        : `<span class="bu-who" ${opt.tap === "who" ? 'data-tap="who"' : ""}>Who\u2019s in the average? \u203a</span>`;
       return tabShell("Franchise benchmarking", ["All franchises", "Kansas", D.franchise.name], `
-        ${sheet(`${D.franchise.name} vs network average`, `<div class="bu-lg"><span><i class="bu-sw good"></i>Franchise</span><span><i class="bu-sw ref"></i>Network average</span><span><i class="bu-sw band"></i>0 to network average</span></div>${rows}`, { right: "KPIs from CJ's Data Collection sheet" })}
+        ${sheet(`${D.franchise.name} vs ${base.toLowerCase()}`, `<div class="bu-lg"><span><i class="bu-sw good"></i>Franchise</span><span><i class="bu-sw ref"></i>${base}</span><span><i class="bu-sw band"></i>0 to ${base.toLowerCase()}</span>${who}</div>${rows}`, { right: "KPIs from CJ's Data Collection sheet" })}
         <div class="tv-later"><b>Financial benchmarks</b> Revenue, gross margin, labor and material %, growth trend <span>Stage 3, with QuickBooks Online</span></div>`,
-        { sheet: "Benchmarks", filters: [["Franchise", D.franchise.name, true], ["Compare to", "Network average", true], ["Period", "Last 13 weeks"]] });
+        { sheet: "Benchmarks", filters: [["Franchise", D.franchise.name, true], ["Compare to", reg ? "Central region" : "Network average", true, opt.tap === "cmp" ? "cmp" : null], ["Period", "Last 13 weeks"]] });
     }
     if (view === "lineage") {
       const guide = `<div class="tv-guide"><div class="tg-h">Data Guide</div>
         <div class="tg-i"><small>Metric</small><b>On-Time Completion % <span class="cert">\u2714 Certified data source</span></b></div>
-        <div class="tg-i"><small>Definition <em>(illustrative)</em></small><span>Completed jobs where Majority Completion \u2264 Target Completion, \u00f7 completed jobs</span></div>
-        <div class="tg-i"><small>Data source</small><span><code>curated.job_milestone</code> \u00b7 11:11 SQL Server \u00b7 live via Bridge</span></div>
-        <div class="tg-i"><small>Upstream (documented)</small><span>MuleSoft job-sync-papi \u00b7 4 SPAR System APIs</span></div>
+        ${opt.down ? "" : `<div class="tg-i"><small>Definition <em>(illustrative)</em></small><span>Completed jobs where Majority Completion \u2264 Target Completion, \u00f7 completed jobs</span></div>`}
+        <div class="tg-i ${opt.tapUp ? "tg-tap" : ""} ${opt.up ? "open" : ""}" ${opt.tapUp ? 'data-tap="up"' : ""}><small>Upstream table</small><span><code>curated.job_milestone</code> \u00b7 11:11 SQL Server \u00b7 live via Bridge${opt.up ? "" : " \u203a"}</span>
+          ${opt.up ? `<span class="tg-x">Columns used: <code>majority_completion</code>, <code>target_completion</code><br/>Written by MuleSoft job-sync-papi \u00b7 last write 1:58 PM</span>` : ""}</div>
+        <div class="tg-i ${opt.tapDown ? "tg-tap" : ""} ${opt.down ? "open" : ""}" ${opt.tapDown ? 'data-tap="down"' : ""}><small>Downstream</small><span>6 workbooks \u00b7 3 Pulse metrics \u00b7 2 subscriptions${opt.down ? "" : " \u203a"}</span>
+          ${opt.down ? `<span class="tg-x">Network Operations \u00b7 Franchise benchmarking \u00b7 Data Health \u00b7 West contact speed \u00b7 +2<br/>Contact their owners from Catalog before changing the source</span>` : ""}</div>
         <div class="tg-i"><small>Owner</small><span>PuroClean (owner to be agreed)</span></div></div>`;
       return tabShell("Network Operations", ["All franchises"], `${bans(D.kpis, { tapLineage: opt.tap, hl: opt.tap ? null : "On-time completion" })}
         <div class="tv-g g-lin">
@@ -969,9 +1069,16 @@ window.Screens = (function () {
       const strip = `<div class="tv-int">${plats
         .map(([n, t, s]) => {
           const bad = amber && n === "PSA";
-          return `<div class="ti ${bad ? "amber" : ""}"><div class="ti-h"><i></i><b>${n}</b></div><small>${t}</small>${spark(s, { c: bad ? "#d97a00" : "#59a14f", w: 90, h: 18 })}</div>`;
+          const tap = bad && opt.tapPsa;
+          return `<div class="ti ${bad ? "amber" : ""} ${bad && opt.psa ? "sel" : ""}" ${tap ? 'data-tap="psa"' : ""}><div class="ti-h"><i></i><b>${n}</b></div><small>${bad && opt.psa ? "probe 2:15 \u00b7 503 \u00b7 next 2:16" : t}</small>${spark(s, { c: bad ? "#d97a00" : "#59a14f", w: 90, h: 18 })}</div>`;
         })
         .join("")}</div>`;
+      const O = D.outage;
+      const kvRow = (a, b) => `<tr><td class="mut">${a}</td><td>${b}</td></tr>`;
+      const statusSheet = sheet("Integration status \u00b7 PSA", `<table class="tv-table tv-kv">${kvRow("Status", '<b class="amb">Delayed \u00b7 polls paused</b>')}${kvRow("Since", O.start)}${kvRow("Watermark", `held at ${O.watermark}`)}${kvRow("Jobs lost", "<b>0</b>")}${kvRow("Franchises on PSA", `${O.franchises} ${opt.tapList ? '<a class="lnk tv-a" data-tap="list">View \u203a</a>' : ""}`)}</table>`, { right: "ops.integration_status" });
+      const psaFr = [["CA-0219", "Sacramento North", "2:12 PM"], ["TX-0233", "Houston NW", "2:11 PM"], ["FL-0141", "Orlando South", "2:09 PM"], ["OH-0731", "Dayton North", "2:10 PM"]];
+      const listSheet = sheet(`Franchises on PSA \u00b7 ${O.franchises}`, `<table class="tv-table tv-held"><thead><tr><th>Franchise</th><th>Last synced</th></tr></thead><tbody>${psaFr
+        .map(([id, n, w]) => `<tr><td><b>${id}</b> ${n}</td><td class="r">${w}</td></tr>`).join("")}</tbody></table><div class="tv-note">Top 4 of ${O.franchises} \u00b7 jobs wait in PSA \u00b7 catch-up from ${O.watermark} when it recovers</div>`, { right: "Filtered" });
       const usable = [19, 19, 20, 20, 21, 21, 22, 22, 34, 45, 52, 59, 64];
       const drill = opt.drill === "loss";
       const reasons = [["Missing loss type", 52], ["Dates out of order", 27], ["Unknown account", 14], ["Bad date format", 7]]
@@ -983,20 +1090,29 @@ window.Screens = (function () {
         ["OH-0715", "Columbus E.", "JobSite", 8],
       ];
       const heldSheet = sheet("Held \u00b7 missing loss type", `<table class="tv-table tv-held"><thead><tr><th>Franchise</th><th>Platform</th><th>Held</th></tr></thead><tbody>${held
-        .map(([id, n, p, v, hl]) => `<tr class="${hl ? "hl" : ""}"><td><b>${id}</b> ${n}</td><td>${p}</td><td class="r">${v}</td></tr>`)
-        .join("")}</tbody></table><div class="tv-note">Top 4 of 31 franchises \u00b7 100 records \u00b7 Wichita East includes D-889301 (10:12 AM)</div>`, { right: "Filtered" });
+        .map(([id, n, p, v, hl]) => {
+          const tap = hl && opt.tapRow;
+          return `<tr class="${hl ? "hl" : ""} ${tap ? "tap" : ""}" ${tap ? 'data-tap="ks"' : ""}><td><b>${id}</b> ${n}</td><td>${p}</td><td class="r">${v}</td></tr>`;
+        })
+        .join("")}</tbody></table><div class="tv-note">Top 4 of 31 franchises \u00b7 100 records \u00b7 Wichita East includes D-889301 (10:12 AM)</div>`, { right: opt.tapRow ? "Click Wichita East" : "Filtered" });
+      const recs = [["D-889301", "1180 S Webb Rd", "10:12 AM"], ["D-889288", "640 N Rock Rd", "9:41 AM"], ["D-889262", "3310 E Douglas", "Mon"]];
+      const shareBtn = opt.shared
+        ? '<span class="tv-shared">\u2713 Shared with RD, Central</span>'
+        : `<button class="sbtn neutral xs" ${opt.tapShare ? 'data-tap="share"' : ""}>Share</button>`;
+      const recSheet = sheet("KS-0412 \u00b7 held", `<table class="tv-table tv-held"><thead><tr><th>Job</th><th>Held</th><th>SLA clock</th></tr></thead><tbody>${recs
+        .map(([j, a, h], i) => `<tr class="${i === 0 ? "hl" : ""}"><td><b>${j}</b></td><td>${h}</td><td>running</td></tr>`).join("")}</tbody></table><div class="tv-note">11 records \u00b7 DQ-014 \u00b7 each loads on its next Dash update</div>`, { right: shareBtn });
       const trend = sheet("Usable data, % of franchises", area(usable, { w: 230, h: 84, min: 0, max: 100, ticks: [0, 50, 100], fmt: (v) => v + "%", c: "#59a14f", ann: [[8, "Wave 1"], [11, "Wave 2"]], ref: 90, refL: "Goal 90% (illustrative)", lastL: "64%" }));
       return tabShell("Data Health & Integrations", drill ? ["All franchises", "Missing loss type"] : ["All franchises"], `${bans([
           { k: "Franchises with usable data", v: "64%", d: "+45 pts since Nov", tone: "good", s: usable },
-          { k: "Integrations working", v: amber ? "4 / 5" : "5 / 5", d: amber ? "PSA delayed \u00b7 catch-up when back" : "all platforms syncing", cls: amber ? "amber" : "ok" },
+          { k: "Integrations working", v: amber ? "4 / 5" : "5 / 5", d: amber ? "PSA delayed \u00b7 catch-up when back" : "all platforms syncing", cls: `${amber ? "amber" : "ok"} ${opt.tile ? "sel" : ""}`, tap: opt.tapTile ? "tile" : null },
           { k: "Records held \u00b7 7 days", v: "192", d: "0.4% of updates", tone: "good", s: [0.9, 0.85, 0.8, 0.8, 0.7, 0.66, 0.6, 0.58, 0.55, 0.5, 0.46, 0.42, 0.4] },
           { k: "Duplicates merged \u00b7 7 days", v: "146", d: "never double-counted" },
         ])}
         ${strip}
         <div class="tv-g g-half">
-          ${drill ? "" : trend}
-          ${sheet("Top reasons records are held", hbars(reasons, { max: 56 }), { right: opt.tapReason ? "Click a reason" : "" })}
-          ${drill ? heldSheet : ""}
+          ${opt.tile ? statusSheet : drill ? "" : trend}
+          ${opt.list ? listSheet : sheet("Top reasons records are held", hbars(reasons, { max: 56 }), { right: opt.tapReason ? "Click a reason" : "" })}
+          ${drill ? (opt.rec ? recSheet : heldSheet) : ""}
         </div>`, { sheet: "Data Health", clock: opt.clock || (amber ? "2:14 PM" : "2:13 PM"), fresh: amber ? "PSA delayed since 2:14 PM" : undefined });
     }
     if (view === "agent") {
@@ -1047,8 +1163,8 @@ window.Screens = (function () {
       const open = !!opt.expand;
       const dayton = open
         ? `<div class="ex-fr">${[["OH-0731 Dayton North", 7, "new"], ["OH-0702 Dayton South", 5], ["OH-0745 Springfield", 3]]
-            .map(([f, v, n]) => `<div class="ex-fb ${n ? "new" : ""}"><span>${f}</span><i><s style="width:${(v / 8) * 100}%"></s></i><b>${v}</b>${n ? '<em>connected Tue</em>' : ""}</div>`)
-            .join("")}<div class="ex-dd">Without Dayton North, Dayton is in its normal range. The jobs were always there; now corporate sees them.</div></div>`
+            .map(([f, v, n]) => `<div class="ex-fb ${n ? "new" : ""} ${n && opt.tapNew ? "tap" : ""} ${n && opt.records ? "sel" : ""}" ${n && opt.tapNew ? 'data-tap="dn"' : ""}><span>${f}</span><i><s style="width:${(v / 8) * 100}%"></s></i><b>${v}</b>${n ? `<em>${opt.records ? "23 jobs \u00b7 first synced Tue 2:10 PM via MuleSoft psa-sapi" : "connected Tue \u00b7 view data \u203a"}</em>` : ""}</div>`)
+            .join("")}<div class="ex-dd">${opt.records ? "Jobs dated before Tuesday that corporate couldn\u2019t see until the connection. Not a real surge." : "Without Dayton North, Dayton is in its normal range. The jobs were always there; now corporate sees them."}</div></div>`
         : `<div class="ex-dd">OH-0731 (Dayton North) connected Tuesday \u00b7 first 23 jobs now visible</div>${opt.tapDayton ? '<div class="ex-more">See franchises \u203a</div>' : ""}`;
       const explainPane = `<div class="tv-explain ${open ? "open" : ""}"><div class="ex-head">${TLOGO} Explain Data &nbsp; <small>Ohio · open water jobs</small></div>
         <div class="ex-val"><b>61</b><span class="warn">Above expected (38–52)</span></div>

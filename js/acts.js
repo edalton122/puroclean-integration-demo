@@ -207,17 +207,24 @@ window.Acts = (function () {
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
         const logged = { date_of_loss: "6:12 AM", dispatch: "6:20 AM" };
-        x.left(S.jobApp({ isNew: true, dates: logged, actions: [{ label: "Save", tap: "save" }], clock: "6:21 AM" }));
+        x.left(S.jobApp({ isNew: true, pickLoss: true, dates: logged, actions: [{ label: "Save" }], clock: "6:21 AM" }));
         C.graph(C.baseGraph()); C.tab("flow"); C.setClock("06:21:10");
         C.caption("MuleSoft checks each SPAR platform for new and changed jobs every 5 minutes (polling shown; webhooks where a vendor offers them).");
         C.ambient(x.t, POLLS, { every: 520 });
         C.clock([{ l: "Polls today", n: 308, v: "{n}", s: "4 SPAR platforms" }, { l: "SLA lane", v: "every 5 min", s: "4 SLA milestones (illustrative)" }, { l: "Connections", v: "5", s: "4 SPAR + FranConnect", state: "ok" }, { l: "Before MuleSoft", v: "Dash every ~2 hrs", s: "for comparison" }]);
         await N("job-sync-papi \u00b7 scheduler */5 \u00b7 4 SPAR System APIs \u00b7 GET ?updated_since={watermark}", "MuleSoft checks every platform for changes");
+        C.caption("The PM fills in the new job the way they always do. Pick Water as the loss type.");
+        await x.tap("loss");
+        x.left(S.jobApp({ isNew: true, dates: logged, flash: "loss", actions: [{ label: "Save", tap: "save" }], clock: "6:21 AM" }));
+        C.ring("dash"); C.tag("dash", "loss_type \"H2O\"", "");
+        await N("Dash \u00b7 new job form \u00b7 Loss type Water \u00b7 stored by Dash as loss_type \"H2O\" (illustrative code)", "Dash stores Water in its own code; MuleSoft translates it later");
+        C.caption("Click Save. Nothing about the franchise\u2019s workflow changes.");
         await x.tap("save");
         x.left(S.jobApp({ dates: logged, actions: [{ label: "Accept job", tap: "accept" }], clock: "6:21 AM" }));
         C.ring("dash"); C.node("dash", "active"); C.tag("dash", "INSERT D-889214", "new");
         await N("Dash \u00b7 INSERT job D-889214 \u00b7 updated_at 12:21:30Z > watermark 12:20:00Z \u2192 picked up by the 12:25 poll", "The job is saved in Dash; MuleSoft will see it on the next cycle");
         C.clock([{ l: "Polls today", n: 308, v: "{n}", s: "4 SPAR platforms" }, { l: "Changed in Dash", n: 1, v: "{n} job", state: "run" }, { l: "Connections", v: "5", s: "4 SPAR + FranConnect", state: "ok" }, { l: "Next Dash poll", v: "6:25 AM" }]);
+        C.caption("Click Accept job. Acceptance is what starts the customer-contact clock.");
         await x.tap("accept");
         x.left(S.jobApp({ dates: datesUpTo("received_accepted"), flash: "received_accepted", clock: "6:24 AM" }));
         C.ring("dash"); C.tag("dash", "accepted_at", "new");
@@ -232,27 +239,40 @@ window.Acts = (function () {
       powered: ["MuleSoft Anypoint", "System + Process APIs", "DataWeave", "FranConnect reference"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
-        x.left(S.jobApp({ dates: datesUpTo("received_accepted"), clock: "6:25 AM" }));
+        const dates = datesUpTo("received_accepted");
+        const app = (tapF, mapped) => x.left(S.jobApp({ dates, tapF, mapped, clock: "6:25 AM" }));
+        app("loss", []);
         C.graph(C.baseGraph()); C.tab("flow"); C.setClock("06:25:00");
-        C.caption("The 6:25 poll picks up the job. The Dash System API translates it; the Process API enriches it.");
+        C.caption("The 6:25 poll picks up the job. Click the Loss type on the Dash job to see how MuleSoft reads and translates it.");
         C.ambient(x.t, POLLS.filter((p) => p[0] !== "s-dash"), { every: 700 });
         C.payload({
           left: { title: "Dash payload (source \u00b7 field names illustrative)", obj: dashSnap, hl: ["loss_type", "loss_date", "dispatched_at", "accepted_at", "account"] },
           right: { title: "PuroClean canonical job (PuroLogic Dates)", obj: canonSnap, hl: ["loss_type", "date_of_loss", "dispatch", "received_accepted", "franchise_id", "region", "state"] },
           map: dashMap,
         });
+        await x.tap("f-loss");
         await C.packet(["s-dash", "dash"], x.t, { kind: "q", dur: 420, finalState: "active" });
         C.tag("dash", "200 OK \u00b7 1 changed \u00b7 184 ms", "ok");
         await N("dash-sapi \u00b7 GET /v2/jobs?updated_since=12:20:00Z \u2192 200 \u00b7 1 record \u00b7 184 ms", "Dash's connector found 1 new job");
         await C.packet(["dash", "s-dash"], x.t);
         C.tag("s-dash", "dash-to-canonical.dwl v1.3", "");
-        await N("dash-sapi \u00b7 DataWeave dash-to-canonical.dwl \u00b7 4 fields \u2192 canonical job", "Translating Dash's fields into PuroClean's format");
-        const box = await C.transform(dwRows.slice(0, 4), x.t, { script: "dash-sapi \u00b7 dash-to-canonical.dwl" });
+        const box = await C.transform(dwRows.slice(0, 1), x.t, { script: "dash-sapi \u00b7 codes" });
+        await N("dash-sapi \u00b7 DataWeave dash-to-canonical.dwl \u00b7 loss_type \"H2O\" \u2192 \"Water\"", "Dash's code for Water becomes PuroClean's standard value");
+        app("accepted", ["loss"]);
+        C.caption("Now click Received/Accepted. Dash stores local time; PuroClean stores UTC.");
+        await x.tap("f-accepted");
+        C.ring("s-dash");
+        await C.transform(dwRows.slice(1, 4), x.t, { script: "dash-sapi \u00b7 dates and time zones", into: box.parentElement });
+        await N("dash-sapi \u00b7 dash-to-canonical.dwl \u00b7 3 dates \u00b7 America/Chicago (-06:00) \u2192 UTC \u00b7 renamed to PuroLogic Dates", "Three dates renamed and moved to one time zone");
         await C.packet(["s-dash", "proc"], x.t);
+        app("franchise", ["loss", "accepted"]);
+        C.caption("Finally, click the Franchise. Dash only knows an account number; MuleSoft attaches PuroClean\u2019s franchise and region.");
+        await x.tap("f-franchise");
         await C.packet(["fran", "s-fran", "proc"], x.t, { kind: "ref", dur: 420 });
         C.tag("s-fran", "cache hit \u00b7 3 ms", "ok");
         await N("job-sync-papi \u00b7 enrich \u00b7 account DASH-M-0412/02 \u2192 franchise KS-0412 (account map) \u00b7 region Central (illustrative) \u00b7 FranConnect cache", "Matched to PuroClean Wichita East");
         await C.transform(dwRows.slice(4), x.t, { script: "job-sync-papi \u00b7 account map + FranConnect", into: box.parentElement });
+        app(null, ["loss", "accepted", "franchise"]);
         C.node("proc", "ok", undefined);
         C.clock([{ l: "Fields mapped", n: 6, v: "{n} / 6", state: "ok" }, { l: "Timezone", v: "America/Chicago \u2192 UTC" }, { l: "Enrichment", v: "KS-0412 \u00b7 Central" }, { l: "Since the poll", n: 27, v: "{n} s", state: "run" }]);
       },
@@ -263,13 +283,19 @@ window.Acts = (function () {
       powered: ["MuleSoft Database Connector", "11:11 SQL Server lake (Nick's environment)", "Private connection to 11:11"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
-        x.left(S.jobApp({ dates: datesUpTo("received_accepted"), clock: "6:25 AM" }));
+        const dates = datesUpTo("received_accepted");
+        const app = (tapF, mapped) => x.left(S.jobApp({ dates, tapF, mapped, clock: "6:25 AM" }));
+        app("address", []);
         C.graph(C.baseGraph()); ["dash", "s-dash", "fran", "s-fran"].forEach((n) => C.node(n, "ok")); C.tab("flow"); C.setClock("06:25:38");
-        C.caption("Quality checks pass, then the record is upserted into 11:11 over a private connection.");
+        C.caption("Quality checks, then an upsert into 11:11 over a private connection. Click the Address: it\u2019s part of the duplicate check.");
         C.ambient(x.t, POLLS.filter((p) => p[0] !== "s-dash"), { every: 700 });
+        await x.tap("f-address");
         await C.packet(["proc", "dq"], x.t);
         C.tag("dq", "14 / 14 rules \u2713 \u00b7 no duplicate", "ok");
         await N("dq \u00b7 14 rules passed \u00b7 dedupe key (address, date_of_loss, carrier_claim) \u00b7 0 matches", "Quality checks passed; not a duplicate");
+        app("accepted", ["address"]);
+        C.caption("Click Received/Accepted to follow the job\u2019s dates into the 11:11 lake.");
+        await x.tap("f-accepted");
         await C.packet(["dq", "lake"], x.t);
         C.ring("lake"); C.tag("lake", "MERGE \u00b7 1 job \u00b7 3 dates", "new");
         await N("11:11 (private link) \u00b7 MERGE staging.job_milestone \u2192 EXEC curated.usp_promote_job", "Written to the PuroClean data lake");
@@ -277,6 +303,10 @@ window.Acts = (function () {
           { lvl: "sql", raw: code("MERGE staging.job_milestone AS t USING @batch AS s ON t.source_system = s.source_system AND t.source_job_id = s.source_job_id AND t.milestone = s.milestone WHEN MATCHED THEN UPDATE SET t.ts = s.ts WHEN NOT MATCHED THEN INSERT (\u2026) VALUES (\u2026);"), exec: "Written to the data lake" },
           { lvl: "ok", raw: "poll 6:25:00 \u2192 curated 6:25:41 (41 s) \u00b7 accepted 6:24:00 \u2192 curated 1m 41s", exec: "In the lake 41 seconds after MuleSoft picked it up" },
         ], x.t);
+        app("path", ["address", "accepted"]);
+        C.caption("Click Contacted, the next step on the path. Its 30-minute clock is now running on the corporate side too.");
+        await x.tap("f-path");
+        app(null, ["address", "accepted"]);
         C.clock([{ l: "Poll to lake", n: 41, v: "{n} s", state: "ok" }, { l: "Accept to lake", v: "1m 41s", s: "always inside ~5.5 min" }, { l: "SLA timer", v: "Contacted due 6:54", s: "30 min (illustrative)", state: "run" }, { l: "Write mode", v: "upsert", s: "no duplicates" }]);
         await C.packet(["lake", "tab"], x.t, { kind: "res" });
         C.tag("tab", "visible in Tableau", "ok");
@@ -376,11 +406,28 @@ window.Acts = (function () {
         C.tag("notify", "email \u00b7 sent", "err");
         x.left(S.slaAlert(true));
         await N("notification-api \u00b7 POST /alerts \u00b7 channel email \u00b7 202 Accepted \u00b7 412 ms", "The RD gets an email alert");
+        C.caption("Tap the alert to open the job in Tableau Mobile.");
         await x.tap("open");
         C.node("notify", "ok");
+        x.left(S.tableauMobile({ tap: "ack" }));
         await N("link \u2192 Tableau Cloud \u00b7 Network Operations \u203a JOB-CA-11902 \u00b7 row-level security: West", "The RD opens the job in Tableau \u2014 on their phone, in Tableau Mobile");
-        x.left(S.tableauMobile());
         C.clock([{ l: "Detected", v: "+34 min" }, { l: "Alert sent in", n: 0.4, dec: 1, v: "{n} s", state: "ok" }, { l: "Routed to", v: "RD, West" }]);
+        C.caption("Tap Acknowledge so the alert doesn\u2019t escalate any further.");
+        await x.tap("ack");
+        x.left(S.tableauMobile({ acked: true, tap: "call" }));
+        await C.packet(["notify", "proc"], x.t, { kind: "res", dur: 380 });
+        C.tag("notify", "acknowledged \u00b7 rd.west", "ok");
+        await N("notification-api \u00b7 PATCH /alerts/A-20417 status=acknowledged by rd.west \u00b7 escalation to the VP of Operations cancelled (illustrative rule)", "Acknowledged: the alert stops escalating");
+        C.caption("Tap Call franchise. The RD calls Sacramento North while the customer is still waiting.");
+        await x.tap("call");
+        x.left(S.tableauMobile({ acked: true, called: true, clock: "8:06" }));
+        await C.log([{ lvl: "info", at: "10:06:00", raw: "PSA \u00b7 JOB-CA-11902 \u00b7 franchise logs the customer call \u00b7 FirstContactDT = 16:06Z", exec: "After the RD's call, the franchise contacts the customer" }], x.t);
+        C.setClock("10:10:00");
+        await C.packet(["psa", "s-psa", "proc"], x.t, { dur: 420 });
+        C.tag("proc", "CONTACT_30 closed \u00b7 38 min", "warn");
+        x.left(S.tableauMobile({ acked: true, called: true, contacted: true, clock: "8:10" }));
+        await N("job-sync-papi \u00b7 10:10 PSA poll \u00b7 contacted 16:06Z \u2192 SLA CONTACT_30 closed late at 38 min \u00b7 alert A-20417 resolved \u00b7 Tableau updates live", "The next poll picks up the contact; the alert resolves itself");
+        C.clock([{ l: "Detected", v: "+34 min" }, { l: "Alert sent in", n: 0.4, dec: 1, v: "{n} s", state: "ok" }, { l: "Acknowledged", v: "1 min", state: "ok" }, { l: "Customer contacted", v: "+38 min", state: "warn", s: "4 min after the alert" }]);
       },
     },
 
@@ -391,17 +438,32 @@ window.Acts = (function () {
       powered: ["DataWeave validation", "MuleSoft error handling", "Quarantine table in 11:11"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
-        x.left(S.jobApp({ isNew: true, role: "sync", franchise: "PuroClean Wichita East \u00b7 Derby office", dates: { date_of_loss: "6:12 AM", dispatch: "6:20 AM" }, actions: [{ label: "Save", tap: "save" }], clock: "10:12 AM" }));
+        const derby = "PuroClean Wichita East \u00b7 Derby office";
+        x.left(S.jobApp({ isNew: true, role: "sync", franchise: derby, dates: { date_of_loss: "6:12 AM", dispatch: "6:20 AM" }, actions: [{ label: "Save", tap: "save" }], clock: "10:11 AM" }));
         const g = C.baseGraph();
         g.nodes.forEach((n) => { if (n.id === "quar") n.kind = "store"; });
-        C.graph(g); C.tab("flow"); C.setClock("10:12:00");
-        C.caption("The Derby office logs a job the main office already logged at 6:21 AM.");
+        C.graph(g); C.tab("flow"); C.setClock("10:11:00");
+        C.caption("The Derby office logs a job the main office already logged at 6:21 AM. Click Save.");
         C.ambient(x.t, POLLS.filter((p) => p[0] !== "s-dash"), { every: 700 });
         await N("Dash \u00b7 account DASH-M-0412 (multi-location) \u00b7 location /01 Derby \u00b7 new job in progress", "A second location is entering the same job");
         await x.tap("save");
-        x.left(S.dashJobs());
+        C.ring("dash"); C.tag("dash", "INSERT D-889305", "new");
+        await N("Dash \u00b7 INSERT D-889305 \u00b7 same address, date of loss and claim as D-889214 \u00b7 queued for the 10:15 poll", "Saved in Dash; MuleSoft sees it on the next cycle");
+        x.left(S.jobApp({ isNew: true, role: "sync", franchise: derby, noLoss: true, address: "1180 S Webb Rd", dates: { date_of_loss: "8:40 AM", dispatch: "8:55 AM", received_accepted: "9:05 AM" }, actions: [{ label: "Save", tap: "save2" }], clock: "10:12 AM" }));
+        C.setClock("10:12:00");
+        C.caption("Next, a rushed entry with no loss type. Click Save.");
+        await x.tap("save2");
+        C.ring("dash"); C.tag("dash", "INSERT D-889301", "new");
+        await N("Dash \u00b7 INSERT D-889301 \u00b7 loss_type empty \u00b7 Dash accepts it as entered", "Dash accepts it; MuleSoft's quality rules will catch it");
+        x.left(S.dashJobs({ tap: true, clock: "10:13 AM" }));
+        C.setClock("10:13:00");
+        C.caption("The Andover office records an inspection time inline. Click Save.");
+        await x.tap("inline-save");
+        x.left(S.dashJobs({ saved: true }));
+        C.ring("dash"); C.tag("dash", "UPDATE D-889297", "new");
+        await N("Dash \u00b7 UPDATE D-889297 SET inspected_at 16:13Z \u00b7 location /03 Andover", "A clean update from a third location");
         C.setClock("10:15:00");
-        C.caption("The 10:15 poll picks up three changes from the multi-location account.");
+        C.caption("The 10:15 poll picks up the three saves from the multi-location account.");
         await C.packet(["s-dash", "dash"], x.t, { kind: "q", dur: 380, finalState: "active" });
         C.tag("dash", "200 OK \u00b7 3 changed", "ok");
         await N("dash-sapi \u00b7 GET /v2/jobs?updated_since=15:10:00Z \u2192 3 changes on DASH-M-0412", "Three changes picked up from Dash");
@@ -439,11 +501,19 @@ window.Acts = (function () {
         await N("SELECT reason_code, COUNT(*) FROM quarantine.job WHERE held_at > DATEADD(day, -7, SYSUTCDATETIME()) GROUP BY reason_code", "Held records, counted by reason for the last 7 days");
         C.caption("Click \u201cMissing loss type\u201d to see which franchises\u2019 records are held.");
         await x.tap("reason");
-        x.left(S.tableau("health", { clock: "10:31 AM", drill: "loss" }));
+        x.left(S.tableau("health", { clock: "10:31 AM", drill: "loss", tapRow: true }));
         C.tag("quar", "100 \u00b7 missing loss type", "err", { stay: true });
-        C.caption("A filter action: the reason chart filters the held-records sheet to one reason.");
+        C.caption("A filter action: the reason chart filters the held-records sheet to one reason. Click Wichita East.");
         await N("SELECT franchise_id, platform, COUNT(*) FROM quarantine.job WHERE reason_code = 'DQ-014' AND held_at > DATEADD(day, -7, SYSUTCDATETIME()) GROUP BY franchise_id, platform", "Held records for missing loss type, by franchise");
-        await N("KS-0412 \u00b7 11 held \u00b7 includes D-889301 from 10:12 AM \u00b7 retries automatically on the next Dash update", "CJ knows exactly which franchises to follow up with");
+        await x.tap("ks");
+        x.left(S.tableau("health", { clock: "10:31 AM", drill: "loss", rec: true, tapShare: true }));
+        C.ring("quar");
+        await N("SELECT source_job_id, address, held_at FROM quarantine.job WHERE franchise_id = 'KS-0412' AND reason_code = 'DQ-014' \u2192 11 rows \u00b7 includes D-889301 from 10:12 AM", "Wichita East's held jobs, including the one from the last step");
+        C.caption("Click Share to send this filtered view to the Central RD, who owns the follow-up.");
+        await x.tap("share");
+        x.left(S.tableau("health", { clock: "10:32 AM", drill: "loss", rec: true, shared: true }));
+        C.tag("tab", "shared \u00b7 RD Central", "ok", { stay: true });
+        await N("tableau \u00b7 share view Data Health (Reason = DQ-014, Franchise = KS-0412) \u2192 rd.central \u00b7 opens with the same filters \u00b7 row-level security: Central", "The RD gets a link to exactly these records");
         C.extra(linCard('"Franchises with usable data" \u00b7 how it\'s measured', [
           ["Tableau measure", "Usable Data % (certified data source)", "definition illustrative"],
           ["Rule", "franchise has \u2265 90% of jobs with all required PuroLogic Dates + loss type", "illustrative threshold"],
@@ -499,9 +569,13 @@ window.Acts = (function () {
         await N("data source filter [Username] = USERNAME() \u2192 SQL: JOIN ref.user_region u ON u.region = j.region WHERE u.username = 'rd.west@\u2026'", "Only West Region rows are allowed");
         await query(x, ["user", "tabd", "rls", "bridge", "views"], { rows: "137 rows", ms: "164 ms", sql: "v_open_jobs \u2229 region West \u2192 CA 74 \u00b7 OR 19 \u00b7 WA 28 \u00b7 NV 16 = 137", exec: "137 open jobs in the West Region" });
         C.clock([{ l: "States visible", n: 4, v: "{n} of 51" }, { l: "Open jobs", n: 137, v: "{n}", state: "ok" }, { l: "Copies of the dashboard", n: 1, v: "{n}" }]);
+        x.left(S.tableau("rd", { tapWatch: true }));
+        C.caption("Click Subscribe in the toolbar.");
+        await x.tap("watch");
         x.left(S.tableau("rd-subscribe", { tapSub: true }));
-        C.caption("Click \u201cSubscribe & create alert\u201d to set up the automation.");
+        C.ring("tabd");
         await N("RD opens Subscribe \u00b7 weekly digest every Monday 7 AM Pacific \u00b7 plus a data-driven alert: on-time completion (West) < 80%", "The RD sets a weekly digest and an alert threshold");
+        C.caption("Click \u201cSubscribe & create alert\u201d to set up the automation.");
         await x.tap("subscribe");
         x.left(S.tableau("rd-subscribed", { tapPreview: true }));
         C.tag("tabd", "1 subscription \u00b7 1 alert", "ok", { stay: true });
@@ -527,12 +601,26 @@ window.Acts = (function () {
       powered: ["Tableau Cloud"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
-        x.left(S.tableau("bench"));
+        x.left(S.tableau("bench", { tap: "rank" }));
         const g = tabGraph(); g.compact = true;
         C.graph(g); C.tab("flow"); C.setClock("14:02:00");
         C.caption("Benchmarks only count franchises whose data passes the quality rules.");
         C.ambient(x.t, [["mule", "views"]], { every: 900 });
-        await query(x, ["user", "tabd", "sem", "bridge", "views"], { rows: "6 KPIs", ms: "212 ms", sql: "tableau calc \u00b7 { FIXED [Franchise] : AVG([KPI]) } \u00b7 filter usable_data = 1 \u00b7 last 90 days \u2192 network baseline", exec: "Network averages, from franchises with usable data" });
+        const Q = ["user", "tabd", "sem", "bridge", "views"];
+        await query(x, Q, { rows: "6 KPIs", ms: "212 ms", sql: "tableau calc \u00b7 { FIXED [Franchise] : AVG([KPI]) } \u00b7 filter usable_data = 1 \u00b7 last 90 days \u2192 network baseline", exec: "Network averages, from franchises with usable data" });
+        C.caption("Click the Cycle time row to see where Wichita East ranks.");
+        await x.tap("rank");
+        x.left(S.tableau("bench", { rank: true, tap: "who" }));
+        await query(x, Q, { rows: "412 rows", ms: "96 ms", sql: "tableau calc \u00b7 RANK(AVG([Cycle time]), 'asc') over franchises with usable data \u2192 KS-0412 rank 38 of 412", exec: "Wichita East: 38th fastest of 412 franchises" });
+        C.caption("Click \u201cWho\u2019s in the average?\u201d to see which franchises count.");
+        await x.tap("who");
+        x.left(S.tableau("bench", { rank: true, who: true, tap: "cmp" }));
+        C.ring("views");
+        await query(x, Q, { rows: "430 rows", ms: "74 ms", sql: "SELECT usable_data, COUNT(*) FROM curated.v_franchise_health GROUP BY usable_data \u2192 412 included \u00b7 18 excluded", exec: "18 franchises are left out until their data passes the quality rules" });
+        C.caption("Switch Compare to: Central region, Wichita East\u2019s own region.");
+        await x.tap("cmp");
+        x.left(S.tableau("bench", { rank: true, who: true, cmp: "central" }));
+        await query(x, Q, { rows: "6 KPIs", ms: "118 ms", sql: "\u2026 { FIXED [Region], [KPI] : AVG(...) } WHERE region = 'Central' AND usable_data = 1 \u2192 96 franchises", exec: "Same KPIs, compared with the Central region" });
         C.extra(linCard('"Network average" \u00b7 how it\'s calculated', [
           ["Grain", "per franchise, trailing 90 days", "illustrative"],
           ["Network average", "mean across franchises with usable data", "excludes held records"],
@@ -578,7 +666,20 @@ window.Acts = (function () {
         });
         C.tag("tab", "On-Time Completion %", "new", { stay: true });
         C.extra(lineageTable(5));
-        C.caption("From CJ's KPI, through Tableau and MuleSoft, back to each platform's field and API.");
+        x.left(S.tableau("lineage", { tapUp: true }));
+        C.caption("From CJ's KPI back to each platform's field. In the Data Guide, click the upstream table.");
+        await x.tap("up");
+        x.left(S.tableau("lineage", { up: true, tapDown: true }));
+        C.ring("lake", "new");
+        C.tag("lake", "written by job-sync-papi \u00b7 1:58 PM", "ok", { stay: true, dy: 70 });
+        await N("tableau catalog \u00b7 curated.job_milestone \u00b7 columns majority_completion, target_completion \u00b7 upstream writer: MuleSoft job-sync-papi (documented) \u00b7 last write 13:58", "The exact columns behind the KPI, and the MuleSoft API that writes them");
+        C.caption("Now click Downstream: what else depends on this number?");
+        await x.tap("down");
+        x.left(S.tableau("lineage", { up: true, down: true }));
+        C.ring("tab", "new");
+        C.tag("tab", "6 workbooks \u00b7 3 Pulse metrics", "ok", { stay: true, dy: 70 });
+        await N("tableau catalog \u00b7 impact analysis \u00b7 curated.job_milestone \u2192 6 workbooks, 3 Pulse metrics, 2 subscriptions \u00b7 owners listed", "Everything that would be affected if this source changed");
+        C.caption("From CJ's KPI, through Tableau and MuleSoft, back to each platform's field and API, and forward to everything that uses it.");
       },
     },
     {
@@ -655,19 +756,30 @@ window.Acts = (function () {
       powered: ["Platform account map in 11:11", "FranConnect reference data", "Anypoint Monitoring"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
-        x.left(S.anypointOnboard(false));
+        x.left(S.anypointOnboard(0));
         C.graph(C.baseGraph()); C.tab("flow"); C.setClock("14:08:00");
-        C.caption("Connecting a franchise adds one row to the platform account map. No deployment.");
+        C.caption("Connecting a franchise adds one row to the platform account map. No deployment. Click + Connect franchise.");
         C.ambient(x.t, POLLS, { every: 650 });
         C.clock([{ l: "Franchises connected", n: 430, v: "{n}" }, { l: "Deployments", n: 0, v: "{n}" }, { l: "Jobs from OH-0731", n: 0, v: "{n}" }]);
+        await x.tap("new");
+        x.left(S.anypointOnboard(1));
         C.ring("s-fran", "new");
-        await N("franconnect-sapi \u00b7 OH-0731 Dayton North \u00b7 region Central \u00b7 status Open (nightly sync)", "The franchise already exists in FranConnect");
+        await C.packet(["fran", "s-fran"], x.t, { kind: "ref", dur: 420 });
+        C.tag("s-fran", "OH-0731 \u00b7 Central \u00b7 Open", "ok");
+        await N("franconnect-sapi \u00b7 GET /franchises?q=Dayton \u2192 OH-0731 Dayton North \u00b7 region Central \u00b7 status Open (cached nightly)", "The franchise already exists in FranConnect");
+        C.caption("Pick Dayton North from the FranConnect results.");
+        await x.tap("pick");
+        x.left(S.anypointOnboard(2));
+        await C.packet(["s-psa", "psa"], x.t, { kind: "q", dur: 420 });
+        C.tag("psa", "account PSA-T-55120 \u00b7 200", "ok");
+        await N("psa-sapi \u00b7 GET /accounts/PSA-T-55120 \u2192 200 \u00b7 account exists and PuroClean's corporate access can read it (per vendor, to confirm)", "MuleSoft checks the PSA account before anything is saved");
+        C.caption("Click Connect.");
         await x.tap("golive");
         C.ring("lake", "new"); C.tag("lake", "INSERT ref.platform_account", "new");
         await N("ref.platform_account \u00b7 INSERT (OH-0731, PSA, PSA-T-55120) \u00b7 config table in 11:11", "Its PSA account is mapped to the franchise");
         C.ring("s-psa", "new"); C.tag("s-psa", "+ account PSA-T-55120", "new");
-        await N("psa-sapi \u00b7 reads the account map each cycle \u00b7 PuroClean's corporate PSA access (per vendor, to confirm) \u00b7 deployments 0", "No code, no deployment");
-        x.left(S.anypointOnboard(true));
+        await N("psa-sapi \u00b7 reads the account map each cycle \u00b7 deployments 0", "No code, no deployment");
+        x.left(S.anypointOnboard(3));
         C.clock([{ l: "Franchises connected", n: 431, v: "{n}", state: "ok" }, { l: "Deployments", n: 0, v: "{n}", state: "ok" }, { l: "Jobs from OH-0731", n: 0, v: "{n}" }]);
         await C.burst(["psa", "s-psa", "proc", "dq", "lake"], x.t, 8, { gap: 160 });
         C.tag("lake", "+23 jobs \u00b7 OH-0731", "ok");
@@ -681,14 +793,19 @@ window.Acts = (function () {
       powered: ["Anypoint Exchange", "API-led connectivity"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
-        x.left(S.anypointExchange(false));
+        x.left(S.anypointExchange(0));
         C.graph(C.baseGraph()); C.tab("flow"); C.setClock("14:10:00");
-        C.caption("Stage 1: four SPAR platforms plus FranConnect, each with its own System API.");
+        C.caption("Stage 1: four SPAR platforms plus FranConnect, each with its own System API. Click the spar-system-api template in Exchange.");
         const amb = C.ambient(x.t, FLOWS, { every: 600 });
         await N("application network \u00b7 5 System APIs \u2192 job-sync-papi \u2192 dq \u2192 11:11 \u2192 Tableau", "Four platforms and FranConnect feed one shared pipeline");
+        await x.tap("tpl");
+        x.left(S.anypointExchange(1));
+        ["s-dash", "s-psa", "s-albi", "s-jobsite"].forEach((n) => C.ring(n));
+        await N("exchange \u00b7 spar-system-api v1.0 \u00b7 the pattern all four System APIs share: change-feed polling, watermark, retries, policies \u00b7 depends on puroclean-canonical-job v1.3", "The four existing connectors were built from one pattern");
+        C.caption("Click Create from template.");
         await x.tap("add");
         amb.stop();
-        x.left(S.anypointExchange(true));
+        x.left(S.anypointExchange(2));
         const g2 = C.baseGraph({
           addNodes: [
             { id: "new", label: "New platform", sub: "5th SPAR option", x: 14, y: 384, w: 118, h: 46, kind: "src new" },
@@ -699,7 +816,12 @@ window.Acts = (function () {
         g2.groups[0].h = 430;
         C.graph(g2);
         C.ring("new", "new"); C.ring("s-new", "new");
-        await N("Exchange \u00b7 new-sapi from the spar-system-api template \u00b7 new-to-canonical.dwl \u00b7 build, test, deploy to CloudHub 2.0", "One new connector and its mapping, from a template");
+        await N("Exchange \u00b7 new-sapi scaffolded from spar-system-api \u00b7 only new-to-canonical.dwl to write: the new platform's field names \u2192 18 PuroLogic Dates", "One new connector and its mapping, from a template");
+        C.caption("Once the mapping is written and tested, click Deploy to sandbox.");
+        await x.tap("deploy");
+        x.left(S.anypointExchange(3));
+        C.tag("s-new", "CloudHub 2.0 \u00b7 Sandbox", "new", { stay: true, dy: 2 });
+        await N("runtime manager \u00b7 deploy new-sapi v1.0 \u2192 CloudHub 2.0 Sandbox \u00b7 policies applied from the template", "Deployed to a sandbox for testing");
         C.extra(`<div class="exch"><div class="ex-h">Anypoint Exchange</div><div class="ex-a"><b>puroclean-canonical-job</b> v1.3<small>used by 5 System APIs</small></div><div class="ex-a"><b>job-sync-papi</b> v2.0<small>reused</small></div><div class="ex-a"><b>dq-rules-restoration</b> v1.1<small>reused</small></div></div>`);
         await C.packet(["new", "s-new", "proc", "dq", "lake", "tab"], x.t, { kind: "new", onHop: async (b) => { if (["proc", "dq", "lake", "tab"].includes(b)) { C.tag(b, "reused \u00b7 0 changes", "ok", { stay: true }); } } });
         await N("downstream diff \u00b7 job-sync-papi 0 changes \u00b7 dq-rules 0 \u00b7 11:11 schema 0 \u00b7 Tableau 0", "Nothing downstream changed");
@@ -739,9 +861,25 @@ window.Acts = (function () {
         C.node("mon", "err"); C.ring("mon", "err");
         C.tag("s-psa", "watermark held \u00b7 0 lost", "warn", { stay: true, dy: 74 });
         C.clock([{ l: "Functional monitor", v: "PSA failing", state: "err" }, { l: "PSA polls", v: "paused since 2:14", state: "warn" }, { l: "Watermark", v: `held at ${O.watermark}` }, { l: "Lost", n: 0, v: "{n}", state: "ok" }, { l: "Franchises on PSA", n: O.franchises, v: "{n}" }]);
-        x.left(S.tableau("health-amber"));
-        C.caption("PSA is red. Nothing is lost: the jobs wait in PSA. CJ's Integrations working tile is amber.");
+        x.left(S.tableau("health-amber", { tapTile: true }));
+        C.caption("PSA is red. Nothing is lost: the jobs wait in PSA. Click the amber Integrations working tile.");
         await N("job-sync-papi \u00b7 ops.integration_status PSA = delayed \u2192 Tableau tile amber \u00b7 alert \u2192 on-call (email)", "CJ's dashboard shows it, and on-call gets an alert");
+        await x.tap("tile");
+        x.left(S.tableau("health-amber", { clock: "2:15 PM", tile: true, tapPsa: true }));
+        await C.packet(["tab", "lake"], x.t, { kind: "q", dur: 380 });
+        C.tag("lake", "ops.integration_status", "ok");
+        await N("SELECT platform, status, since, watermark, lost FROM ops.integration_status WHERE platform = 'PSA' \u2192 delayed \u00b7 14:14 \u00b7 14:13 \u00b7 0", "The tile reads the status MuleSoft writes: delayed, watermark held, nothing lost");
+        C.caption("Click PSA in the integrations strip to see what MuleSoft is doing right now.");
+        await x.tap("psa");
+        x.left(S.tableau("health-amber", { clock: "2:15 PM", tile: true, psa: true, tapList: true }));
+        await C.packet(["s-psa", "psa"], x.t, { kind: "err", dur: 380, finalState: "err" });
+        C.tag("s-psa", "probe 2:15 \u00b7 503", "warn");
+        await N("psa-sapi \u00b7 circuit open \u00b7 probe GET /api/health 14:15:00 \u2192 503 \u00b7 next probe 14:16:00 \u00b7 polls stay paused", "MuleSoft keeps probing PSA every minute and will resume on its own");
+        C.caption(`Click View next to Franchises on PSA to see who is affected.`);
+        await x.tap("list");
+        x.left(S.tableau("health-amber", { clock: "2:15 PM", tile: true, psa: true, list: true }));
+        await C.packet(["tab", "lake"], x.t, { kind: "q", dur: 380 });
+        await N(`SELECT a.franchise_id, MAX(j.synced_at) FROM ref.platform_account a JOIN curated.job j ON \u2026 WHERE a.platform = 'PSA' GROUP BY a.franchise_id \u2192 ${O.franchises} franchises`, "CJ knows exactly which franchises are affected before anyone calls");
       },
     },
     {
@@ -770,9 +908,16 @@ window.Acts = (function () {
         C.caption("The alert names the API, the error, the franchises on PSA and the runbook.");
         C.clock([{ l: "Outage", v: "running", state: "err" }, { l: "Watermark", v: `held at ${O.watermark}` }, { l: "Lost", n: 0, v: "{n}", state: "ok" }]);
         await N("anypoint-monitoring \u00b7 alert psa-sapi error count > 5 in 5 min \u2192 email on-call \u00b7 notification-api adds franchise context", "The on-call owner gets an email");
+        C.caption("Tap the alert to open it.");
         await x.tap("openAlert");
         x.left(S.failAlert(true));
         await N(`alert context \u00b7 ${O.franchises} franchises on PSA \u00b7 watermark 14:13:00Z \u00b7 runbook RB-PSA-01`, "The alert explains impact and links the runbook");
+        C.caption("Tap Acknowledge so the team knows someone owns it.");
+        await x.tap("ack");
+        x.left(S.failAlert(true, { acked: true }));
+        C.ring("notify");
+        await N("notification-api \u00b7 PATCH /alerts/A-20431 status=acknowledged by on-call \u00b7 repeat pages suppressed while acknowledged (illustrative routing rule)", "Acknowledged: no repeat pages while it's being handled");
+        C.caption("Tap View trace to see exactly which call failed.");
         await x.tap("trace");
         dash("trace");
         await N("trace \u00b7 correlation-id 7f3c\u2026a91 \u00b7 GET 503 \u2192 3 retries \u2192 polls paused \u00b7 0 data loss", "One failed poll, every hop, in order");
@@ -800,7 +945,7 @@ window.Acts = (function () {
       powered: ["Anypoint API Manager", "Anypoint Security", "MuleSoft Trust Center"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
-        x.left(S.anypointAPIManager());
+        x.left(S.anypointAPIManager({ tap: "valid" }));
         const pg = policyGraph();
         C.graph(pg); C.tab("flow"); C.setClock("14:40:00");
         const SR = D.security;
@@ -808,13 +953,22 @@ window.Acts = (function () {
           <div><b>MuleSoft</b><ul>${SR.mulesoft.map((s) => `<li>${s}</li>`).join("")}</ul></div>
           <div class="pc"><b>PuroClean</b><ul>${SR.puroclean.map((s) => `<li>${s}</li>`).join("")}</ul></div></div>
           <div class="srm-src">Source: MuleSoft Trust Center, Anypoint Security and the MuleSoft security capabilities overview.</div></div>`);
-        C.caption("Every inbound call passes the same policy chain at the gateway. No code changes.");
+        C.caption("Every inbound call passes the same policy chain at the gateway. Click Send valid request.");
         const msgs = ["client_id 3f\u2026 valid", "token valid \u00b7 scope jobs:write", "payload depth 4 \u2264 10", "12 / 600 per min"];
+        await x.tap("valid");
         await C.packet(pg._ids, x.t, { dur: 340, onHop: async (b) => { const i = Number(b.slice(1)); if (b[0] === "p") C.tag(b, msgs[i], "ok"); } });
+        x.left(S.anypointAPIManager({ sent: true, tap: "pol" }));
         await N("api-manager \u00b7 client-id \u2713 \u2192 oauth2 \u2713 \u2192 json-threat-protection \u2713 \u2192 rate-limit \u2713 \u2192 200", "A normal request passes all four checks");
         pg._ids.forEach((id) => C.node(id, ""));
-        C.caption("A malformed payload is stopped at JSON Threat Protection.");
+        C.caption("Click JSON Threat Protection to see its limits.");
+        await x.tap("pol");
+        x.left(S.anypointAPIManager({ sent: true, pol: true, tap: "bad" }));
+        C.ring("p2");
+        await N("api-manager \u00b7 json-threat-protection config \u00b7 maxContainerDepth 10 \u00b7 maxStringValueLength 10240 \u00b7 maxObjectEntryCount 100 (illustrative values)", "Limits PuroClean sets in configuration, not code");
+        C.caption("Now click Send malformed payload. It\u2019s stopped at JSON Threat Protection.");
+        await x.tap("bad");
         await C.packet(pg._ids.slice(0, 4), x.t, { kind: "err", dur: 340, finalState: "err" });
+        x.left(S.anypointAPIManager({ blocked: true, pol: true }));
         C.tag("p2", "depth 64 > 10 \u00b7 400", "err", { stay: true });
         await N("api-manager \u00b7 json-threat-protection \u00b7 max depth 64 > 10 \u2192 400 rejected \u00b7 never reaches psa-sapi", "A malicious payload is blocked at the gateway");
         await N("outbound polls \u00b7 TLS 1.2+ \u00b7 vendor credentials in secure properties \u00b7 response schema validated in each System API", "Polled vendors: encrypted, authenticated and validated");
@@ -827,15 +981,31 @@ window.Acts = (function () {
       powered: ["Anypoint Exchange", "Anypoint Monitoring"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
-        x.left(S.anypointExchangeCatalog());
+        x.left(S.anypointExchangeCatalog({ tap: "asset" }));
         const g = C.baseGraph(); g.compact = true;
         g.nodes.forEach((n) => { n.state = "ok"; if (n.id === "quar" || n.id === "notify") n.kind = n.kind.replace(" dim", ""); });
         C.graph(g); C.tab("flow");
         C.ambient(x.t, POLLS.concat(FLOWS), { every: 300 });
         C.extra(`<div class="exch"><div class="ex-h">Documented in Anypoint Exchange</div>${["dash-sapi", "psa-sapi", "albi-sapi", "jobsite-sapi", "franconnect-sapi", "job-sync-papi", "notification-api", "puroclean-canonical-job", "dq-rules-restoration"].map((a) => `<div class="ex-a"><b>${a}</b><small>spec \u00b7 owner \u00b7 runbook</small></div>`).join("")}</div>`);
-        C.caption("The whole application network: documented, monitored and owned by PuroClean.");
+        C.caption("The whole application network: documented, monitored and owned by PuroClean. Click psa-sapi.");
         await N("exchange \u00b7 9 assets \u00b7 each with spec, owner, SLA and runbook \u00b7 5 functional monitors, one per connection", "Every piece is documented, owned and monitored");
         C.clock([{ l: "Assets documented", n: 9, v: "{n} / 9", state: "ok" }, { l: "Runbooks", n: 9, v: "{n}" }, { l: "Monitors", n: 5, v: "{n}", state: "ok" }]);
+        await x.tap("asset");
+        x.left(S.anypointExchangeCatalog({ asset: true, tap: "runbook" }));
+        C.ring("s-psa", "new");
+        C.tag("s-psa", "owner \u00b7 spec \u00b7 consumers", "ok", { stay: true, dy: 2 });
+        await N("exchange \u00b7 psa-sapi v1.2 \u00b7 owner PuroClean IT \u00b7 OAS spec \u00b7 consumers job-sync-papi, psa-webhook-service", "Who owns it, what it does and who depends on it");
+        C.caption("Click the runbook linked to it.");
+        await x.tap("runbook");
+        x.left(S.anypointExchangeCatalog({ asset: true, runbook: true, tap: "mon" }));
+        C.ring("mon", "new");
+        await N("exchange \u00b7 RB-PSA-01 PSA outage \u00b7 linked from the psa-sapi alert \u00b7 the steps the on-call owner followed in chapter 6", "The same runbook the 2:15 PM alert linked to");
+        C.caption("Click the PSA functional monitor.");
+        await x.tap("mon");
+        x.left(S.anypointExchangeCatalog({ asset: true, runbook: true, mon: true }));
+        await C.packet(["s-psa", "psa", "s-psa"], x.t, { kind: "q", dur: 380 });
+        C.tag("psa", "monitor 200 \u00b7 212 ms", "ok");
+        await N("functional-monitor psa-sapi \u00b7 2:42 PM \u00b7 GET /api/health \u2192 200 \u00b7 212 ms \u00b7 runs every 5 min \u00b7 alerts on-call on failure", "Checked every five minutes, whoever is on call");
       },
     },
 
@@ -846,7 +1016,7 @@ window.Acts = (function () {
       powered: ["Tableau Pulse"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
-        x.left(S.pulse());
+        x.left(S.pulse({}));
         C.graph(pulseGraph()); C.tab("flow"); C.setClock("07:30:00");
         C.caption("Wednesday, 7:30 AM. Pulse watches the metrics CJ follows and flags what changed.");
         await C.packet(["views", "sem"], x.t);
@@ -858,14 +1028,29 @@ window.Acts = (function () {
         await C.packet(["ins", "dig"], x.t, { kind: "res" });
         C.tag("dig", "delivered 7:30 AM", "ok", { stay: true });
         await N("pulse \u00b7 digest \u2192 CJ \u00b7 email + Tableau Mobile \u00b7 7:30 AM", "The digest lands in CJ's inbox and on CJ's phone");
-        x.left(S.pulseDetail());
+        x.left(S.pulse({ tap: true }));
+        C.caption("Tap the Open water jobs card in CJ\u2019s digest.");
+        await x.tap("card");
+        x.left(S.pulseDetail({ tap: "dayton" }));
+        C.ring("ins");
         C.extra(linCard("Pulse metric definition", [
           ["Metric", "Open water jobs", "on a certified data source"],
           ["Insight", "unexpected value vs the range Pulse learns from history", "built in"],
           ["Delivered", "daily digest to CJ (email, Tableau Mobile)", "7:30 AM"],
         ]));
-        await N("CJ follows the insight to the metric detail page \u00b7 top contributors by metro: Columbus +9, Dayton +6 (OH-0731 connected Tuesday), Cincinnati +2", "CJ sees exactly which metros drove the spike");
+        await N("CJ follows the insight to the metric detail page \u00b7 top contributors by metro: Columbus +9, Dayton +6, Cincinnati +2", "CJ sees exactly which metros drove the spike");
         C.clock([{ l: "Digest", v: "7:30 AM" }, { l: "Ohio open water", n: 61, v: "{n}", state: "warn" }, { l: "Expected range", v: "38\u201352" }, { l: "Top driver", v: "Columbus +9" }]);
+        C.caption("Tap Dayton to see what\u2019s behind its jump.");
+        await x.tap("dayton");
+        x.left(S.pulseDetail({ dayton: true, tap: "open" }));
+        await C.packet(["views", "sem", "ins"], x.t, { kind: "q", dur: 380 });
+        C.tag("views", "OH-0731 \u00b7 first sync Tue", "new", { stay: true });
+        await N("pulse \u00b7 breakdown metro = Dayton \u2192 franchise \u00b7 OH-0731 Dayton North +5 \u00b7 connected Tuesday through MuleSoft (chapter 5)", "Most of Dayton's jump is the franchise connected on Tuesday");
+        C.caption("Tap Open in Tableau to dig in on the full dashboard.");
+        await x.tap("open");
+        x.left(S.tableau("network", { clock: "7:32 AM" }));
+        C.tag("dig", "opened in Tableau", "ok", { stay: true });
+        await N("deep link \u2192 Tableau Cloud \u00b7 Network Operations dashboard", "CJ lands on the dashboard, ready to ask why");
       },
     },
     {
@@ -891,10 +1076,17 @@ window.Acts = (function () {
           <div class="expl-src">Tableau analysis of contributing dimensions \u00b7 curated.v_open_jobs</div></div>`);
         await N("Explain Data: Columbus +9 (seasonal), Dayton +6, Cincinnati +2 \u00b7 contributing dimension: metro", "Columbus and Dayton drive the spike");
         await x.tap("dayton");
-        x.left(S.tableau("explain-data", { expand: true }));
-        C.caption("Dayton's jump is the franchise that just connected. Data working as designed.");
-        await N("drill Dayton metro \u2192 franchise \u00b7 OH-0731 Dayton North 7 (first sync Tuesday \u00b7 23 jobs now in Tableau) \u00b7 OH-0702 5 \u00b7 OH-0745 3", "Dayton's jump is the franchise that just connected \u2014 data working as designed");
+        x.left(S.tableau("explain-data", { expand: true, tapNew: true }));
+        C.caption("Dayton's jump is the franchise that just connected. Click Dayton North to view its data.");
+        await N("drill Dayton metro \u2192 franchise \u00b7 OH-0731 Dayton North 7 (first sync Tuesday \u00b7 23 jobs now in Tableau) \u00b7 OH-0702 5 \u00b7 OH-0745 3", "Dayton's jump is the franchise that just connected");
         C.clock([{ l: "Ohio open water", n: 61, v: "{n}", state: "warn" }, { l: "Columbus", v: "+9 seasonal" }, { l: "Dayton", v: "+6 \u00b7 OH-0731 new" }, { l: "Cincinnati", v: "+2" }]);
+        await x.tap("dn");
+        x.left(S.tableau("explain-data", { expand: true, records: true }));
+        C.ring("mule", "new");
+        await C.packet(["user", "tabd", "sem", "bridge", "views"], x.t, { kind: "q", dur: 380, finalState: "active" });
+        C.tag("views", "23 jobs \u00b7 first_synced Tue 14:10", "ok");
+        await N("view data \u00b7 SELECT COUNT(*), MIN(first_synced_at), MIN(date_of_loss) FROM curated.job WHERE franchise_id = 'OH-0731' \u2192 23 \u00b7 Tue 14:10 via psa-sapi \u00b7 losses dated before Tuesday", "Jobs that existed before Tuesday, newly visible: data working as designed");
+        C.caption("Dayton North's jobs were always there. Since Tuesday's connection, corporate sees them.");
       },
     },
     {
@@ -903,16 +1095,35 @@ window.Acts = (function () {
       powered: ["Roadmap only"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
-        x.left(S.whatsNext());
-        C.reset();
-        C.lineage(linCard("Stage roadmap (CJ's three stages)", [
+        const rows = [
           ["Stage 1", "Visibility and adoption: every job, one record, Tableau", "this project"],
           ["Stage 2", "Compliance: jobs moving on time, nothing stuck in limbo", "next"],
           ["Stage 3", "Profitability: QuickBooks Online, margin by job and franchise", "later"],
-        ]));
+        ];
+        const detail = [
+          ["Builds", "4 SPAR System APIs + FranConnect \u00b7 job-sync-papi \u00b7 canonical model \u00b7 11:11 \u00b7 Tableau", "the foundation"],
+          ["Reuses", "the SLA lane and 18 PuroLogic Dates \u00b7 adds compliance rules and notification-api routes", "no new connectors"],
+          ["Adds", "one QuickBooks Online System API from the Exchange template \u00b7 same Process API and lake", "like step 5.3"],
+        ];
+        const show = (n) => {
+          x.left(S.whatsNext({ seen: [1, 2, 3].slice(0, n), tap: n < 3 ? n + 1 : null }));
+          C.lineage(linCard("Stage roadmap (CJ's three stages)", rows.slice(0, Math.max(1, n)), n ? detail[n - 1] : null));
+        };
+        C.reset();
+        show(0);
+        x.left(S.whatsNext({ tap: 1 }));
         C.tab("lineage");
-        C.caption("Each stage builds on the same connection layer.");
-        await N("roadmap \u00b7 Stage 1 connection layer reused by Stage 2 (compliance) and Stage 3 (QuickBooks Online)", "Each stage reuses what Stage 1 builds");
+        C.caption("Each stage builds on the same connection layer. Click Stage 1.");
+        for (const n of [1, 2, 3]) {
+          await x.tap("st" + n);
+          show(n);
+          if (n < 3) C.caption(`Click Stage ${n + 1}.`);
+          await N(
+            ["roadmap \u00b7 Stage 1 \u00b7 connection layer: System APIs, Process API, canonical model, 11:11, Tableau", "roadmap \u00b7 Stage 2 \u00b7 reuses the SLA lane and PuroLogic Dates \u00b7 adds compliance rules", "roadmap \u00b7 Stage 3 \u00b7 adds a QuickBooks Online System API \u00b7 everything downstream reused"][n - 1],
+            ["Stage 1 builds the foundation", "Stage 2 reuses it for compliance", "Stage 3 adds one connector for profitability"][n - 1]
+          );
+        }
+        C.caption("Each stage reuses what Stage 1 builds.");
       },
     },
 
