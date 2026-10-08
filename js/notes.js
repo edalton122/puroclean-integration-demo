@@ -2,7 +2,7 @@
    Keyed by step ID. Chapter question appears automatically in the talk bar.
    Handoff lines help you segue into the next beat. */
 window.NOTES = {
-  hero: "Welcome. This is a 13-stop short path or a full 30-minute run. Pick Short path to start — you can switch any time. Four people in the story: Alex, a franchise project manager; Jordan, a corporate regional director; CJ Bailey; and Nick Hindle, the CIO.",
+  hero: "Welcome. This is a 14-stop short path or a full 30-minute run. Pick Short path to start — you can switch any time. Four people in the story: Alex, a franchise project manager; Jordan, a corporate regional director; CJ Bailey; and Nick Hindle, the CIO.",
   today: "The framing slide: why five connections don't mean five projects. Great to run before Chapter 1 if you have time.",
 
   "1.1": "Clicks: Water, Save, Accept job. Set the scene: corporate sees less than 20 percent of franchise jobs today. Franchises asked for choice, so PuroClean is offering four approved job management platforms and requiring one of them by January 1. The first goal is measuring adoption, so this chapter shows a franchise PM or owner working in Dash and how that job reaches your dashboard. The franchise's day doesn't change. Alex logs the job in Dash exactly as today; Dash stores Water as its own code. MuleSoft will pick it up on its own on the next five-minute cycle. Nothing to install, nothing to change.",
@@ -37,5 +37,6 @@ window.NOTES = {
   "8.3": "Clicks: Stage 1, Stage 2, Stage 3. Stage 1 builds the foundation, Stage 2 reuses it for compliance, Stage 3 adds one QuickBooks Online connector. Weather overlays, AI agents and a unified customer view come after. None of this is Stage 1, but Stage 1 makes it possible.",
 
   arch: "The full architecture on one page. Everything that appeared in the demo is here.",
+  wrap: "No clicks. The recap adapts to the path you're on: on Short path it's the moments you just walked; toggle to Full run and it fills in with the extra stops and a roadmap strip. Tie a bow on the story: one job in Dash became one trusted record that everyone can see and act on, from Alex to Nick. Then press Next for the questions and next steps.",
   close: "Eight questions, eight answers. The next steps are the same five we've discussed: confirm the SLA milestones, agree the canonical model owner, design the 11:11 connection with Nick, introduce the partners, and agree the mutual plan.",
 };

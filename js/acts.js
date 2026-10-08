@@ -65,6 +65,7 @@ window.Acts = (function () {
     { id: "7",     n: "7", title: "Security",     question: "Is it secure, and does it depend on one person?", tip: "API Manager policies, Trust Center certs, Exchange-documented runbooks" },
     { id: "8",     n: "8", title: "See it daily", question: "Will leaders actually use the data every day?",  tip: "Pulse digest, metric insights, Explain Data – the dashboard comes to CJ" },
     { id: "arch",  n: "",  title: "Architecture", question: "",                                               tip: "End-to-end reference architecture" },
+    { id: "wrap",  n: "",  title: "Recap",        question: "",                                               tip: "The whole story in one view" },
     { id: "close", n: "",  title: "Next Steps",   question: "",                                               tip: "Wave 1 scope and answers to the eight questions" },
   ];
 
@@ -1230,6 +1231,7 @@ window.Acts = (function () {
     },
 
     { id: "arch",  act: "arch",  layout: "full", short: false, page: "arch",  title: "How it fits together", powered: [] },
+    { id: "wrap",  act: "wrap",  layout: "full", short: true,  page: "wrap",  title: "One story, start to finish", powered: [] },
     { id: "close", act: "close", layout: "full", short: true,  page: "close", title: "Your questions, answered.", powered: [] },
   ];
 

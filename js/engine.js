@@ -60,7 +60,7 @@
     "6.1": "Tue 2:14 PM", "6.2": "Tue 2:15 PM",
     "7.1": "Tue 2:40 PM", "7.2": "Tue 2:42 PM",
     "8.1": "Wed 7:30 AM", "8.2": "Wed 7:32 AM", "8.3": "Wed 7:45 AM",
-    "arch": "", "close": "",
+    "arch": "", "wrap": "", "close": "",
   };
 
   /* Leading persona for each chapter. */
@@ -80,13 +80,13 @@
     const clock = CLOCKS[s.id] || "";
     const q = ch && ch.question ? ch.question : "";
     const chLabel = ch && ch.n ? `Chapter ${ch.n} \u00b7 ${ch.title}` : ch ? ch.title : "";
-    const notShort = !inPath(s) && s.act !== "hero" && s.act !== "today" && s.act !== "arch" && s.act !== "close";
+    const notShort = !inPath(s) && s.act !== "hero" && s.act !== "today" && s.act !== "arch" && s.act !== "wrap" && s.act !== "close";
 
     talk.innerHTML = `
       <div class="tk-l">
         <div class="tk-act">
           ${chLabel ? `<span class="tk-ch">${esc(chLabel)}</span>` : ""}
-          ${q ? `<span class="tk-q">\u201c${esc(q)}\u201d</span>` : ""}
+          ${q ? `<span class="tk-q">${esc(q)}</span>` : ""}
           ${notShort ? '<span class="tk-off">Full run only</span>' : ""}
         </div>
         <div class="tk-title">${/^\d/.test(s.id) ? `<span class="tk-id">${s.id}</span>` : ""}${esc(s.title)}</div>
@@ -166,10 +166,11 @@
         </div>
         <div class="vg-body">
           <div class="vg-eyebrow">${handoff ? "Handoff \u00b7 " : ""}Chapter ${esc(ch.n)} \u00b7 ${esc(ch.title)}${clock ? ` \u00b7 ${esc(clock)}` : ""}</div>
-          <div class="vg-q">\u201c${esc(v.q || ch.question)}\u201d</div>
+          <div class="vg-qlbl">The question this chapter answers</div>
+          <div class="vg-q">${esc(v.q || ch.question)}</div>
           <div class="vg-cols">
             <div>
-              <div class="vg-h">What matters to ${esc(who)}</div>
+              <div class="vg-h">What this means for ${esc(who)}</div>
               <ul class="vg-matters">${v.matters.map((m) => `<li>${esc(m)}</li>`).join("")}</ul>
             </div>
             <div>
@@ -349,6 +350,15 @@
       state.path = p.dataset.path;
       const cur = ALL[state.i];
       if (cur.act === "hero" || cur.act === "today") return goAct("1");
+      /* If the current stop is not on the new path (e.g. 1.3 while switching
+         to Short path), snap to the nearest in-path stop so Next/Back and the
+         counter match what the toggle says. Prefer the previous stop. */
+      if (!inPath(cur)) {
+        let j = prevIndex();
+        if (j < 0) j = nextIndex();
+        if (j < 0) j = state.i;
+        return go(j, { replay: true });
+      }
       return go(state.i, { replay: true });
     }
     const g = e.target.closest("[data-go]");
@@ -430,6 +440,50 @@
     { q: "Will leaders actually use the data every day?", a: "Yes. Pulse sends CJ a morning digest of what changed. He follows an insight to the dashboard, clicks a state, and Explain Data shows the driver." },
   ];
 
+  /* One proof line per step, keyed by step id. The recap pulls only the steps
+     on the current path, so Short and Full show different lines automatically. */
+  const WRAP_PROOF = {
+    "1.1": "Alex logged the job in Dash exactly as always",
+    "1.2": "MuleSoft picked it up and translated it, 4 minutes later",
+    "1.3": "The record landed in the 11:11 lake and the SLA clock started",
+    "1.4": "Near-real-time and daily lanes, side by side",
+    "1.5": "The same job across four platforms, one language",
+    "2.1": "A missed SLA reached Jordan in seconds, with the job in Tableau Mobile",
+    "3.1": "Duplicates merged; a bad record held with a reason, not loaded silently",
+    "3.2": "Data health became CJ\u2019s own KPI",
+    "4.1": "Network to one job in three clicks",
+    "4.2": "Jordan\u2019s region, same dashboard, scoped by row-level security",
+    "4.3": "Benchmarked against the rest of the network",
+    "4.4": "Every KPI traced back to its source",
+    "4.5": "Tableau Agent built and saved a new view, no IT ticket",
+    "5.1": "50 to 900 locations and a storm surge, 0 dropped",
+    "5.2": "Onboarding a franchise is configuration, not code",
+    "5.3": "A fifth platform added from an Exchange template",
+    "6.1": "PSA went down at 2:14 PM and caught up in order, nothing lost",
+    "6.2": "The alert, the trace and the recovery, end to end",
+    "7.1": "Four policies on every inbound call; a malformed payload blocked",
+    "7.2": "Everything documented in the Exchange catalog",
+    "8.1": "Pulse brought the morning digest to CJ",
+    "8.2": "Explain Data traced the Ohio jump to Dayton North",
+    "8.3": "What the trusted foundation makes possible next",
+  };
+
+  /* One outcome per person, with a fuller line for the full run. */
+  const WRAP_OUTCOME = {
+    pm: { short: "Kept working in Dash. Nothing to change.", full: "Kept working in Dash. Nothing to change, at any scale." },
+    rd: { short: "Knew about a missed SLA first, from his phone.", full: "Knew first, and sees his own region against the whole network." },
+    cj: { short: "Trusted numbers, network to one job, a morning digest.", full: "Trusted numbers, self-service answers, and the reason behind every move." },
+    it: { short: "Scales, recovers and is secured, with no single point of failure.", full: "Scales by configuration, recovers on its own, and stays secure and documented." },
+  };
+
+  const WRAP_TECH = "MuleSoft Anypoint Platform \u00b7 CloudHub 2.0 \u00b7 Anypoint MQ \u00b7 DataWeave \u00b7 Tableau Cloud \u00b7 Tableau Bridge \u00b7 11:11 SQL Server lake";
+
+  const WRAP_ROADMAP = [
+    ["Stage 1", "Visibility and adoption: every job, one record, in Tableau", "this project"],
+    ["Stage 2", "Compliance: jobs moving on time, nothing stuck in limbo", "next"],
+    ["Stage 3", "Profitability: QuickBooks Online, margin by job and franchise", "later"],
+  ];
+
   const PAGES = {
     hero: () => {
       /* The 8 numbered story chapters. */
@@ -499,7 +553,7 @@
             <div class="cast-nm">${esc(p.name)}</div>
             <div class="cast-rl">${esc(p.role)}</div>
             <div class="cast-og">${esc(p.org)}</div>
-            <div class="cast-q">\u201c${esc(p.question)}\u201d</div>
+            <div class="cast-q"><span class="cast-qlbl">The question</span>${esc(p.question)}</div>
           </div>
         </div>`).join("");
 
@@ -513,7 +567,7 @@
             </div>
           </div>
           <div class="hv2-btns">
-            <button class="primary hv2-btn" data-path="short">\u2605 Short path <span class="hv2-sub">~14 min \u00b7 13 stops</span></button>
+            <button class="primary hv2-btn" data-path="short">\u2605 Short path <span class="hv2-sub">~16 min \u00b7 14 stops</span></button>
             <button class="ghost-light hv2-btn" data-path="full">Full run <span class="hv2-sub">~30 min \u00b7 all stops</span></button>
           </div>
         </div>
@@ -601,6 +655,58 @@
         <div class="arch-detail" id="archDetail"><b>Tap a block</b><p>Every block here appears in the demo. The right-hand console shows each one working.</p></div>
         <div class="arch-out"><div class="arch-h">Out of Stage 1</div>${D.scope.out.map(([k, v]) => `<div><b>${k}</b><small>${v}</small></div>`).join("")}</div>
       </div>`,
+
+    wrap: () => {
+      const full = state.path === "full";
+      const CHAPTERS = A.chapters.filter((c) => c.n);
+      const moments = ALL.filter((s) => inPath(s) && /^\d/.test(s.id)).length;
+
+      const chapterCards = CHAPTERS.map((c) => {
+        const steps = ALL.filter((s) => s.act === c.id && inPath(s) && WRAP_PROOF[s.id]);
+        const pid = CHAPTER_PERSONA[c.id];
+        const col = PERSONA_COLORS[pid] || "#0176D3";
+        const lines = steps.map((s) => `<li>${esc(WRAP_PROOF[s.id])}</li>`).join("");
+        return `<div class="wrap-ch" style="--pc:${col}">
+          <div class="wrap-ch-h"><span class="wrap-ch-n">${esc(c.n)}</span>${esc(c.title)}</div>
+          <ul class="wrap-ch-pts">${lines}</ul>
+        </div>`;
+      }).join("");
+
+      const outcomeCards = D.personas.map((p) => {
+        const o = WRAP_OUTCOME[p.id] || {};
+        const who = p.name.split(" ")[0];
+        return `<div class="wrap-out" style="--pc:${p.color}">
+          <div class="wrap-out-av" style="--pc:${p.color}">
+            ${p.img ? `<img src="${p.img}" alt="${esc(p.name)}"/>` : `<span>${esc(p.initials)}</span>`}
+          </div>
+          <div class="wrap-out-inf">
+            <div class="wrap-out-nm">${esc(who)}</div>
+            <div class="wrap-out-rl">${esc(p.role)}</div>
+            <div class="wrap-out-txt">${esc(full ? (o.full || o.short || "") : (o.short || ""))}</div>
+          </div>
+        </div>`;
+      }).join("");
+
+      const roadmap = full ? `<div class="wrap-road">
+        <div class="wrap-road-h">Where this goes next</div>
+        <div class="wrap-road-rows">${WRAP_ROADMAP.map(([s, d, t]) => `<div class="wrap-road-row"><b>${esc(s)}</b><span>${esc(d)}</span><em>${esc(t)}</em></div>`).join("")}</div>
+      </div>` : "";
+
+      return `<div class="wrap-page${full ? " is-full" : ""}">
+        <div class="wrap-head">
+          <div>
+            <span class="wrap-badge">${full ? "Full run recap" : "Short path recap"} \u00b7 ${moments} moments</span>
+            <h2>${full ? "From one job to a network you can run." : "One job, one record, seen every day."}</h2>
+            <p class="lede">${full ? "Everything from the first Dash save to the roadmap, on one foundation." : "From a water loss in Wichita on Tuesday morning to CJ\u2019s digest on Wednesday."}</p>
+          </div>
+        </div>
+        <div class="wrap-grid">${chapterCards}</div>
+        <div class="wrap-outs-h">What changed for each person</div>
+        <div class="wrap-outs">${outcomeCards}</div>
+        ${roadmap}
+        <div class="wrap-tech"><span class="wrap-tech-lbl">Behind the scenes</span>${esc(WRAP_TECH)}</div>
+      </div>`;
+    },
 
     close: () => `
       <div class="close">
