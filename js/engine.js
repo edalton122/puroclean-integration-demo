@@ -400,7 +400,7 @@
     { q: "Will it hold at 900 locations and new platforms?", a: "Yes. CloudHub 2.0 replicas and Anypoint MQ handle the load. Adding a franchise is configuration; adding a platform is a new System API from an Exchange template." },
     { q: "What happens when something breaks?", a: "MuleSoft retries, then pauses. The watermark holds the position. When the source recovers, it catches up in order. Nothing is lost, and CJ sees it before anyone reports it." },
     { q: "Is it secure, and does it depend on one person?", a: "Yes. API Manager applies four policies to every inbound call. Everything is documented in Exchange. Monitoring and alerts mean no single point of failure." },
-    { q: "Will leaders actually use the data every day?", a: "Yes. Pulse sends CJ a morning digest of what changed. She follows an insight to the dashboard, right-clicks a state, and Explain Data shows the driver." },
+    { q: "Will leaders actually use the data every day?", a: "Yes. Pulse sends CJ a morning digest of what changed. He follows an insight to the dashboard, clicks a state, and Explain Data shows the driver." },
   ];
 
   const PAGES = {

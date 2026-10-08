@@ -410,11 +410,11 @@ window.Acts = (function () {
     },
     {
       id: "3.2", act: "3", short: true, title: "Data health, CJ's own KPI",
-      desc: "CJ's data health dashboard shows the share of franchises with usable data, how many records are being held back, and the top reasons they were held. The Data Guide shows the certified data source with its quality status.", why: "Usable data climbs from under 20% as each wave goes live, and CJ can see exactly what to fix next.",
+      desc: "CJ's data health dashboard shows the share of franchises with usable data, how many records are being held back, and the top reasons they were held. CJ clicks the top reason to see exactly which franchises' records are held, including the job from the last step.", why: "Usable data climbs from under 20% as each wave goes live, and CJ can see exactly who to follow up with next.",
       powered: ["Tableau Cloud", "11:11 curated views", "Certified data source"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
-        x.left(S.tableau("health", { clock: "10:30 AM" }));
+        x.left(S.tableau("health", { clock: "10:30 AM", tapReason: true }));
         const g = C.baseGraph(); g.compact = true;
         g.nodes.forEach((n) => { if (n.id === "quar") n.kind = "store"; });
         C.graph(g); C.tab("flow");
@@ -424,6 +424,13 @@ window.Acts = (function () {
         C.tag("quar", "192 held \u00b7 7 days", "err", { stay: true });
         C.tag("lake", "64% usable", "ok", { stay: true });
         await N("SELECT reason_code, COUNT(*) FROM quarantine.job WHERE held_at > DATEADD(day, -7, SYSUTCDATETIME()) GROUP BY reason_code", "Held records, counted by reason for the last 7 days");
+        C.caption("Click \u201cMissing loss type\u201d to see which franchises\u2019 records are held.");
+        await x.tap("reason");
+        x.left(S.tableau("health", { clock: "10:31 AM", drill: "loss" }));
+        C.tag("quar", "100 \u00b7 missing loss type", "err", { stay: true });
+        C.caption("A filter action: the reason chart filters the held-records sheet to one reason.");
+        await N("SELECT franchise_id, platform, COUNT(*) FROM quarantine.job WHERE reason_code = 'DQ-014' AND held_at > DATEADD(day, -7, SYSUTCDATETIME()) GROUP BY franchise_id, platform", "Held records for missing loss type, by franchise");
+        await N("KS-0412 \u00b7 11 held \u00b7 includes D-889301 from 10:12 AM \u00b7 retries automatically on the next Dash update", "CJ knows exactly which franchises to follow up with");
         C.extra(linCard('"Franchises with usable data" \u00b7 how it\'s measured', [
           ["Tableau measure", "Usable Data % (certified data source)", "definition illustrative"],
           ["Rule", "franchise has \u2265 90% of jobs with all required PuroLogic Dates + loss type", "illustrative threshold"],
@@ -545,7 +552,7 @@ window.Acts = (function () {
     },
     {
       id: "4.5", act: "4", short: true, title: "Tableau Agent: ask a question, get a view",
-      desc: "CJ asks Tableau Agent which West franchises were slowest to first contact last month. The agent builds a bar chart on the certified data source. She drags Loss type onto Color, switches to a bar chart, and saves it \u2014 all in the browser, without an extract.", why: "CJ gets a new insight without waiting for IT or building from scratch. Row-level security still applies, and no new pipeline is needed.",
+      desc: "CJ asks Tableau Agent which West franchises were slowest to first contact last month. The agent builds a bar chart on the certified data source. He drags Loss type onto Color, switches to a bar chart, and saves it \u2014 all in the browser, without an extract.", why: "CJ gets a new insight without waiting for IT or building from scratch. Row-level security still applies, and no new pipeline is needed.",
       powered: ["Tableau Agent", "Tableau web authoring", "Certified data source"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
@@ -804,7 +811,7 @@ window.Acts = (function () {
     /* ---------- Chapter 8: Everyday use */
     {
       id: "8.1", act: "8", short: true, title: "Tableau Pulse: the dashboard comes to CJ",
-      desc: "Each morning, Tableau Pulse sends CJ a short digest of the metrics that changed, like Wednesday's jump in open water jobs in Ohio. She follows the insight to the metric's detail page and sees exactly which metros drove the spike.", why: "CJ hears about what matters without having to go looking for it.",
+      desc: "Each morning, Tableau Pulse sends CJ a short digest of the metrics that changed, like Wednesday's jump in open water jobs in Ohio. He follows the insight to the metric's detail page and sees exactly which metros drove the spike.", why: "CJ hears about what matters without having to go looking for it.",
       powered: ["Tableau Pulse"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
@@ -832,25 +839,30 @@ window.Acts = (function () {
     },
     {
       id: "8.2", act: "8", short: false, title: "Explain Data: why did Ohio jump?",
-      desc: "CJ taps from Pulse straight into the network dashboard and right-clicks Ohio on the map. Explain Data shows that the spike is driven by Columbus and Dayton \u2014 and that Dayton North is the franchise that connected on Tuesday.", why: "The insight chain is complete: the dashboard flagged it, Pulse surfaced it, Explain Data traced it back to a single franchise connection.",
+      desc: "CJ goes from Pulse straight into the network dashboard and clicks Ohio on the map. Explain Data shows that the spike is driven by Columbus and Dayton. Clicking Dayton shows that most of its jump is Dayton North, the franchise that connected on Tuesday.", why: "The insight chain is complete: the dashboard flagged it, Pulse surfaced it, Explain Data traced it back to a single franchise connection.",
       powered: ["Tableau Explain Data"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
-        x.left(S.tableau("network"));
+        x.left(S.tableau("network", { tapState: "OH", clock: "7:32 AM" }));
         const g = tabGraph(); g.compact = true;
         C.graph(g); C.tab("flow"); C.setClock("07:32:00");
-        C.caption("CJ follows the Pulse insight into the dashboard and right-clicks Ohio.");
+        C.caption("CJ follows the Pulse insight into the dashboard. Click Ohio to ask why it jumped.");
         C.ambient(x.t, [["mule", "views"]], { every: 900 });
         await N("CJ taps 'Open in Tableau' from the Pulse digest \u00b7 Network Operations dashboard opens \u00b7 Ohio highlighted", "CJ lands on the dashboard with Ohio highlighted");
         await x.tap("OH");
-        x.left(S.tableau("explain-data"));
-        await N("right-click Ohio \u2192 Explain Data \u00b7 Tableau analyses the contributing dimensions", "Explain Data finds the drivers");
+        x.left(S.tableau("explain-data", { tapDayton: true }));
+        C.caption("Explain Data ranks what drove Ohio's number. Click Dayton to see which franchise.");
+        await N("select Ohio \u2192 Explain Data \u00b7 Tableau analyses the contributing dimensions", "Explain Data finds the drivers");
         C.extra(`<div class="expl"><div class="expl-h">Explain Data \u00b7 Ohio open water jobs \u00b7 61 vs expected 38\u201352</div>
           <div class="expl-row"><div class="expl-k">Columbus metro</div><div class="expl-v warn">+9 above expected</div></div>
           <div class="expl-row"><div class="expl-k">Dayton metro</div><div class="expl-v warn">+6 above expected</div><div class="expl-note">OH-0731 (Dayton North) connected Tuesday \u00b7 first 23 jobs now visible</div></div>
           <div class="expl-row"><div class="expl-k">Cincinnati metro</div><div class="expl-v">+2</div></div>
           <div class="expl-src">Tableau analysis of contributing dimensions \u00b7 curated.v_open_jobs</div></div>`);
-        await N("Explain Data: Columbus +9 (seasonal), Dayton +6 (OH-0731 Dayton North connected Tuesday \u00b7 first 23 jobs now in Tableau), Cincinnati +2 \u00b7 all within normal ranges except Columbus", "Dayton's jump is the franchise that just connected \u2014 data working as designed");
+        await N("Explain Data: Columbus +9 (seasonal), Dayton +6, Cincinnati +2 \u00b7 contributing dimension: metro", "Columbus and Dayton drive the spike");
+        await x.tap("dayton");
+        x.left(S.tableau("explain-data", { expand: true }));
+        C.caption("Dayton's jump is the franchise that just connected. Data working as designed.");
+        await N("drill Dayton metro \u2192 franchise \u00b7 OH-0731 Dayton North 7 (first sync Tuesday \u00b7 23 jobs now in Tableau) \u00b7 OH-0702 5 \u00b7 OH-0745 3", "Dayton's jump is the franchise that just connected \u2014 data working as designed");
         C.clock([{ l: "Ohio open water", n: 61, v: "{n}", state: "warn" }, { l: "Columbus", v: "+9 seasonal" }, { l: "Dayton", v: "+6 \u00b7 OH-0731 new" }, { l: "Cincinnati", v: "+2" }]);
       },
     },

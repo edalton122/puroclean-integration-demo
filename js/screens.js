@@ -84,17 +84,38 @@ window.Screens = (function () {
   /* ------------------------------------------------------------ franchise job record (neutral stand-in for the vendor app) */
   const PATH_FIELDS = ["date_of_loss", "dispatch", "received_accepted", "contacted", "inspected", "started", "target_completion"];
 
+  const GUIDE = {
+    date_of_loss: { keys: ["date_of_loss", "loss"], tip: "Record when the loss happened, from the customer or the carrier\u2019s assignment." },
+    dispatch: { keys: ["dispatch", "carrier"], tip: "Log the time the carrier or TPA dispatched the job to your office." },
+    received_accepted: { keys: ["dispatch", "received_accepted"], tip: "Accept the job as soon as you receive it. The 30-minute customer-contact clock starts at acceptance (illustrative SLA)." },
+    contacted: { keys: ["received_accepted", "contacted"], tip: "Call the customer within 30 minutes of accepting the job and set a time for the inspection." },
+    inspected: { keys: ["contacted", "inspected"], tip: "Inspect the loss, capture photos and moisture readings, then record the inspection time." },
+    started: { keys: ["inspected", "started"], tip: "Record when mitigation work began on site." },
+    target_completion: { keys: ["started", "target_completion"], tip: "Set a completion date the customer and the carrier can plan around." },
+  };
+
   function path(set, vKey) {
     const v = D.vendors[vKey];
+    const lbl = (f) => (v.labels && v.labels[f]) || (D.milestones.find((m) => m.field === f) || {}).label;
     const ms = D.milestones.filter((m) => PATH_FIELDS.includes(m.field));
     const cur = ms.findIndex((m) => !set[m.field]);
-    return `<div class="lx-path">${ms
-      .map((m, i) => {
-        const st = set[m.field] ? "done" : i === cur ? "cur" : "todo";
-        const lbl = (v.labels && v.labels[m.field]) || m.label;
-        return `<div class="lx-pi ${st}"><span>${st === "done" ? `<i>${SVG.check}</i>` : ""}${esc(lbl)}</span></div>`;
-      })
-      .join("")}</div>`;
+    const focus = ms[cur < 0 ? ms.length - 1 : cur];
+    const g = GUIDE[focus.field];
+    const keyVal = (k) =>
+      k === "loss" ? ["Loss type", D.job.loss] : k === "carrier" ? ["Carrier", D.job.carrier] : [lbl(k), set[k] || "\u2014"];
+    const keys = g.keys.map(keyVal).map(([a, b]) => `<div class="lx-kf"><small>${esc(a)}</small><span>${esc(b)}</span></div>`).join("");
+    return `<div class="lx-pathc">
+      <div class="lx-path"><span class="lx-ptog" title="Hide guidance">${SVG.chev}</span><div class="lx-ptrack">${ms
+        .map((m, i) => {
+          const st = set[m.field] ? "done" : i === cur ? "cur" : "todo";
+          return `<div class="lx-pi ${st}" title="${esc(lbl(m.field))}">${st === "done" ? `<i>${SVG.check}</i>` : `<span>${esc(lbl(m.field))}</span>`}</div>`;
+        })
+        .join("")}</div></div>
+      <div class="lx-coach">
+        <div><div class="lx-ct">Key Fields <a>Edit</a></div><div class="lx-kfs">${keys}</div></div>
+        <div><div class="lx-ct">Guidance for Success <a>Edit</a></div><p>${esc(g.tip)}</p></div>
+      </div>
+    </div>`;
   }
 
   function jobApp(st = {}) {
@@ -605,9 +626,13 @@ window.Screens = (function () {
       if (opt.tip === st) {
         const k = st === "KS" ? D.kansas : null;
         const top = k ? `${k.byLoss[0].k} (${k.byLoss[0].v})` : "Water";
+        const rows = st === "OH"
+          ? [["State", s.n], ["Open jobs", v], ["Open water jobs", "61"], ["Expected", "38\u201352"]]
+          : [["State", s.n], ["Open jobs", v], ["Top loss type", top], ["Franchises", st === "KS" ? 6 : "\u2014"]];
+        const hint = st === "OH" ? "Click to Explain Data \u203a" : "Click to drill down \u203a";
         tip = `<div class="tv-tip" style="left:${(((lx - vx + r + 14) / W) * 100).toFixed(1)}%;top:${(((ly - vy) / H) * 100).toFixed(1)}%">
-          <div><span>State</span><b>${s.n}</b></div><div><span>Open jobs</span><b>${v}</b></div><div><span>Top loss type</span><b>${top}</b></div><div><span>Franchises</span><b>${st === "KS" ? 6 : "\u2014"}</b></div>
-          ${tap ? "<em>Click to drill down \u203a</em>" : ""}</div>`;
+          ${rows.map(([a, b]) => `<div><span>${a}</span><b>${b}</b></div>`).join("")}
+          ${tap ? `<em>${hint}</em>` : ""}</div>`;
       }
     });
     const legend = `<div class="tv-legend"><b>Open jobs</b><span>0</span><i style="background:linear-gradient(90deg,${BLUE.join(",")})"></i><span>${max - 1}</span></div>`;
@@ -719,14 +744,16 @@ window.Screens = (function () {
   function tableau(view, opt = {}) {
     const K = D.kansas;
     if (view === "network") {
+      const tapSt = opt.tapState || (opt.tap ? "KS" : null);
+      const right = tapSt === "OH" ? "Click Ohio to explain the jump" : tapSt ? "Click a state to drill down" : "All four SPAR platforms";
       return tabShell("Network Operations", ["All franchises"], `${bans(D.kpis)}
         <div class="tv-g g-map">
-          ${sheet("Open jobs by state", stateMap({ tap: opt.tap ? "KS" : null, tip: opt.tap ? "KS" : null }), { right: opt.tap ? "Click a state to drill down" : "All four SPAR platforms" })}
+          ${sheet("Open jobs by state", stateMap({ tap: tapSt, tip: tapSt }), { right })}
           <div class="tv-col">
             ${sheet("Open jobs by loss type", donut(NET_LOSS, { center: "1,712", sub: "open jobs" }))}
             ${sheet("Open jobs \u00b7 last 13 weeks", area(SERIES["Open jobs"].s, { w: 210, h: 64, min: 1560, max: 1720, ticks: [1600, 1700], xl: [[0, "Nov"], [6, "Jan"], [12, "Feb"]], lastL: "1,712" }))}
           </div>
-        </div>`);
+        </div>`, { clock: opt.clock });
     }
     if (view === "kansas") {
       const metros = [
@@ -845,7 +872,20 @@ window.Screens = (function () {
         })
         .join("")}</div>`;
       const usable = [19, 19, 20, 20, 21, 21, 22, 22, 34, 45, 52, 59, 64];
-      return tabShell("Data Health & Integrations", ["All franchises"], `${bans([
+      const drill = opt.drill === "loss";
+      const reasons = [["Missing loss type", 52], ["Dates out of order", 27], ["Unknown account", 14], ["Bad date format", 7]]
+        .map(([k, v]) => ({ k, v, l: v + "%", c: "#e15759", tap: opt.tapReason && k === "Missing loss type" ? "reason" : null, fade: drill && k !== "Missing loss type" }));
+      const held = [
+        ["TX-0233", "Houston NW", "PSA", 12],
+        ["KS-0412", "Wichita East", "Dash", 11, true],
+        ["FL-0108", "Tampa Bay", "Albi", 9],
+        ["OH-0715", "Columbus E.", "JobSite", 8],
+      ];
+      const heldSheet = sheet("Held \u00b7 missing loss type", `<table class="tv-table tv-held"><thead><tr><th>Franchise</th><th>Platform</th><th>Held</th></tr></thead><tbody>${held
+        .map(([id, n, p, v, hl]) => `<tr class="${hl ? "hl" : ""}"><td><b>${id}</b> ${n}</td><td>${p}</td><td class="r">${v}</td></tr>`)
+        .join("")}</tbody></table><div class="tv-note">Top 4 of 31 franchises \u00b7 100 records \u00b7 Wichita East includes D-889301 (10:12 AM)</div>`, { right: "Filtered" });
+      const trend = sheet("Usable data, % of franchises", area(usable, { w: 230, h: 84, min: 0, max: 100, ticks: [0, 50, 100], fmt: (v) => v + "%", c: "#59a14f", ann: [[8, "Wave 1"], [11, "Wave 2"]], ref: 90, refL: "Goal 90% (illustrative)", lastL: "64%" }));
+      return tabShell("Data Health & Integrations", drill ? ["All franchises", "Missing loss type"] : ["All franchises"], `${bans([
           { k: "Franchises with usable data", v: "64%", d: "+45 pts since Nov", tone: "good", s: usable },
           { k: "Integrations working", v: amber ? "4 / 5" : "5 / 5", d: amber ? "PSA delayed \u00b7 catch-up when back" : "all platforms syncing", cls: amber ? "amber" : "ok" },
           { k: "Records held \u00b7 7 days", v: "192", d: "0.4% of updates", tone: "good", s: [0.9, 0.85, 0.8, 0.8, 0.7, 0.66, 0.6, 0.58, 0.55, 0.5, 0.46, 0.42, 0.4] },
@@ -853,8 +893,9 @@ window.Screens = (function () {
         ])}
         ${strip}
         <div class="tv-g g-half">
-          ${sheet("Usable data, % of franchises", area(usable, { w: 230, h: 84, min: 0, max: 100, ticks: [0, 50, 100], fmt: (v) => v + "%", c: "#59a14f", ann: [[8, "Wave 1"], [11, "Wave 2"]], ref: 90, refL: "Goal 90% (illustrative)", lastL: "64%" }))}
-          ${sheet("Top reasons records are held", hbars([["Missing loss type", 52], ["Dates out of order", 27], ["Unknown account", 14], ["Bad date format", 7]].map(([k, v]) => ({ k, v, l: v + "%", c: "#e15759" })), { max: 56 }))}
+          ${drill ? "" : trend}
+          ${sheet("Top reasons records are held", hbars(reasons, { max: 56 }), { right: opt.tapReason ? "Click a reason" : "" })}
+          ${drill ? heldSheet : ""}
         </div>`, { sheet: "Data Health", clock: opt.clock || (amber ? "2:14 PM" : "2:13 PM"), fresh: amber ? "PSA delayed since 2:14 PM" : undefined });
     }
     if (view === "agent") {
@@ -902,20 +943,25 @@ window.Screens = (function () {
     }
 
     if (view === "explain-data") {
-      const ohJobs = { ...D.openJobs, OH: 61 };
-      const explainPane = `<div class="tv-explain"><div class="ex-head">${TLOGO} Explain Data &nbsp; <small>Ohio · open water jobs</small></div>
+      const open = !!opt.expand;
+      const dayton = open
+        ? `<div class="ex-fr">${[["OH-0731 Dayton North", 7, "new"], ["OH-0702 Dayton South", 5], ["OH-0745 Springfield", 3]]
+            .map(([f, v, n]) => `<div class="ex-fb ${n ? "new" : ""}"><span>${f}</span><i><s style="width:${(v / 8) * 100}%"></s></i><b>${v}</b>${n ? '<em>connected Tue</em>' : ""}</div>`)
+            .join("")}<div class="ex-dd">Without Dayton North, Dayton is in its normal range. The jobs were always there; now corporate sees them.</div></div>`
+        : `<div class="ex-dd">OH-0731 (Dayton North) connected Tuesday \u00b7 first 23 jobs now visible</div>${opt.tapDayton ? '<div class="ex-more">See franchises \u203a</div>' : ""}`;
+      const explainPane = `<div class="tv-explain ${open ? "open" : ""}"><div class="ex-head">${TLOGO} Explain Data &nbsp; <small>Ohio · open water jobs</small></div>
         <div class="ex-val"><b>61</b><span class="warn">Above expected (38–52)</span></div>
         <div class="ex-sect">Top contributing dimensions</div>
         <div class="ex-dim"><div class="ex-dk">Columbus metro</div><div class="ex-dv warn">+9 above expected</div><div class="ex-dd">Seasonal increase vs prior 12-week average</div></div>
-        <div class="ex-dim"><div class="ex-dk">Dayton metro</div><div class="ex-dv warn">+6 above expected</div><div class="ex-dd">OH-0731 (Dayton North) connected Tuesday · first 23 jobs now visible</div></div>
+        <div class="ex-dim ${opt.tapDayton ? "tap" : ""} ${open ? "sel" : ""}" ${opt.tapDayton ? 'data-tap="dayton"' : ""}><div class="ex-dk">Dayton metro${open ? " \u00b7 open water jobs by franchise" : ""}</div><div class="ex-dv warn">+6 above expected</div>${dayton}</div>
         <div class="ex-dim"><div class="ex-dk">Cincinnati metro</div><div class="ex-dv">+2</div><div class="ex-dd">Within historical range</div></div>
         <div class="ex-src">Tableau analysis · curated.v_open_jobs · illustrative</div>
       </div>`;
       return tabShell("Network Operations", ["All franchises"], `${bans(D.kpis)}
         <div class="tv-g g-explain">
-          ${sheet("Open jobs by state · Ohio highlighted", stateMap({ sel: "OH", tip: "OH" }))}
+          ${sheet("Open jobs by state · Ohio selected", stateMap({ sel: "OH" }))}
           ${explainPane}
-        </div>`, { sheet: "Overview" });
+        </div>`, { sheet: "Overview", clock: opt.clock || "7:33 AM" });
     }
 
     return "";
