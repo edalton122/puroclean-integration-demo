@@ -202,9 +202,9 @@ window.PC = (function () {
 
   /* Derived from 11.6 jobs per franchise a month and roughly 40 tracked updates per job; a storm surge is 4x. */
   const scale = [
-    { loc: 50, label: "50 \u00b7 first connections", jobs: 19, events: 850, peak: 3400, replicas: 2, surge: 2, latency: "avg 2m 40s" },
-    { loc: 430, label: "430 \u00b7 full network", jobs: 164, events: 6850, peak: 27400, replicas: 2, surge: 3, latency: "avg 2m 40s" },
-    { loc: 900, label: "900 \u00b7 growth", jobs: 343, events: 14300, peak: 57200, replicas: 2, surge: 4, latency: "avg 2m 45s" },
+    { loc: 50, label: "50 \u00b7 first connections", jobs: 19, open: 570, events: 850, peak: 3400, replicas: 2, surge: 2, cpu: 6, cpuSurge: 22, latency: "avg 2m 40s" },
+    { loc: 430, label: "430 \u00b7 full network", jobs: 164, open: 4920, events: 6850, peak: 27400, replicas: 2, surge: 3, cpu: 19, cpuSurge: 48, latency: "avg 2m 40s" },
+    { loc: 900, label: "900 \u00b7 growth", jobs: 343, open: 10290, events: 14300, peak: 57200, replicas: 2, surge: 4, cpu: 34, cpuSurge: 61, latency: "avg 2m 45s" },
   ];
 
   const outage = { start: "2:14 PM", end: "2:31 PM", watermark: "2:13 PM", franchises: 37, behind: 21 };

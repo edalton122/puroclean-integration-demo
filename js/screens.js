@@ -432,52 +432,108 @@ window.Screens = (function () {
     );
   }
 
-  /* ------------------------------------------------------------ Anypoint Runtime Manager (step 5.1) */
-  function anypointRM(idx, surge) {
-    const s = D.scale[idx];
+  /* ------------------------------------------------------------ Anypoint Monitoring (step 5.1) */
+  /* Share of a weekday's job updates in each hour (sums to 100). */
+  const HOUR_SHAPE = [2, 1, 1, 1, 1, 2, 4, 6, 7, 7, 7, 7, 7, 7, 7, 6, 6, 5, 4, 3, 3, 2, 2, 2];
+  const STORM_HOURS = [13, 14, 15, 16, 17, 18];
+  const hourly = (idx, surge) => HOUR_SHAPE.map((v, h) => (D.scale[idx].events * v) / 100 * (surge && STORM_HOURS.includes(h) ? 4 : 1));
+  const cnt = (v, from, cls = "") => `<b class="${cls}" data-n="${v}" data-from="${from == null ? v : from}">${Math.round(from == null ? v : from).toLocaleString()}</b>`;
+
+  function anypointRM(idx, surge, prev) {
+    const s = D.scale[idx], p = prev ? D.scale[prev.idx] : null;
     const reps = surge ? s.surge : s.replicas;
     const autoscaled = surge && s.surge > s.replicas;
-    const mqDepth = surge ? 78 : 4 + idx * 3;
-    const workers = Array.from({ length: reps }, (_, i) => {
-      const extra = i >= s.replicas;
-      return `<div class="ap-worker ${extra ? "new" : ""}">
-        <div class="ap-wh"><span class="ap-dot ok"></span> Worker ${i + 1}${extra ? " <em>autoscaled</em>" : ""}</div>
-        <div class="ap-wm"><span style="width:${30 + Math.round(Math.random() * 8)}%"></span><small>CPU ${31 + i + (surge ? 18 : 0)}%</small></div>
-        <div class="ap-wm"><span style="width:${55 + Math.round(Math.random() * 6)}%"></span><small>Mem 412 MB / 512 MB</small></div>
-      </div>`;
+    const cpu = surge ? s.cpuSurge : s.cpu;
+    const prevCpu = p ? (prev.surge ? p.cpuSurge : p.cpu) : 0;
+    const mult = Math.round(((surge ? s.peak : s.events) / D.scale[0].events));
+    const max = surge ? 4800 : 1200;
+    const prevVals = prev ? hourly(prev.idx, prev.surge) : HOUR_SHAPE.map(() => 0);
+    const bars = hourly(idx, surge).map((v, h) => {
+      const hot = surge && STORM_HOURS.includes(h);
+      const h0 = Math.min(100, (prevVals[h] / max) * 100);
+      return `<span class="mb ${hot ? "hot" : ""}" style="--h0:${h0.toFixed(1)}%;height:${Math.max(1.5, (v / max) * 100).toFixed(1)}%"></span>`;
     }).join("");
+    const slots = [0, 1, 2, 3].map((i) => {
+      const on = i < reps, extra = i >= s.replicas;
+      if (!on) return `<div class="mr off"><div class="mr-h">Slot ${i + 1} \u00b7 standby</div><small>autoscaling max 4</small></div>`;
+      return `<div class="mr ${extra ? "new" : ""}"><div class="mr-h"><span class="ap-dot ok"></span> Replica ${i + 1}${extra ? " <em>autoscaled</em>" : ""}</div>
+        <div class="mr-bar"><span style="--w0:${extra ? 0 : prevCpu}%;width:${cpu}%" class="${cpu > 55 ? "warn" : ""}"></span></div><small>CPU ${cpu}% \u00b7 Mem ${surge ? 71 : 52 + idx * 4}%</small></div>`;
+    }).join("");
+    const banner = surge
+      ? `<div class="mon-ban warn"><span class="mb-app">job-sync-papi</span><b>Peak \u00d7${mult}</b> vs. first connections <i></i> MQ buffering <i></i> replicas 2 \u2192 ${reps} <i></i> <b>0 dropped</b></div>`
+      : `<div class="mon-ban"><span class="mb-app">job-sync-papi</span><b>Volume \u00d7${mult}</b> vs. first connections <i></i> code changes <b>0</b> <i></i> redeploys <b>0</b> <i></i> replicas <b>2</b></div>`;
     const body = `
-      <div class="ap-page-h">
-        <div class="ap-ph-l"><i>${SVG.back}</i><div><b>job-sync-papi</b><small>v2.0.4 · CloudHub 2.0 · us-east-1</small></div></div>
-        <div class="ap-ph-r"><span class="ap-badge ok">Running</span></div>
-      </div>
-      <div class="ap-grid">
-        <div class="ap-sect">
-          <div class="ap-sh">Workers (${reps}${autoscaled ? " · autoscaled" : ""})</div>
-          <div class="ap-workers">${workers}</div>
-          <div class="ap-as"><span class="ap-ash">Autoscaling</span><span class="ap-ast">Min 2 · Max 4</span><span class="ap-badge ${autoscaled ? "warn" : "ok"}">${autoscaled ? "Scaling out" : "Enabled"}</span></div>
-        </div>
-        <div class="ap-sect">
-          <div class="ap-sh">Anypoint MQ · puroclean-job-updates</div>
-          <div class="ap-mq">
-            <div><small>Messages in queue</small><b class="${mqDepth > 50 ? "warn" : ""}">${surge ? "2,840" : (mqDepth).toString()}</b></div>
-            <div><small>In-flight</small><b>${surge ? "78" : "2"}</b></div>
-            <div><small>Throughput</small><b>${surge ? "High · draining" : "Normal"}</b></div>
+      <div class="mon">
+        <div class="mon-top">
+          <div class="mon-card mon-map">
+            <div class="mon-h">Locations <span>from FranConnect</span></div>
+            ${netMap(s.loc, p ? p.loc : null, surge)}
+            <div class="mm-n">${cnt(s.loc, p && p.loc)}<span>${surge ? "<em>hailstorm \u00b7 DFW</em>" : "connected"}</span></div>
           </div>
-          <div class="ap-mq-bar"><span style="width:${Math.min(100, mqDepth)}%" class="${mqDepth > 50 ? "warn" : ""}"></span></div>
+        <div class="mon-tiles">
+          <div><small>Open jobs tracked</small>${cnt(s.open, p && p.open)}<em>each with live SLA timers</em></div>
+          ${surge
+            ? `<div class="mon-mq warn"><small>Anypoint MQ backlog</small><b class="mq-n">2,840</b><div class="mq-bar"><span style="width:100%"></span></div><em class="mq-s">absorbing the spike \u00b7 draining</em></div>`
+            : `<div><small>SLA-lane pickup</small><b class="ok">${s.latency.replace("avg ", "")}</b><em>avg \u00b7 inside the 5-min cycle</em></div>`}
+          <div class="${surge ? "warn" : ""}"><small>Job updates / day${surge ? " (storm rate)" : ""}</small>${cnt(surge ? s.peak : s.events, p && (prev.surge ? p.peak : p.events))}</div>
+          <div class="${autoscaled ? "warn" : ""}"><small>Replicas</small>${cnt(reps, p && (prev.surge ? p.surge : p.replicas))}<em>${autoscaled ? "autoscaled from 2" : `CPU ${cpu}% avg`}</em></div>
+        </div>
+        </div>
+        ${banner}
+        <div class="mon-g">
+          <div class="mon-card">
+            <div class="mon-h">${surge ? "Hailstorm afternoon" : "Typical weekday"} \u00b7 job updates per hour <span>axis 0\u2013${max === 4800 ? "4.8K" : "1.2K"}</span></div>
+            <div class="mon-chart ${surge ? "surge" : ""}">${bars}${surge ? '<i class="mc-old" style="bottom:25%"><span>normal peak axis</span></i>' : ""}</div>
+            <div class="mon-x"><span>12a</span><span>6a</span><span>12p</span><span>6p</span><span>11p</span></div>
+          </div>
+          <div class="mon-card">
+            <div class="mon-h">Replicas <span class="ap-badge ${autoscaled ? "warn" : "ok"}">${autoscaled ? "Scaling out" : "Running"}</span></div>
+            <div class="mon-reps">${slots}</div>
+            <div class="mon-foot">Autoscaling on CPU \u00b7 min 2 \u00b7 max 4 \u00b7 Anypoint MQ backlog ${surge ? "draining" : `${4 + idx * 3} (steady)`}</div>
+          </div>
         </div>
       </div>`;
-    return lx("Runtime Manager", ["Applications", "Alerts", "Servers"], "Applications", body, { kind: "anypoint", avatar: "PC" });
+    return lx("Anypoint Monitoring", ["Overview", "Inbound", "Outbound", "Failures", "JVM"], "Overview", body, { kind: "anypoint", avatar: "PC" });
   }
 
-  function anypointScale(idx, surge) {
-    const s = D.scale[idx];
-    const ctrl = `<div class="demo-ctrl">
-      <div class="dc-label">Demo control · network size</div>
+  /* Franchise dots for the demo-control map: deterministic, placed inside each state's inscribed circle. */
+  let netDots = null;
+  function franchiseDots() {
+    if (netDots) return netDots;
+    let seed = 7;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    const W = { TX: 10, FL: 8, CA: 9, OH: 4, GA: 4, NC: 4, PA: 4, IL: 4, NY: 4, NJ: 3, AZ: 3, CO: 3, MI: 3, TN: 3, VA: 3, WA: 3, MO: 3, KS: 2, IN: 2, WI: 2, MN: 2, AL: 2, SC: 2, LA: 2, KY: 2, OK: 2, OR: 2, NV: 2, UT: 2, MA: 2, MD: 2 };
+    const states = Object.keys(window.US_MAP.states);
+    const bag = [];
+    states.forEach((k) => { for (let i = 0; i < (W[k] || 1); i++) bag.push(k); });
+    const pilot = ["KS", "TX", "FL", "OH", "CA", "GA", "OK"];
+    const pt = (k) => {
+      const [x, y, r] = window.US_MAP.states[k].l;
+      const a = rnd() * Math.PI * 2, d = Math.sqrt(rnd()) * r * 0.85;
+      return [x + Math.cos(a) * d, y + Math.sin(a) * d];
+    };
+    netDots = Array.from({ length: 900 }, (_, i) => pt(i < 50 ? pilot[Math.floor(rnd() * pilot.length)] : bag[Math.floor(rnd() * bag.length)]));
+    return netDots;
+  }
+
+  function netMap(n, prevN, surge) {
+    const M = window.US_MAP, [vx, vy, vw, vh] = M.vb;
+    const tx = M.states.TX.l;
+    const dots = franchiseDots().slice(0, n).map(([x, y], i) => {
+      const fresh = prevN != null && i >= prevN;
+      return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${n > 500 ? 6.5 : 8.5}" class="${fresh ? "nd" : ""}" ${fresh ? `style="animation-delay:${Math.round(((i - prevN) / Math.max(1, n - prevN)) * 700)}ms"` : ""}/>`;
+    }).join("");
+    const storm = surge ? `<g class="storm"><circle cx="${tx[0] + 40}" cy="${tx[1] - 45}" r="70"/><circle cx="${tx[0] + 40}" cy="${tx[1] - 45}" r="38"/></g>` : "";
+    return `<svg class="dc-map" viewBox="${vx} ${vy} ${vw} ${vh}">${Object.values(M.states).map((s) => `<path d="${s.d}"/>`).join("")}${storm}<g class="dots">${dots}</g></svg>`;
+  }
+
+  function anypointScale(idx, surge, prev) {
+    const ctrl = `<div class="demo-ctrl dc-scale">
+      <div class="dc-label">Demo control</div>
       <div class="sbtn-group wide">${D.scale.map((x, i) => `<button class="${i === idx ? "on" : ""}" data-tap="sc-${i}">${x.label}</button>`).join("")}</div>
-      <label class="lx-toggle ${surge ? "on" : ""}" data-tap="surge"><span class="sw"></span> Storm surge (4× volume)</label>
+      <label class="lx-toggle ${surge ? "on" : ""}" data-tap="surge"><span class="sw"></span> Storm surge (4\u00d7)</label>
     </div>`;
-    return ctrl + frame("it", anypointRM(idx, surge), { clock: "2:05 PM" });
+    return ctrl + frame("it", anypointRM(idx, surge, prev), { clock: "2:05 PM" });
   }
 
   /* ------------------------------------------------------------ Anypoint Runtime Manager (step 5.2) */

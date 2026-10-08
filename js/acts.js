@@ -7,6 +7,21 @@ window.Acts = (function () {
   const code = (s) => `<code>${C.esc(s)}</code>`;
   const pick = (o, keys) => Object.fromEntries(keys.filter((k) => k in o).map((k) => [k, o[k]]));
 
+  /* Ticks every [data-n] number in the left app up (or down) from data-from. Not awaited. */
+  function countUp(x, ms = 900) {
+    const els = [...document.querySelectorAll("#leftUI [data-n]")].filter((e) => +e.dataset.from !== +e.dataset.n);
+    if (!els.length || QUICK) { els.forEach((e) => (e.textContent = (+e.dataset.n).toLocaleString())); return; }
+    const t0 = performance.now();
+    const tick = () => {
+      if (!Run.alive(x.t)) return;
+      const k = Math.min(1, Math.max(0, (performance.now() - t0) / ms)), ease = 1 - Math.pow(1 - k, 3);
+      els.forEach((e) => { if (e.isConnected) e.textContent = Math.round(+e.dataset.from + (+e.dataset.n - +e.dataset.from) * ease).toLocaleString(); });
+      if (k < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+    setTimeout(() => { if (Run.alive(x.t)) els.forEach((e) => { if (e.isConnected) e.textContent = (+e.dataset.n).toLocaleString(); }); }, ms + 120);
+  }
+
   /* Types text into an element of the left app with a blinking caret. html:true keeps tags whole. */
   const QUICK = /[?&]fast\b/.test(location.search);
   async function typeIn(x, sel, text, opt = {}) {
@@ -762,9 +777,11 @@ window.Acts = (function () {
       powered: ["CloudHub 2.0", "Clustered replicas + autoscaling", "Anypoint MQ"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
-        let idx = 0, surge = false, amb;
+        let idx = 0, surge = false, amb, prev = null;
         const draw = () => {
-          x.left(S.anypointScale(idx, surge));
+          x.left(S.anypointScale(idx, surge, prev));
+          countUp(x);
+          prev = { idx, surge };
           C.graph(scaleGraph(idx, surge));
           C.extra(scalePanel(idx, surge));
           if (amb) amb.stop();
@@ -776,20 +793,38 @@ window.Acts = (function () {
           C.clock([{ l: "Locations", n: s.loc, v: "{n}" }, { l: "Replicas", n: w, v: "{n}", state: "ok" }, { l: "Updates / day", n: surge ? s.peak : s.events, v: "{n}", state: surge ? "warn" : "" }, { l: "SLA-lane pickup", v: s.latency, state: "ok" }]);
         };
         C.reset(); C.tab("flow"); C.setClock("14:05:00");
-        C.caption("50 locations: two replicas for high availability, plenty of headroom.");
+        C.caption("50 first connections: two replicas, mostly idle. Click 430 \u00b7 full network and watch the map, the counters and the chart.");
         draw();
-        await N("job-sync-papi \u00b7 2 replicas, clustered (scheduler runs on one) \u00b7 850 updates/day \u00b7 queue depth ~0", "Two replicas for high availability, with plenty of headroom");
+        await N("job-sync-papi \u00b7 2 replicas, clustered (scheduler runs on one) \u00b7 570 open jobs \u00b7 850 updates/day \u00b7 CPU 6% \u00b7 queue depth ~0", "Two replicas for high availability, mostly idle");
         await x.tap("sc-1"); idx = 1; draw();
-        C.caption("430 locations, the full network: same APIs, same two replicas.");
-        await N("430 locations \u00b7 6,850 updates/day \u00b7 same 2 replicas \u00b7 no redeploy \u00b7 pickup avg 2m 40s", "The full network runs on the same two replicas");
+        C.caption("430 locations: 8\u00d7 the volume on the same two replicas. Only the CPU moves. Click 900 \u00b7 growth.");
+        await N("430 locations \u00b7 4,920 open jobs \u00b7 6,850 updates/day (\u00d78) \u00b7 same 2 replicas, CPU 19% \u00b7 no redeploy \u00b7 pickup avg 2m 40s", "8\u00d7 the volume, same two replicas, no redeploy");
         await x.tap("sc-2"); idx = 2; draw();
-        C.caption("900 locations: same design. Pickup stays inside the 5-minute cycle.");
-        await N("900 locations \u00b7 14,300 updates/day \u00b7 still 2 replicas \u00b7 pickup avg 2m 45s, max ~5.5 min", "At 900 locations, pickup stays inside the 5-minute cycle");
+        C.caption("900 locations: 17\u00d7 the volume. Still two replicas, still no code change. Now turn on Storm surge.");
+        await N("900 locations \u00b7 10,290 open jobs \u00b7 14,300 updates/day (\u00d717) \u00b7 still 2 replicas, CPU 34% \u00b7 pickup avg 2m 45s, max ~5.5 min", "17\u00d7 the volume; pickup stays inside the 5-minute cycle");
         await x.tap("surge"); surge = true; draw();
         C.ring("q", "err"); C.ring("w2", "new"); C.ring("w3", "new");
         C.tag("q", "queue depth 78% \u00b7 draining", "warn", { stay: true });
-        C.caption("Storm surge: Anypoint MQ absorbs the spike while capacity scales out. Nothing is dropped.");
-        await N("surge 4x \u00b7 57,200 updates/day \u00b7 Anypoint MQ absorbs the burst \u00b7 CPU autoscaling 2 \u2192 4 replicas \u00b7 drained in ~6 min \u00b7 0 dropped", "The queue absorbs the spike and capacity scales out; nothing is dropped");
+        C.caption("Hailstorm over Dallas\u2013Fort Worth: Anypoint MQ absorbs the spike while CPU autoscaling adds two replicas. Watch the backlog drain.");
+        const drain = async () => {
+          const q = () => document.querySelector("#leftUI .mon-mq");
+          for (let i = 1; i <= 16; i++) {
+            await x.sleep(380);
+            const el = q(); if (!el) return;
+            const left = Math.round(2840 * Math.pow(1 - i / 16, 1.6));
+            el.querySelector(".mq-n").textContent = left.toLocaleString();
+            el.querySelector(".mq-bar span").style.width = `${Math.max(1, 100 * left / 2840)}%`;
+          }
+          const el = q(); if (!el) return;
+          el.classList.remove("warn"); el.classList.add("ok");
+          el.querySelector(".mq-s").textContent = "drained \u00b7 0 dropped";
+          const foot = document.querySelector("#leftUI .mon-foot");
+          if (foot) foot.textContent = "Backlog drained \u00b7 scales back to 2 replicas after the cooldown";
+          const badge = document.querySelector("#leftUI .mon-h .ap-badge");
+          if (badge) { badge.textContent = "Cooling down"; badge.classList.replace("warn", "ok"); }
+        };
+        await Promise.all([drain(), N("surge 4x \u00b7 57,200 updates/day rate \u00b7 Anypoint MQ absorbs the burst \u00b7 CPU autoscaling 2 \u2192 4 replicas \u00b7 drained in ~6 min \u00b7 0 dropped", "The queue absorbs the spike and capacity scales out; nothing is dropped")]);
+        C.caption("Capacity grew only for the storm, then returns to two replicas. Same APIs, same canonical model, same 11:11 tables at every size.");
       },
     },
     {

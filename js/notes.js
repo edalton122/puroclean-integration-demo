@@ -22,7 +22,7 @@ window.NOTES = {
   "4.4": "Clicks: the On-time completion tile, Upstream table, Downstream. The lineage traces the number back through Tableau and MuleSoft to the exact PSA field, then forward to every workbook and Pulse metric that uses it.",
   "4.5": "Clicks: ask, drag Loss type, Save. CJ asks Tableau Agent a question in plain English. No IT ticket, no new pipeline, no extract. The certified data source means his view is already filtered to West Region via RLS. Tableau Agent is part of Tableau+.",
 
-  "5.1": "Clicks: 430, 900, Storm surge. At 50 locations: two replicas. At 900: same two replicas. Storm surge: Anypoint MQ absorbs the burst while CloudHub 2.0 autoscales to four replicas. Nothing is dropped.",
+  "5.1": "Clicks: 430, 900, Storm surge. Point at the map filling in and the counters: volume goes \u00d78, then \u00d717, but the banner stays at zero code changes, zero redeploys, two replicas. Only CPU moves. Storm surge: hailstorm over DFW, the chart breaks through the old axis, Anypoint MQ holds the backlog while CloudHub 2.0 autoscales to four replicas, and the backlog drains to zero. Nothing is dropped.",
   "5.2": "Clicks: Connect franchise, Dayton North, Connect. FranConnect already knows the franchise; MuleSoft checks the PSA account; Connect adds one row to a config table. No deployment, no code. Dayton North's first 23 jobs flow on the next five-minute cycle.",
   "5.3": "Clicks: the template, Create from template, Deploy to sandbox. A fifth SPAR platform is one new System API from an Exchange template. The canonical model, Process API, quality rules, 11:11 and Tableau are reused as-is. Downstream: zero changes.",
 
