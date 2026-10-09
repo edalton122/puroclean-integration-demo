@@ -55,6 +55,7 @@ window.Screens = (function () {
       <div class="lx-gh">
         ${brand}
         <div class="lx-search">${SVG.search}<span>${search}</span></div>
+        <span class="lx-illus">Illustrative UI</span>
         <div class="lx-ghi"><i>${SVG.help}</i>${kind === "tableau" || kind === "anypoint" ? "" : `<i>${SVG.gear}</i>`}<i class="bell ${opt.bell ? "on" : ""}">${SVG.bell}</i><span class="lx-av">${opt.avatar || "CB"}</span></div>
       </div>
       ${kind === "anypoint" ? `<div class="ap-env-bar"><span class="ap-env-sel">${esc(opt.env || "Production")} <i>\u25be</i></span>${(tabs || []).map((t) => `<span class="lx-tab ${t === active ? "on" : ""}">${esc(t)}</span>`).join("")}</div>` : `<div class="lx-nav">${(tabs || []).map((t) => `<span class="lx-tab ${t === active ? "on" : ""}">${esc(t)}</span>`).join("")}</div>`}

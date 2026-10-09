@@ -252,7 +252,7 @@ window.Acts = (function () {
 
     /* ---------- Chapter 1: Adoption */
     {
-      id: "1.1", act: "1", short: true, title: "A new water loss, accepted in Dash",
+      id: "1.1", act: "1", short: true, title: "A new water loss in Dash",
       desc: "A water-damage job is dispatched to PuroClean Wichita East. The project manager logs it in Dash, the job app they already use, and accepts it, recording the dispatch and acceptance times exactly as they do today.", why: "Franchises don't change tools or add steps. MuleSoft picks up the change on its own, which is what makes high adoption realistic.",
       powered: ["Franchise's SPAR platform", "No change for the franchise"],
       async run(x) {
@@ -538,7 +538,7 @@ window.Acts = (function () {
       },
     },
     {
-      id: "3.2", act: "3", short: true, title: "Data health, CJ's own KPI",
+      id: "3.2", act: "3", short: true, title: "Data health: CJ's KPI",
       desc: "CJ's data health dashboard shows the share of franchises with usable data, how many records are being held back, and the top reasons they were held. CJ clicks the top reason to see exactly which franchises' records are held, including a Wichita East job saved at 10:12 AM with no loss type.", why: "Usable data climbs from under 20% as each wave goes live, and CJ can see exactly who to follow up with next.",
       powered: ["Tableau Cloud", "11:11 curated views", "Certified data source"],
       async run(x) {
@@ -583,7 +583,7 @@ window.Acts = (function () {
 
     /* ---------- Chapter 4: See it */
     {
-      id: "4.1", act: "4", short: true, title: "CJ's Tuesday afternoon: network to one job",
+      id: "4.1", act: "4", short: true, title: "Network to one job",
       desc: "CJ starts at the whole network and clicks down through Kansas and Wichita to a single job and its milestone history. Each click is a live query: SLA milestones are minutes old, everything else is as of the 2:00 AM batch.", why: "Today the SLA report takes CJ two minutes and an RD two hours, and there's no network view at all. Here, anyone with access goes from the network to one job in three clicks.",
       powered: ["Tableau Cloud", "Certified data sources", "Live via Tableau Bridge"],
       async run(x) {
@@ -1037,7 +1037,7 @@ window.Acts = (function () {
 
     /* ---------- Chapter 7: Security */
     {
-      id: "7.1", act: "7", short: true, title: "Security: Nick's gating item",
+      id: "7.1", act: "7", short: true, title: "Security at the gateway",
       desc: "Every call into PuroClean's APIs, from a vendor webhook or an internal app, passes the same gateway checks: identity, authorization, payload inspection and rate limits. When MuleSoft polls a vendor, it uses encrypted connections and stored credentials, and validates every response.", why: "The platform is independently certified, and PuroClean keeps control of its own policies, users and credentials.",
       powered: ["Anypoint API Manager", "Anypoint Security", "MuleSoft Trust Center"],
       async run(x) {

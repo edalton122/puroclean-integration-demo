@@ -120,7 +120,7 @@ code { font-family: var(--mono); font-size: .92em; }
   overflow: auto; padding: 18px 22px 30px; display: flex; flex-direction: column; align-items: center; justify-content: safe center; gap: 12px;
   background: radial-gradient(circle at 20% 0%, #fff 0, var(--bg) 60%);
 }
-.right { background: var(--cx-bg); color: var(--cx-text); display: flex; flex-direction: column; min-height: 0; border-left: 4px solid var(--red); }
+.right { background: var(--cx-bg); color: var(--cx-text); display: flex; flex-direction: column; min-height: 0; border-left: 1px solid var(--cx-line); }
 .foot {
   display: flex; gap: 18px; justify-content: space-between; padding: 5px 18px; font-size: 11.5px; color: #888;
   background: #fff; border-top: 1px solid var(--line);
@@ -245,7 +245,7 @@ tr.tapped > td { background: #e3eefa; }
 .cmp-foot { font-size: 13px; font-style: italic; color: #555; border-top: 1px solid var(--line); padding-top: 8px; }
 
 .next-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-.next-grid div { background: var(--bg); border-radius: 8px; padding: 12px; border-top: 3px solid var(--navy); }
+.next-grid div { background: var(--bg); border-radius: 8px; padding: 12px; border: 1px solid var(--line); }
 .next-grid b { display: block; }
 .next-grid small { color: #666; }
 blockquote { margin: 16px 0 8px; padding: 10px 14px; border-left: 4px solid var(--red); background: #fdf3f4; font-size: 17px; font-style: italic; }
@@ -293,7 +293,7 @@ blockquote span { display: block; font-size: 12px; font-style: normal; color: #7
 .tb-body { padding: 10px 12px 12px; }
 .tb-kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; margin-bottom: 9px; }
 .tb-kpis.three { grid-template-columns: repeat(3, 1fr); }
-.kpi { border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; border-top: 3px solid var(--navy); }
+.kpi { border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; }
 .kpi-k { font-size: 11px; color: #666; line-height: 1.15; }
 .kpi-v { font-size: 20px; font-weight: 700; color: var(--navy); }
 .kpi-v small { font-size: 11px; font-weight: 600; }
@@ -565,8 +565,8 @@ body.exec .cx-mini .lg { grid-template-columns: 92px 1fr; }
 .srm { background: var(--cx-panel); border: 1px solid var(--cx-line); border-radius: 10px; padding: 12px 14px; }
 .srm-h { font-weight: 700; font-size: 14px; margin-bottom: 8px; }
 .srm-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.srm-cols > div { background: #2a2627; border-radius: 8px; padding: 10px 12px; border-top: 3px solid var(--cx-blue); }
-.srm-cols > div.pc { border-top-color: var(--red); }
+.srm-cols > div { background: #2a2627; border-radius: 8px; padding: 10px 12px; }
+.srm-cols > div.pc { }
 .srm-cols ul { margin: 6px 0 0; padding-left: 18px; font-size: 13.5px; }
 .srm-src { font-size: 11.5px; color: var(--cx-mut); margin-top: 8px; }
 
@@ -585,7 +585,7 @@ body.exec .cx-mini .lg { grid-template-columns: 92px 1fr; }
 .ghost-light { background: transparent; color: #fff; border: 1.5px solid rgba(255,255,255,.5); font-weight: 600; }
 .ghost-light:hover { border-color: #fff; }
 .hero-stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin: 16px 0; }
-.hs { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; border-top: 3px solid var(--red); }
+.hs { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
 .hs b { display: block; font-size: 24px; color: var(--ink); }
 .hs span { font-size: 13px; color: #666; }
 .hero-split { display: grid; grid-template-columns: 45fr 55fr; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); }
@@ -625,7 +625,7 @@ body.exec .cx-mini .lg { grid-template-columns: 92px 1fr; }
 .arch-out .arch-h { color: #888; }
 
 .close-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 14px 0 16px; }
-.close-cards > div { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; border-top: 4px solid var(--red); }
+.close-cards > div { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
 .close-cards i { font-style: normal; font-weight: 700; color: #fff; background: var(--red); width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; margin-bottom: 8px; }
 .close-cards b { font-size: 19px; display: block; }
 .close-cards p { margin: 4px 0 0; color: #555; }
@@ -675,6 +675,9 @@ body.exec .cx-mini .lg { grid-template-columns: 92px 1fr; }
 .lx-logo { height: 18px; display: block; }
 .lx-search { flex: 1; max-width: 300px; margin: 0 auto; display: flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border: 1px solid #c9c9c9; border-radius: 14px; color: var(--sf-mut); background: #fff; font-size: 12px; white-space: nowrap; overflow: hidden; }
 .lx-search svg { width: 13px; height: 13px; flex: none; }
+.lx-illus { font-size: 10px; font-weight: 600; letter-spacing: .03em; color: #888; background: #f0f0f0; border: 1px solid #ddd; border-radius: 10px; padding: 2px 7px; white-space: nowrap; flex: none; }
+.lx.anypoint .lx-illus { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.15); color: #aaa; }
+.lx.vendor.dash .lx-illus { background: rgba(0,0,0,.08); border-color: rgba(0,0,0,.12); color: #7a8a9c; }
 .lx-ghi { display: flex; gap: 11px; align-items: center; color: var(--sf-mut); }
 .lx-ghi i { display: block; position: relative; }
 .lx-ghi svg { width: 15px; height: 15px; display: block; }
@@ -1003,7 +1006,7 @@ body.exec .cx-mini .lg { grid-template-columns: 92px 1fr; }
 .tv-bans.n4 { grid-template-columns: repeat(4, 1fr); }
 .tv-bans.n5 { grid-template-columns: repeat(5, 1fr); }
 .tv-ban { position: relative; border: 1px solid #e6e6e6; border-radius: 4px; padding: 6px 8px 4px; background: #fff; min-width: 0; transition: box-shadow .2s, border-color .2s; }
-.tv-ban::before { content: ""; position: absolute; left: -1px; right: -1px; top: -1px; height: 3px; background: #4e79a7; border-radius: 4px 4px 0 0; }
+.tv-ban::before { content: ""; position: absolute; left: -1px; right: -1px; top: -1px; height: 3px; border-radius: 4px 4px 0 0; }
 .tv-bk { font-size: 10.5px; color: #666; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tv-bv { font-size: 20px; font-weight: 700; color: #1b1b1b; line-height: 1.15; letter-spacing: -.01em; white-space: nowrap; }
 .tv-bd { font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
