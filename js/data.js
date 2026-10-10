@@ -260,7 +260,7 @@ window.PC = (function () {
       role: "Regional Director",
       org: "PuroClean Corporate \u00b7 West Region",
       question: "Will I know before my customer complains?",
-      need: "Live SLA alerts routed by region, and a morning digest of how my region is trending",
+      need: "A heads-up when a franchise in my region misses an SLA, and a morning digest of how my region is trending",
       chapters: ["2", "4", "8"],
       color: "#0176D3",
       initials: "RD",
@@ -303,7 +303,7 @@ window.PC = (function () {
     "2:rd": { matters: [
       "The franchise owner is texted automatically — I don't have to send it",
       "Only the alerts for my region, not the whole network",
-      "Get to the job details from my phone, wherever I am",
+      "A heads-up when it happens, and word when it\u2019s resolved",
     ] },
     "3:pm": { q: "How does this help me?", matters: [
       "Saving a job in Dash shouldn\u2019t break corporate reporting",

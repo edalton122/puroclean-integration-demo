@@ -657,6 +657,13 @@ body.exec .cx-mini .lg { grid-template-columns: 92px 1fr; }
 .sms-bubble small { display: block; margin-top: 4px; font-size: 11px; color: #6b6b70; }
 .sms-bubble.ok { background: #d6f5df; }
 .ml-app.msg { background: #34c759; }
+.duo-col.side { zoom: .72; }
+.duo-note { font-size: 15px; color: var(--mut, #706e6b); }
+.notifs { display: flex; flex-direction: column; gap: 8px; }
+.notif.ok b { color: #2e844a; }
+.sms-call { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 18px; padding: 8px 14px; background: #34c759; color: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.sms-call svg { width: 14px; height: 14px; }
+.sms-call.done { background: #e9e9eb; color: #2e844a; cursor: default; }
 .left-ui { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
 .left-desc {
   position: sticky; bottom: 0; z-index: 3; flex: none;

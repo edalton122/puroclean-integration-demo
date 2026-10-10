@@ -319,6 +319,7 @@
         left(html) { if (Run.alive(t)) { leftUI.innerHTML = html; applyPulse(); } },
         tap: (names) => tap(names, t),
         sleep: (ms) => Run.sleep(ms, t),
+        reveal(sel) { const el = Run.alive(t) && leftUI.querySelector(sel); if (el) revealTarget(el, "smooth"); },
       };
       await s.run(ctx);
       if (Run.alive(t)) {
@@ -431,7 +432,7 @@
 
   const ANSWERS = [
     { q: "Will franchises have to change anything?", a: "No. They keep Dash, PSA, Albi or JobSite. MuleSoft reads changes on a 5-minute cycle; the franchise sees nothing different." },
-    { q: "Will we know before the customer complains?", a: "Yes. A missed SLA texts the franchise owner and alerts the RD in seconds, automatically, routed by region. The RD opens the job in Tableau Mobile from the alert." },
+    { q: "Will we know before the customer complains?", a: "Yes. A missed SLA texts the franchise owner in seconds, automatically, and the RD for that region gets a heads-up. When the franchise logs the call, the alert closes itself." },
     { q: "Can we trust the numbers?", a: "Yes. Duplicates are merged automatically. Bad records are held with a reason, not loaded silently, and the SLA clock keeps running while they\u2019re held." },
     { q: "Can everyone see what matters, at their level?", a: "Yes. One dashboard, row-level security, and three clicks from the network to one job. CJ can ask Tableau Agent and save a new view \u2014 no IT ticket." },
     { q: "Will it hold at 900 locations and new platforms?", a: "Yes. CloudHub 2.0 replicas and Anypoint MQ handle the load. Adding a franchise is configuration; adding a platform is a new System API from an Exchange template." },
@@ -448,7 +449,7 @@
     "1.3": "The record landed in the 11:11 lake and the SLA clock started",
     "1.4": "Near-real-time and daily lanes, side by side",
     "1.5": "The same job across four platforms, one language",
-    "2.1": "The franchise owner was texted automatically; Jordan had the job in Tableau Mobile in seconds",
+    "2.1": "The franchise owner was texted automatically and called the customer; Jordan got a heads-up",
     "3.1": "Duplicates merged; a bad record held with a reason, not loaded silently",
     "3.2": "Data health became CJ\u2019s own KPI",
     "4.1": "Network to one job in three clicks",
@@ -504,7 +505,7 @@
       /* What each persona does in each chapter they appear in. */
       const BEATS = {
         pm: { "1": { a: "Job created in Dash",         b: "MuleSoft picks it up \u00b7 4 min",   s: true  } },
-        rd: { "2": { a: "SLA alert \u00b7 seconds",    b: "Franchise texted \u00b7 Tableau Mobile",  s: true  },
+        rd: { "2": { a: "SLA alert \u00b7 seconds",    b: "Franchise texted \u00b7 RD heads-up",     s: true  },
               "4": { a: "West region view",             b: "Subscribe + data-driven alert",         s: false },
               "8": { a: "Tableau digest (West)",        b: "Fresno East \u25bc30% \u00b7 open in Tableau", s: true  } },
         cj: { "3": { a: "Certified data source",       b: "DQ warning \u00b7 data health KPI",     s: true  },
@@ -639,7 +640,7 @@
               ["Data arrives", "Every 5 minutes for SLA milestones \u00b7 nightly for everything else \u00b7 no exports"],
               ["Field names", "Mapped once per platform by DataWeave \u00b7 one PuroLogic canonical model downstream"],
               ["Duplicates", "Automatically merged \u00b7 bad records held with a reason code, not silently loaded"],
-              ["SLA breach", "Alert in seconds, routed to the right RD \u00b7 job link in Tableau Mobile"],
+              ["SLA breach", "Franchise owner texted in seconds, automatically \u00b7 heads-up to the right RD"],
               ["Network view", "Network to one job in three clicks \u00b7 row-level security for each region"],
               ["Usable data", "Rises as each wave goes live \u00b7 CJ\u2019s own Integrations working KPI"],
               ["Add a platform", "New System API from an Exchange template \u00b7 model, rules, lake, Tableau unchanged"],

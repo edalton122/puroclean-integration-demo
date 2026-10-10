@@ -880,23 +880,25 @@ window.Screens = (function () {
   const msgApp = '<span class="ml-app msg"><svg viewBox="0 0 24 24"><path d="M12 3C6.5 3 2 6.8 2 11.5c0 2.4 1.2 4.6 3.1 6.1L4 21l4-2c1.2.4 2.6.6 4 .6 5.5 0 10-3.8 10-8.5S17.5 3 12 3z" fill="currentColor"/></svg></span>';
   const SMS_TEXT = "PuroClean SLA: JOB-CA-11902 missed 30-min contact. Call the customer now.";
 
-  /* o = { sent, opened, rd, acked, resolved, tap: "sms" | "open" | "ack" } */
+  /* o = { sent, opened, called, resolved, tap: "sms" | "call" } */
   function franchiseSms(o = {}) {
-    const lock = (time, notif) => `<div class="ph-lock"><div class="ph-time">${time}</div><div class="ph-date">Tuesday, February 16</div>${notif || ""}</div>`;
+    const lock = (time, notifs) => `<div class="ph-lock"><div class="ph-time">${time}</div><div class="ph-date">Tuesday, February 16</div><div class="notifs">${notifs || ""}</div></div>`;
+    const clock = o.resolved ? "8:10" : o.called ? "8:06" : "8:02";
+    const callBtn = `<button class="sms-call ${o.called ? "done" : ""}" ${o.tap === "call" ? 'data-tap="call"' : ""}>${PHONE} ${o.called ? "Called Dana \u00b7 8:06 AM" : "Call Dana Whitfield"}</button>`;
     const owner = !o.opened
       ? lock("8:02", o.sent ? `<div class="notif" ${o.tap === "sms" ? 'data-tap="sms"' : ""}><div class="nt-h">${msgApp}<span>MESSAGES \u00b7 now</span></div><b>PuroClean Alerts</b><p>${SMS_TEXT}</p></div>` : "")
       : `<div class="m-app">${mHead("PuroClean Alerts")}
           <div class="m-body sms-thread">
             <div class="sms-from">Text message \u00b7 Today 8:02 AM</div>
             <div class="sms-bubble">${SMS_TEXT}<small>JOB-CA-11902 \u00b7 Dana Whitfield \u00b7 (916) 555-0187</small></div>
+            ${callBtn}
             ${o.resolved ? `<div class="sms-from">8:10 AM</div><div class="sms-bubble ok">PuroClean SLA: JOB-CA-11902 resolved. Your customer contact was logged at 8:06 AM. No further action needed.</div>` : ""}
           </div></div>`;
-    const rd = !o.rd
-      ? lock("8:02", o.sent ? `<div class="notif" ${o.tap === "open" ? 'data-tap="open"' : ""}><div class="nt-h">${mailApp}<span>MAIL \u00b7 now</span></div><b>SLA alert: JOB-CA-11902</b><p>PuroClean Sacramento North \u00b7 not Contacted 34 min after Received/Accepted. Owner texted. Open in Tableau \u203a</p></div>` : "")
-      : tmInner({ tap: o.tap === "ack" ? "ack" : null, acked: o.acked, contacted: o.resolved });
+    const heads = o.sent ? `<div class="notif"><div class="nt-h">${mailApp}<span>MAIL \u00b7 8:02</span></div><b>Heads-up: JOB-CA-11902</b><p>Sacramento North missed the 30-min contact SLA. Owner texted automatically.</p></div>` : "";
+    const done = o.resolved ? `<div class="notif ok"><div class="nt-h">${mailApp}<span>MAIL \u00b7 now</span></div><b>Resolved: JOB-CA-11902</b><p>Customer contacted 8:06 AM. Open in Tableau \u203a</p></div>` : "";
     return `<div class="duo">
-      <div class="duo-col">${phone("ownerPhone", owner, "8:02")}</div>
-      <div class="duo-col">${phone("rdPhone", rd, o.resolved ? "8:10" : "8:02")}</div>
+      <div class="duo-col">${phone("ownerPhone", owner, clock)}</div>
+      <div class="duo-col side">${phone("rdPhone", lock(clock, done + heads), clock)}<div class="duo-note">Heads-up only \u00b7 no action needed</div></div>
     </div>`;
   }
 

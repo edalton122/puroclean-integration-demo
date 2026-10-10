@@ -463,9 +463,9 @@ window.Acts = (function () {
 
     /* ---------- Chapter 2: Know first */
     {
-      id: "2.1", act: "2", short: true, title: "A missed SLA reaches the franchise and the RD in seconds",
-      desc: "At 10:02 AM Central, a Sacramento job passes 30 minutes without a customer contact (illustrative SLA). MuleSoft texts the franchise owner automatically and gives the West regional director a heads-up by email and Tableau Mobile. Nobody has to send anything.", why: "Nick\u2019s franchise text, made automatic: today someone sends it by hand. Here it goes out in seconds, and the RD knows too.",
-      powered: ["MuleSoft notification-api", "FranConnect owner + region lookup", "Text, email, Tableau Mobile"],
+      id: "2.1", act: "2", short: true, title: "A missed SLA texts the franchise owner in seconds",
+      desc: "At 10:02 AM Central, a Sacramento job passes 30 minutes without a customer contact (illustrative SLA). MuleSoft texts the franchise owner automatically to call the customer, and the West regional director gets a heads-up. Nobody has to send anything.", why: "Nick\u2019s franchise text, made automatic: today someone sends it by hand. Here it goes out in seconds, and closes itself once the franchise logs the call.",
+      powered: ["MuleSoft notification-api", "FranConnect owner + region lookup", "Text and email, you choose"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
         x.left(S.franchiseSms());
@@ -485,36 +485,31 @@ window.Acts = (function () {
         x.left(S.franchiseSms({ sent: true, tap: "sms" }));
         C.extra(listCard("Delivery rules (you set them)", [
           ["Franchise owner", "Text message, immediately", "every missed SLA"],
-          ["Regional director", "Email + Tableau Mobile, heads-up", "by FranConnect region"],
-          ["Escalation", "VP of Operations", "if no one acknowledges"],
+          ["Regional director", "Email heads-up, no action needed", "by FranConnect region"],
+          ["Escalation (optional)", "VP of Operations", "if the SLA is still open after 30 min"],
         ]));
-        await N("notification-api \u00b7 POST /alerts \u00b7 sms \u2192 owner CA-0219 \u00b7 email + mobile \u2192 rd.west \u00b7 202 Accepted \u00b7 412 ms", "The owner gets a text and Jordan gets a heads-up, in under half a second");
+        await N("notification-api \u00b7 POST /alerts \u00b7 sms \u2192 owner CA-0219 \u00b7 email \u2192 rd.west (heads-up) \u00b7 202 Accepted \u00b7 412 ms", "The owner gets a text and Jordan gets a heads-up, in under half a second");
+        C.clock([{ l: "Detected", v: "+34 min" }, { l: "Owner texted in", n: 0.4, dec: 1, v: "{n} s", state: "ok" }, { l: "Heads-up to", v: "RD, West" }]);
         C.caption("Tap the text on the franchise owner\u2019s phone.");
         await x.tap("sms");
-        x.left(S.franchiseSms({ sent: true, opened: true, tap: "open" }));
+        x.left(S.franchiseSms({ sent: true, opened: true, tap: "call" }));
+        C.node("notify", "ok");
         C.tag("notify", "sms delivered \u00b7 owner", "ok");
         await N("sms \u00b7 JOB-CA-11902 \u00b7 delivered to owner CA-0219 \u00b7 1.2 s", "The owner knows to call the customer now");
-        C.caption("Now tap the alert on Jordan\u2019s phone.");
-        await x.tap("open");
-        C.node("notify", "ok");
-        x.left(S.franchiseSms({ sent: true, opened: true, rd: true, tap: "ack" }));
-        await N("link \u2192 Tableau Cloud \u00b7 Network Operations \u203a JOB-CA-11902 \u00b7 row-level security: West", "Jordan opens the job in Tableau Mobile and sees the owner was already texted");
-        C.clock([{ l: "Detected", v: "+34 min" }, { l: "Owner texted in", n: 0.4, dec: 1, v: "{n} s", state: "ok" }, { l: "Heads-up to", v: "RD, West" }]);
-        C.caption("Tap Acknowledge so the alert doesn\u2019t escalate to the VP.");
-        await x.tap("ack");
-        x.left(S.franchiseSms({ sent: true, opened: true, rd: true, acked: true }));
-        await C.packet(["notify", "proc"], x.t, { kind: "res", dur: 380 });
-        C.tag("notify", "acknowledged \u00b7 rd.west", "ok");
-        await N("notification-api \u00b7 PATCH /alerts/A-20417 status=acknowledged by rd.west \u00b7 escalation to the VP of Operations cancelled (illustrative rule)", "Acknowledged: the alert stops escalating");
-        await C.log([{ lvl: "info", at: "10:06:00", raw: "PSA \u00b7 JOB-CA-11902 \u00b7 franchise logs the customer call \u00b7 ContactDT = 16:06Z", exec: "After the text, the franchise calls the customer" }], x.t);
+        C.caption("Tap Call Dana Whitfield. The owner calls the customer straight from the text.");
+        await x.tap("call");
+        x.left(S.franchiseSms({ sent: true, opened: true, called: true }));
+        await C.log([{ lvl: "info", at: "10:06:00", raw: "PSA \u00b7 JOB-CA-11902 \u00b7 franchise logs the customer call \u00b7 ContactDT = 16:06Z", exec: "The franchise calls the customer and logs it in PSA, as they do today" }], x.t);
         C.setClock("10:10:00");
         await C.packet(["psa", "s-psa", "proc"], x.t, { dur: 420 });
         C.tag("proc", "CONTACT_30 closed \u00b7 38 min", "warn");
         await C.packet(["proc", "notify"], x.t, { kind: "res", dur: 380 });
-        x.left(S.franchiseSms({ sent: true, opened: true, rd: true, acked: true, resolved: true }));
-        C.tag("notify", "resolved \u00b7 confirmation text", "ok");
-        await N("job-sync-papi \u00b7 10:10 PSA poll \u00b7 contacted 16:06Z \u2192 SLA CONTACT_30 closed late at 38 min \u00b7 alert A-20417 resolved \u00b7 confirmation sms \u2192 owner", "The next poll sees the contact; the alert resolves and the owner gets a confirmation text");
-        C.clock([{ l: "Detected", v: "+34 min" }, { l: "Owner texted in", n: 0.4, dec: 1, v: "{n} s", state: "ok" }, { l: "Acknowledged", v: "1 min", state: "ok" }, { l: "Customer contacted", v: "+38 min", state: "warn", s: "4 min after the text" }]);
+        x.left(S.franchiseSms({ sent: true, opened: true, called: true, resolved: true }));
+        x.reveal(".sms-bubble.ok");
+        C.caption("The alert closed itself. The owner got a confirmation text, and Jordan got a resolved note.");
+        C.tag("notify", "resolved \u00b7 owner + RD told", "ok");
+        await N("job-sync-papi \u00b7 10:10 PSA poll \u00b7 contacted 16:06Z \u2192 SLA CONTACT_30 closed late at 38 min \u00b7 alert A-20417 resolved \u00b7 confirmation sms \u2192 owner \u00b7 resolved email \u2192 rd.west", "The next poll sees the call; the alert closes itself and both get told");
+        C.clock([{ l: "Detected", v: "+34 min" }, { l: "Owner texted in", n: 0.4, dec: 1, v: "{n} s", state: "ok" }, { l: "Customer contacted", v: "+38 min", state: "warn", s: "4 min after the text" }, { l: "Alert closed", v: "Automatically", state: "ok", s: "no one at corporate had to act" }]);
       },
     },
 
