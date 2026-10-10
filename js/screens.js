@@ -294,7 +294,7 @@ window.Screens = (function () {
           </div>
           <div class="dx-quads">
             <div class="dx-quad"><div class="dx-qh">Job Information <span class="dx-pencil">\u270e</span></div>
-              <div class="dx-qf"><label>Office</label><span ${spot("franchise", "")}>PuroClean ${esc(st.franchise || D.franchise.name)}</span></div>
+              <div class="dx-qf"><label>Office</label><span ${spot("franchise", "")}>${esc(st.franchise || D.franchise.name)}</span></div>
               <div class="dx-qf"><label>Loss Type</label>${lossVal}</div>
               <div class="dx-qf"><label>Category</label><span>${J.category.split(" \u00b7 ")[0]}</span></div>
               <div class="dx-qf"><label>Loss Date</label><span>${set.date_of_loss || "\u2014"}</span></div>
@@ -482,14 +482,16 @@ window.Screens = (function () {
 
   /* ------------------------------------------------------------ Tableau Mobile */
   function tableauMobile(o = {}) {
+    return phone("rdPhone", tmInner(o), o.clock || "8:03");
+  }
+
+  function tmInner(o = {}) {
     const c = o.contacted;
     const acts = `<div class="tm-acts">
         <button class="sbtn ${o.acked ? "neutral" : "brand"} xs" ${o.tap === "ack" ? 'data-tap="ack"' : ""}>${o.acked ? "\u2713 Acknowledged" : "Acknowledge alert"}</button>
         <button class="sbtn neutral xs" ${o.tap === "call" ? 'data-tap="call"' : ""}>${PHONE} ${o.called ? "Called \u00b7 2 min" : "Call franchise"}</button>
       </div>`;
-    return phone(
-      "rdPhone",
-      `<div class="m-app">
+    return `<div class="m-app">
         <div class="m-head"><i>${SVG.back}</i><b>${TLOGO} Tableau Mobile</b><i>${SVG.gear}</i></div>
         <div class="m-body tm">
           <div class="tm-banner">Network Operations · West Region</div>
@@ -499,7 +501,7 @@ window.Screens = (function () {
             <div class="tm-row sla"><span>Contact SLA</span><b class="err">${c ? "38 min &nbsp;·&nbsp; late, now contacted" : "34 min &nbsp;·&nbsp; MISSED (30 min)"}</b></div>
             <div class="tm-row"><span>Received/Accepted</span><b>7:28 AM PT</b></div>
             <div class="tm-row"><span>Contacted</span>${c ? "<b>8:06 AM PT</b>" : '<b class="mut">— (not yet)</b>'}</div>
-            <div class="tm-row ok"><span>Franchise texted</span><b>10:02 AM \u00b7 delivered</b></div>
+            <div class="tm-row ok"><span>Franchise texted</span><b>8:02 AM PT \u00b7 delivered</b></div>
           </div>
           ${acts}
           <div class="tm-ml"><div class="tm-mlh">Milestones</div>
@@ -509,9 +511,7 @@ window.Screens = (function () {
             }).join("")}
           </div>
           <div class="tm-foot"><span class="cert">&#9998; Certified data source</span><small>Live via Tableau Bridge</small></div>
-        </div></div>`,
-      o.clock || "8:03"
-    );
+        </div></div>`;
   }
 
   /* ------------------------------------------------------------ Tableau metric detail (Jordan's West digest) */
@@ -877,84 +877,27 @@ window.Screens = (function () {
     );
   }
 
-  /* ------------------------------------------------------------ Two-phone SMS layout (step 2.1) */
+  /* ------------------------------------------------------------ Franchise owner text + Jordan, side by side (step 2.1) */
+  const msgApp = '<span class="ml-app msg"><svg viewBox="0 0 24 24"><path d="M12 3C6.5 3 2 6.8 2 11.5c0 2.4 1.2 4.6 3.1 6.1L4 21l4-2c1.2.4 2.6.6 4 .6 5.5 0 10-3.8 10-8.5S17.5 3 12 3z" fill="currentColor"/></svg></span>';
+  const SMS_TEXT = "PuroClean SLA: JOB-CA-11902 missed 30-min contact. Call the customer now.";
+
+  /* o = { sent, opened, rd, acked, resolved, tap: "sms" | "open" | "ack" } */
   function franchiseSms(o = {}) {
-    /* Left phone: franchise owner's SMS thread */
-    const ownerThread = `<div class="ph-lock"><div class="ph-time">10:02</div><div class="ph-date">Tuesday, February 16</div>
-      <div class="sms-thread">
-        <div class="sms-from">PuroLogic Alerts</div>
-        ${o.sms ? `<div class="sms-bubble in"><b>SLA Alert \u00b7 JOB-CA-11902</b><br/>A customer at PuroClean Sacramento North has not been contacted after 34 min (SLA: 30 min). Please reach out as soon as possible. <em>(illustrative \u00b7 channel configured by Nick)</em></div>
-        <div class="sms-meta">Delivered 10:02 AM</div>
-        ${o.resolved ? '<div class="sms-bubble in ok"><b>\u2713 Resolved \u00b7 JOB-CA-11902</b><br/>Customer contacted at 10:06 AM. Alert closed. Thank you.</div><div class="sms-meta ok">Delivered 10:10 AM</div>' : ""}` : ""}
-      </div></div>`;
-
-    /* Right phone: Jordan\u2019s alert / Tableau Mobile */
-    const rdContent = !o.sms
-      ? `<div class="ph-lock"><div class="ph-time">8:02</div><div class="ph-date">Tuesday, February 16</div>
-          <div class="notif" data-tap="open"><div class="nt-h">${mailApp}<span>MAIL \u00b7 now</span></div>
-          <b>SLA alert: JOB-CA-11902</b>
-          <p>PuroClean Sacramento North \u00b7 not Contacted 34 min after Received/Accepted (7:28 AM). SLA 30 min <em>(illustrative)</em>. Open in Tableau \u203a</p></div></div>`
-      : o.rdOpen
-        ? `<div class="m-app">
-            <div class="m-head"><i>${SVG.back}</i><b>${TLOGO} Tableau Mobile</b><i>${SVG.gear}</i></div>
-            <div class="m-body tm">
-              <div class="tm-banner">Network Ops \u00b7 West Region</div>
-              <div class="tm-job">
-                <div class="tm-row"><span>Job</span><b>JOB-CA-11902</b></div>
-                <div class="tm-row"><span>Franchise</span><b>Sacramento North</b></div>
-                <div class="tm-row sla"><span>Contact SLA</span><b class="err">34 min \u00b7 MISSED (30 min)</b></div>
-                <div class="tm-row ok"><span>Franchise texted</span><b>10:02 AM \u00b7 delivered</b></div>
-              </div>
-              <div class="tm-acts">
-                <button class="sbtn brand xs" data-tap="ack">Acknowledge alert</button>
-                <button class="sbtn neutral xs" data-tap="call">${PHONE} Call franchise</button>
-              </div>
-            </div></div>`
-        : o.rdAcked
-          ? `<div class="m-app">
-              <div class="m-head"><i>${SVG.back}</i><b>${TLOGO} Tableau Mobile</b><i>${SVG.gear}</i></div>
-              <div class="m-body tm">
-                <div class="tm-banner">Network Ops \u00b7 West Region</div>
-                <div class="tm-job">
-                  <div class="tm-row"><span>Job</span><b>JOB-CA-11902</b></div>
-                  <div class="tm-row"><span>Franchise</span><b>Sacramento North</b></div>
-                  <div class="tm-row sla"><span>Contact SLA</span><b class="err">34 min \u00b7 MISSED</b></div>
-                  <div class="tm-row ok"><span>Franchise texted</span><b>10:02 AM \u00b7 delivered</b></div>
-                </div>
-                <div class="tm-acts">
-                  <button class="sbtn neutral xs">\u2713 Acknowledged</button>
-                  <button class="sbtn brand xs" data-tap="call">${PHONE} Call franchise</button>
-                </div>
-              </div></div>`
-          : o.rdCalled
-            ? `<div class="m-app">
-                <div class="m-head"><i>${SVG.back}</i><b>${TLOGO} Tableau Mobile</b><i>${SVG.gear}</i></div>
-                <div class="m-body tm">
-                  <div class="tm-banner">Network Ops \u00b7 West Region</div>
-                  <div class="tm-job">
-                    <div class="tm-row"><span>Job</span><b>JOB-CA-11902</b></div>
-                    <div class="tm-row"><span>Franchise</span><b>Sacramento North</b></div>
-                    <div class="tm-row sla"><span>Contact SLA</span><b class="${o.resolved ? "warn" : "err"}">${o.resolved ? "38 min \u00b7 late, now contacted" : "34 min \u00b7 MISSED"}</b></div>
-                    <div class="tm-row ok"><span>Franchise texted</span><b>10:02 AM \u00b7 delivered</b></div>
-                    ${o.resolved ? '<div class="tm-row ok"><span>Alert</span><b>\u2713 Resolved \u00b7 auto</b></div>' : ""}
-                  </div>
-                  <div class="tm-acts">
-                    <button class="sbtn neutral xs">\u2713 Acknowledged</button>
-                    <button class="sbtn neutral xs">${PHONE} Called \u00b7 2 min</button>
-                  </div>
-                </div></div>`
-            : `<div class="ph-lock"><div class="ph-time">8:02</div><div class="ph-date">Tuesday, February 16</div>
-                <div class="notif" data-tap="open"><div class="nt-h">${mailApp}<span>MAIL \u00b7 now</span></div>
-                <b>SLA alert: JOB-CA-11902</b>
-                <p>PuroClean Sacramento North \u00b7 not Contacted 34 min. Open in Tableau \u203a</p></div></div>`;
-
+    const lock = (time, notif) => `<div class="ph-lock"><div class="ph-time">${time}</div><div class="ph-date">Tuesday, February 16</div>${notif || ""}</div>`;
+    const owner = !o.opened
+      ? lock("8:02", o.sent ? `<div class="notif" ${o.tap === "sms" ? 'data-tap="sms"' : ""}><div class="nt-h">${msgApp}<span>MESSAGES \u00b7 now</span></div><b>PuroClean Alerts</b><p>${SMS_TEXT}</p></div>` : "")
+      : `<div class="m-app">${mHead("PuroClean Alerts")}
+          <div class="m-body sms-thread">
+            <div class="sms-from">Text message \u00b7 Today 8:02 AM</div>
+            <div class="sms-bubble">${SMS_TEXT}<small>JOB-CA-11902 \u00b7 Dana Whitfield \u00b7 (916) 555-0187</small></div>
+            ${o.resolved ? `<div class="sms-from">8:10 AM</div><div class="sms-bubble ok">Resolved: JOB-CA-11902 customer contacted at 8:06 AM. Thanks for the quick call.</div>` : ""}
+          </div></div>`;
+    const rd = !o.rd
+      ? lock("8:02", o.sent ? `<div class="notif" ${o.tap === "open" ? 'data-tap="open"' : ""}><div class="nt-h">${mailApp}<span>MAIL \u00b7 now</span></div><b>SLA alert: JOB-CA-11902</b><p>PuroClean Sacramento North \u00b7 not Contacted 34 min after Received/Accepted. Owner texted. Open in Tableau \u203a</p></div>` : "")
+      : tmInner({ tap: o.tap === "ack" ? "ack" : null, acked: o.acked, contacted: o.resolved });
     return `<div class="duo">
-      <div class="duo-col">
-        ${frame("ownerPhone", ownerThread)}
-      </div>
-      <div class="duo-col">
-        ${frame("rdPhone", rdContent)}
-      </div>
+      <div class="duo-col">${phone("ownerPhone", owner, "8:02")}</div>
+      <div class="duo-col">${phone("rdPhone", rd, o.resolved ? "8:10" : "8:02")}</div>
     </div>`;
   }
 
@@ -1167,7 +1110,7 @@ window.Screens = (function () {
         </div>
         <div class="tb-bar"><span>\u21b6</span><span>\u21b7</span><span>\u27f2 Revert</span><span>\u21bb Refresh</span><span>\u25f7 Pause</span><span class="r">\u2913 Download</span><span>\u2922 Full screen</span><b>${TLOGO}Tableau</b></div>
       </div>`;
-    return frame(opt.role || "cj", lx("Tableau Cloud", OPS_TABS, "Explore", viz, { kind: "tableau", avatar: opt.role === "rd" ? "RD" : "CB" }), { device: "laptop", clock: opt.clock || "2:00 PM" });
+    return frame(opt.role || "cj", lx("Tableau Cloud", OPS_TABS, "Explore", viz, { kind: "tableau", avatar: opt.role === "rd" ? "RD" : "CB", toast: opt.toast, bell: !!opt.toast }), { device: "laptop", clock: opt.clock || "2:00 PM" });
   }
 
   const NET_LOSS = [
@@ -1410,7 +1353,8 @@ window.Screens = (function () {
           ${opt.tile ? statusSheet : drill ? "" : trend}
           ${opt.list ? listSheet : sheet("Top reasons records are held", hbars(reasons, { max: 56 }), { right: opt.tapReason ? "Click a reason" : "" })}
           ${drill ? (opt.rec ? recSheet : heldSheet) : ""}
-        </div>`, { sheet: "Data Health", clock: opt.clock || (amber ? "2:14 PM" : "2:13 PM"), fresh: amber ? "PSA delayed since 2:14 PM" : undefined });
+        </div>`, { sheet: "Data Health", clock: opt.clock || (amber ? "2:14 PM" : "2:13 PM"), fresh: amber ? "PSA delayed since 2:14 PM" : undefined,
+        toast: amber && opt.alert ? toast("error", "Alert sent to CJ and on-call: psa-sapi (System layer) failing since 2:14 PM", "Jobs wait in PSA \u00b7 watermark held \u00b7 0 lost") : "" });
     }
     if (view === "agent") {
       const step = opt.step || 0;
@@ -1481,5 +1425,5 @@ window.Screens = (function () {
     return "";
   }
 
-  return { EMAIL_TPL, AGENT, SHARE, PULSE_SUM, API_BODY, frame, jobApp, platforms, dashJobs, addPlatform, slaAlert, failAlert, pulse, pulseDetail, tableauMobile, tableau, scale, anypointScale, anypointOnboard, anypointExchange, anypointAPIManager, anypointExchangeCatalog, onboard, security, compare, whatsNext, money, icon };
+  return { EMAIL_TPL, AGENT, SHARE, PULSE_SUM, API_BODY, frame, jobApp, platforms, dashJobs, addPlatform, slaAlert, franchiseSms, failAlert, pulse, pulseDetail, tableauMobile, tableau, scale, anypointScale, anypointOnboard, anypointExchange, anypointAPIManager, anypointExchangeCatalog, onboard, security, compare, whatsNext, money, icon };
 })();

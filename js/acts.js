@@ -114,28 +114,24 @@ window.Acts = (function () {
       <tbody>${rows.map(([l, f]) => `<tr class="${f === "started" ? "key" : ""}"><td>${l}</td>${vk.map((k) => `<td class="${k === active ? "on" : ""}"><code>${C.esc(V[k].fields[f])}</code></td>`).join("")}<td><code class="canon">${f}</code></td></tr>`).join("")}</tbody></table></div>`;
   };
 
-  /* Auto-animation: four platforms' loss codes converge on MuleSoft → "Water". ~4 s, no click. */
-  async function rosettaAll(t) {
+  /* Rosetta stone: every platform's loss-type code converges on MuleSoft as one value (~4 s, no click). */
+  async function rosettaAll(x) {
     const vk = ["dash", "psa", "albi", "jobsite"];
-    for (const k of vk) {
-      const code = V[k].fields.loss_type;
-      C.extra({ title: "Every platform \u2192 one record", rows: [
-        ["Dash (PuroLogic)",  V.dash.fields.loss_type,    k === "dash" ? "\u2192 \u201cWater\u201d" : ""],
-        ["PSA",               V.psa.fields.loss_type,     k === "psa"  ? "\u2192 \u201cWater\u201d" : ""],
-        ["Albi",              V.albi.fields.loss_type,    k === "albi" ? "\u2192 \u201cWater\u201d" : ""],
-        ["JobSite",           V.jobsite.fields.loss_type, k === "jobsite" ? "\u2192 \u201cWater\u201d" : ""],
-        ["PuroLogic (canonical)", '"Water"', "one standard value"],
-      ] });
-      await new Promise((res) => setTimeout(res, 800));
+    const code = (k) => V[k].fields.loss_type.split(": ")[1];
+    const card = (n) => `<div class="lin list"><div class="lin-h">Rosetta stone \u00b7 four platforms, one loss type <small class="mut">(vendor codes illustrative)</small></div>
+      ${vk.map((k, i) => `<div class="lin-row"><div class="lin-k">${V[k].name}</div><div class="lin-v"><code>${C.esc(code(k))}</code></div><div class="lin-s">${i < n ? "\u2192 \u201cWater\u201d" : ""}</div></div>`).join("")}
+      ${n === vk.length ? '<div class="lin-row note"><div class="lin-k">PuroClean record</div><div class="lin-v"><code>loss_type: "Water"</code></div><div class="lin-s">one standard value</div></div>' : ""}</div>`;
+    C.caption("The same translation runs for every platform. Four different codes for a water loss, one record.");
+    C.extra(card(0));
+    for (let i = 0; i < vk.length; i++) {
+      const k = vk[i];
+      C.tag(`s-${k}`, code(k), "");
+      await C.packet([k, `s-${k}`, "proc"], x.t, { dur: 360 });
+      C.extra(card(i + 1));
     }
-    /* Final state: all four shown together */
-    C.extra({ title: "Every platform \u2192 one record", rows: [
-      ["Dash (PuroLogic)",  V.dash.fields.loss_type,    '\u2192 "Water"'],
-      ["PSA",               V.psa.fields.loss_type,     '\u2192 "Water"'],
-      ["Albi",              V.albi.fields.loss_type,    '\u2192 "Water"'],
-      ["JobSite",           V.jobsite.fields.loss_type, '\u2192 "Water"'],
-      ["PuroLogic (canonical)", '"Water"', "one standard value"],
-    ] });
+    C.ring("proc");
+    C.tag("proc", 'loss_type "Water" \u00b7 4 codes \u2192 1', "ok", { stay: true });
+    await C.narrate("job-sync-papi \u00b7 canonical loss_type \u00b7 Dash H2O \u00b7 PSA Water \u00b7 Albi WTR \u00b7 JobSite water damage \u2192 \"Water\"", "Four platforms, four codes, one PuroClean value", x.t);
   }
 
   const slaGraph = () => ({
@@ -257,6 +253,9 @@ window.Acts = (function () {
     ${rows.map((r, i) => `<div class="lin-row"><div class="lin-k">${r[0]}</div><div class="lin-v">${r[1]}</div><div class="lin-s">${r[2]}</div></div>${i < rows.length - 1 ? '<div class="lin-arrow">\u2193</div>' : ""}`).join("")}
     ${note ? `<div class="lin-row note"><div class="lin-k">${note[0]}</div><div class="lin-v">${note[1]}</div><div class="lin-s">${note[2]}</div></div>` : ""}</div>`;
 
+  const listCard = (title, rows) => `<div class="lin list"><div class="lin-h">${title}</div>
+    ${rows.map((r) => `<div class="lin-row"><div class="lin-k">${r[0]}</div><div class="lin-v">${r[1]}</div><div class="lin-s">${r[2] || ""}</div></div>`).join("")}</div>`;
+
   /* Tableau round trip: query travels right-to-left, results travel back. */
   async function query(x, path, opt) {
     const N = (a, b) => C.narrate(a, b, x.t);
@@ -350,8 +349,7 @@ window.Acts = (function () {
         app(null, ["loss", "accepted", "franchise"]);
         C.node("proc", "ok", undefined);
         C.clock([{ l: "Fields mapped", n: 6, v: "{n} / 6", state: "ok" }, { l: "Timezone", v: "America/Chicago \u2192 UTC" }, { l: "Enrichment", v: "KS-0412 \u00b7 Central" }, { l: "Since the poll", n: 27, v: "{n} s", state: "run" }]);
-        /* Auto-play Rosetta animation: all four platforms' loss codes converge on one value */
-        await rosettaAll(x.t);
+        await rosettaAll(x);
       },
     },
     {
@@ -465,54 +463,58 @@ window.Acts = (function () {
 
     /* ---------- Chapter 2: Know first */
     {
-      id: "2.1", act: "2", short: true, title: "Franchise owner texted \u00b7 RD has the job in Tableau Mobile",
-      desc: "At 10:02 AM, a Sacramento job passes 30 minutes without a customer contact. Nick already built a text: the franchise owner gets an SMS automatically. The West RD gets an alert, acknowledges it, and opens the job in Tableau Mobile \u2014 all while the customer is still waiting.", why: "Today this shows up in tomorrow\u2019s report. Here, both the owner and the RD know in seconds \u2014 not hours.",
-      powered: ["MuleSoft notification-api", "FranConnect region mapping", "Tableau Mobile"],
+      id: "2.1", act: "2", short: true, title: "A missed SLA reaches the franchise and the RD in seconds",
+      desc: "At 10:02 AM Central, a Sacramento job passes 30 minutes without a customer contact (illustrative SLA). MuleSoft texts the franchise owner automatically and gives the West regional director a heads-up by email and Tableau Mobile. Nobody has to send anything.", why: "Nick\u2019s franchise text, made automatic: today someone sends it by hand. Here it goes out in seconds, and the RD knows too.",
+      powered: ["MuleSoft notification-api", "FranConnect owner + region lookup", "Text, email, Tableau Mobile"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
-        x.left(S.franchiseSms({ empty: true }));
+        x.left(S.franchiseSms());
         const g = C.baseGraph();
         g.nodes.forEach((n) => { if (n.id === "notify") n.kind = "exp"; });
         C.graph(g); C.tab("flow"); C.setClock("10:02:00");
-        C.caption("A scheduled SLA check finds a Sacramento job past 30 minutes. Nick already built a text \u2014 the franchise owner is notified automatically.");
+        C.caption("A scheduled SLA check finds a Sacramento job past 30 minutes. The notification layer looks up who to tell.");
         C.ambient(x.t, POLLS, { every: 650 });
         await C.packet(["s-psa", "proc"], x.t);
         C.tag("proc", "CONTACT_30 \u2717 34 min", "err");
         await N("sla-check \u00b7 every minute \u00b7 JOB-CA-11902 \u00b7 received_accepted 15:28Z \u00b7 contacted NULL at +34m (latest PSA poll) \u2192 BREACH", "A Sacramento job missed the 30-minute contact SLA");
         await C.packet(["fran", "s-fran", "proc"], x.t, { kind: "ref", dur: 420 });
-        C.tag("s-fran", "CA-0219 \u2192 West \u2192 owner + RD", "");
-        await N("route \u00b7 franchise CA-0219 \u2192 owner SMS + region West \u2192 Regional Director (FranConnect) \u00b7 recipient and channel illustrative", "Routed to the franchise owner and the West RD");
+        C.tag("s-fran", "CA-0219 \u2192 owner mobile + RD West", "");
+        await N("route \u00b7 franchise CA-0219 \u2192 owner mobile (FranConnect) \u00b7 region West \u2192 Regional Director \u00b7 recipients illustrative", "Two recipients: the franchise owner and the West RD");
         await C.packet(["proc", "notify"], x.t, { kind: "err", finalState: "err" });
-        C.tag("notify", "SMS + alert \u00b7 sent", "err");
-        x.left(S.franchiseSms({ sms: true }));
-        C.extra({ title: "Delivery rules", rows: [
-          ["Owner SMS", "Always \u00b7 SLA CONTACT_30 fired", "immediate"],
-          ["RD alert", "CONTACT_30 + region routing (FranConnect)", "immediate"],
-          ["VP escalation", "If RD does not acknowledge in 15 min", "conditional"],
-        ] });
-        await N("notification-api \u00b7 POST /alerts \u00b7 sms to owner + email to rd.west \u00b7 202 Accepted \u00b7 412 ms", "The franchise owner gets a text; the RD gets an alert");
-        C.caption("Tap the alert to open the job in Tableau Mobile.");
+        C.tag("notify", "text + email \u00b7 sent", "err");
+        x.left(S.franchiseSms({ sent: true, tap: "sms" }));
+        C.extra(listCard("Delivery rules (you set them)", [
+          ["Franchise owner", "Text message, immediately", "every missed SLA"],
+          ["Regional director", "Email + Tableau Mobile, heads-up", "by FranConnect region"],
+          ["Escalation", "VP of Operations", "if no one acknowledges"],
+        ]));
+        await N("notification-api \u00b7 POST /alerts \u00b7 sms \u2192 owner CA-0219 \u00b7 email + mobile \u2192 rd.west \u00b7 202 Accepted \u00b7 412 ms", "The owner gets a text and Jordan gets a heads-up, in under half a second");
+        C.caption("Tap the text on the franchise owner\u2019s phone.");
+        await x.tap("sms");
+        x.left(S.franchiseSms({ sent: true, opened: true, tap: "open" }));
+        C.tag("notify", "sms delivered \u00b7 owner", "ok");
+        await N("sms \u00b7 JOB-CA-11902 \u00b7 delivered to owner CA-0219 \u00b7 1.2 s", "The owner knows to call the customer now");
+        C.caption("Now tap the alert on Jordan\u2019s phone.");
         await x.tap("open");
         C.node("notify", "ok");
-        x.left(S.franchiseSms({ sms: true, rdOpen: true }));
-        await N("link \u2192 Tableau Cloud \u00b7 Network Operations \u203a JOB-CA-11902 \u00b7 row-level security: West", "The RD opens the job in Tableau Mobile from the alert");
-        C.clock([{ l: "Detected", v: "+34 min" }, { l: "Alert sent in", n: 0.4, dec: 1, v: "{n} s", state: "ok" }, { l: "Routed to", v: "Owner + RD" }]);
+        x.left(S.franchiseSms({ sent: true, opened: true, rd: true, tap: "ack" }));
+        await N("link \u2192 Tableau Cloud \u00b7 Network Operations \u203a JOB-CA-11902 \u00b7 row-level security: West", "Jordan opens the job in Tableau Mobile and sees the owner was already texted");
+        C.clock([{ l: "Detected", v: "+34 min" }, { l: "Owner texted in", n: 0.4, dec: 1, v: "{n} s", state: "ok" }, { l: "Heads-up to", v: "RD, West" }]);
         C.caption("Tap Acknowledge so the alert doesn\u2019t escalate to the VP.");
         await x.tap("ack");
-        x.left(S.franchiseSms({ sms: true, rdAcked: true }));
+        x.left(S.franchiseSms({ sent: true, opened: true, rd: true, acked: true }));
         await C.packet(["notify", "proc"], x.t, { kind: "res", dur: 380 });
         C.tag("notify", "acknowledged \u00b7 rd.west", "ok");
-        await N("notification-api \u00b7 PATCH /alerts/A-20417 status=acknowledged by rd.west \u00b7 escalation to the VP of Operations cancelled", "Acknowledged: the alert stops escalating");
-        C.caption("Tap Call franchise. The RD calls Sacramento North while the customer is still waiting.");
-        await x.tap("call");
-        x.left(S.franchiseSms({ sms: true, rdCalled: true }));
-        await C.log([{ lvl: "info", at: "10:06:00", raw: "PSA \u00b7 JOB-CA-11902 \u00b7 franchise logs the customer call \u00b7 ContactDT = 16:06Z", exec: "After the RD's call, the franchise contacts the customer" }], x.t);
+        await N("notification-api \u00b7 PATCH /alerts/A-20417 status=acknowledged by rd.west \u00b7 escalation to the VP of Operations cancelled (illustrative rule)", "Acknowledged: the alert stops escalating");
+        await C.log([{ lvl: "info", at: "10:06:00", raw: "PSA \u00b7 JOB-CA-11902 \u00b7 franchise logs the customer call \u00b7 ContactDT = 16:06Z", exec: "After the text, the franchise calls the customer" }], x.t);
         C.setClock("10:10:00");
         await C.packet(["psa", "s-psa", "proc"], x.t, { dur: 420 });
         C.tag("proc", "CONTACT_30 closed \u00b7 38 min", "warn");
-        x.left(S.franchiseSms({ sms: true, rdCalled: true, resolved: true }));
-        await N("job-sync-papi \u00b7 10:10 PSA poll \u00b7 contacted 16:06Z \u2192 SLA CONTACT_30 closed late at 38 min \u00b7 alert A-20417 resolved \u00b7 Tableau updates live", "The next poll picks up the contact; the alert resolves itself. The owner gets a confirmation text.");
-        C.clock([{ l: "Detected", v: "+34 min" }, { l: "Alert sent in", n: 0.4, dec: 1, v: "{n} s", state: "ok" }, { l: "Acknowledged", v: "1 min", state: "ok" }, { l: "Customer contacted", v: "+38 min", state: "warn", s: "4 min after the alert" }]);
+        await C.packet(["proc", "notify"], x.t, { kind: "res", dur: 380 });
+        x.left(S.franchiseSms({ sent: true, opened: true, rd: true, acked: true, resolved: true }));
+        C.tag("notify", "resolved \u00b7 confirmation text", "ok");
+        await N("job-sync-papi \u00b7 10:10 PSA poll \u00b7 contacted 16:06Z \u2192 SLA CONTACT_30 closed late at 38 min \u00b7 alert A-20417 resolved \u00b7 confirmation sms \u2192 owner", "The next poll sees the contact; the alert resolves and the owner gets a confirmation text");
+        C.clock([{ l: "Detected", v: "+34 min" }, { l: "Owner texted in", n: 0.4, dec: 1, v: "{n} s", state: "ok" }, { l: "Acknowledged", v: "1 min", state: "ok" }, { l: "Customer contacted", v: "+38 min", state: "warn", s: "4 min after the text" }]);
       },
     },
 
@@ -986,33 +988,28 @@ window.Acts = (function () {
         }
         C.node("s-psa", "err"); C.edge("psa", "s-psa", "err");
         await N("psa-sapi \u00b7 3 retries 10 s apart, still 503 \u2192 circuit-breaker pattern OPEN \u00b7 PSA polls paused, probe every 60 s \u00b7 watermark held at 14:13:00Z", "PSA calls paused; MuleSoft knows exactly where to resume");
-        C.lane("sys", "err");
+        C.lane("sys", "err"); C.lane("proc", "ok"); C.lane("exp", "ok");
+        C.tag("s-psa", "Break: System layer, psa-sapi", "err", { stay: true });
         C.node("mon", "err"); C.ring("mon", "err");
         C.tag("s-psa", "watermark held \u00b7 0 lost", "warn", { stay: true, dy: 74 });
-        C.extra({ title: "Alert sent to CJ and on-call: psa-sapi (System layer) failing since 2:14 PM", rows: [
-          ["Alert channel", "Email \u00b7 Anypoint Monitoring"],
-          ["Triggered by", "psa-sapi \u00b7 circuit-breaker OPEN \u00b7 3 \u00d7 503"],
-          ["Notified", "CJ Bailey (VP) \u00b7 Integration on-call"],
-          ["Jobs lost", "0 \u00b7 watermark held at 14:13:00Z"],
-        ] });
-        C.clock([{ l: "Functional monitor", v: "PSA failing", state: "err" }, { l: "PSA polls", v: "paused since 2:14", state: "warn" }, { l: "Watermark", v: `held at ${O.watermark}` }, { l: "Lost", n: 0, v: "{n}", state: "ok" }, { l: "Franchises on PSA", n: O.franchises, v: "{n}" }]);
-        x.left(S.tableau("health-amber", { tapTile: true }));
-        C.caption("PSA is red. Nothing is lost: the jobs wait in PSA. Click the amber Integrations working tile.");
-        await N("job-sync-papi \u00b7 ops.integration_status PSA = delayed \u2192 Tableau tile amber \u00b7 alert \u2192 on-call (email)", "CJ's dashboard shows it, and on-call gets an alert");
+        C.clock([{ l: "Broken layer", v: "System \u00b7 psa-sapi", state: "err" }, { l: "PSA polls", v: "paused since 2:14", state: "warn" }, { l: "Watermark", v: `held at ${O.watermark}` }, { l: "Lost", n: 0, v: "{n}", state: "ok" }, { l: "Franchises on PSA", n: O.franchises, v: "{n}" }]);
+        x.left(S.tableau("health-amber", { tapTile: true, alert: true }));
+        C.caption("PSA is red. CJ and on-call are told instantly, and the alert names the layer that broke. Click the amber Integrations working tile.");
+        await N("anypoint-monitoring \u00b7 alert \u2192 CJ + on-call (email) \u00b7 layer System \u00b7 psa-sapi failing since 14:14 \u00b7 Process and Experience APIs healthy \u00b7 Tableau tile amber", "CJ and on-call know within seconds, and exactly which layer broke");
         await x.tap("tile");
-        x.left(S.tableau("health-amber", { clock: "2:15 PM", tile: true, tapPsa: true }));
+        x.left(S.tableau("health-amber", { clock: "2:15 PM", tile: true, tapPsa: true, alert: true }));
         await C.packet(["tab", "lake"], x.t, { kind: "q", dur: 380 });
         C.tag("lake", "ops.integration_status", "ok");
         await N("SELECT platform, status, since, watermark, lost FROM ops.integration_status WHERE platform = 'PSA' \u2192 delayed \u00b7 14:14 \u00b7 14:13 \u00b7 0", "The tile reads the status MuleSoft writes: delayed, watermark held, nothing lost");
         C.caption("Click PSA in the integrations strip to see what MuleSoft is doing right now.");
         await x.tap("psa");
-        x.left(S.tableau("health-amber", { clock: "2:15 PM", tile: true, psa: true, tapList: true }));
+        x.left(S.tableau("health-amber", { clock: "2:15 PM", tile: true, psa: true, tapList: true, alert: true }));
         await C.packet(["s-psa", "psa"], x.t, { kind: "err", dur: 380, finalState: "err" });
         C.tag("s-psa", "probe 2:15 \u00b7 503", "warn");
         await N("psa-sapi \u00b7 circuit open \u00b7 probe GET /api/health 14:15:00 \u2192 503 \u00b7 next probe 14:16:00 \u00b7 polls stay paused", "MuleSoft keeps probing PSA every minute and will resume on its own");
         C.caption(`Click View next to Franchises on PSA to see who is affected.`);
         await x.tap("list");
-        x.left(S.tableau("health-amber", { clock: "2:15 PM", tile: true, psa: true, list: true }));
+        x.left(S.tableau("health-amber", { clock: "2:15 PM", tile: true, psa: true, list: true, alert: true }));
         await C.packet(["tab", "lake"], x.t, { kind: "q", dur: 380 });
         await N(`SELECT a.franchise_id, MAX(j.synced_at) FROM ref.platform_account a JOIN curated.job j ON \u2026 WHERE a.platform = 'PSA' GROUP BY a.franchise_id \u2192 ${O.franchises} franchises`, "CJ knows exactly which franchises are affected before anyone calls");
       },

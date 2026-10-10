@@ -477,6 +477,7 @@ body.exec .cx-mini .lg { grid-template-columns: 92px 1fr; }
 .lin { background: var(--cx-panel); border: 1px solid var(--cx-line); border-radius: 10px; padding: 12px 14px; }
 .lin-h { font-weight: 700; font-size: 15px; margin-bottom: 10px; }
 .lin-row { display: grid; grid-template-columns: 140px 1fr 170px; gap: 10px; background: #2a2627; border-radius: 7px; padding: 9px 12px; align-items: center; animation: fadeUp .35s ease both; border-left: 3px solid var(--red); }
+.lin.list .lin-row + .lin-row { margin-top: 6px; }
 .lin-row.note { margin-top: 10px; border-left-color: var(--cx-blue); background: transparent; border: 1px dashed var(--cx-line); }
 .lin-k { font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--cx-mut); font-weight: 700; }
 .lin-v { font-size: 14.5px; color: #fff; }
@@ -647,19 +648,15 @@ body.exec .cx-mini .lg { grid-template-columns: 92px 1fr; }
 .presenter small { color: #ccc; margin-bottom: 10px; }
 
 /* ------------------------------------------------------------ left pane: UI + "what's happening" line */
-/* ---- Two-phone side-by-side layout ---- */
-.duo { display: flex; gap: 20px; justify-content: center; align-items: flex-start; width: 100%; }
-.duo-col { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 0 0 auto; }
-.duo .device.phone { width: 292px; }
-/* SMS thread styles */
-.sms-thread { padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; background: #f7f7f7; min-height: 160px; }
-.sms-from { font-size: 11px; font-weight: 700; color: #888; text-align: center; padding-bottom: 4px; border-bottom: 1px solid #e0e0e0; margin-bottom: 4px; }
-.sms-bubble { background: #e9e9ea; color: #1c1c1e; border-radius: 14px; padding: 8px 12px; font-size: 13px; line-height: 1.45; max-width: 90%; }
-.sms-bubble.in { align-self: flex-start; }
-.sms-bubble.ok { background: #d1f0db; }
-.sms-meta { font-size: 10px; color: #888; padding-left: 12px; margin-top: -4px; }
-.sms-meta.ok { color: #2e844a; }
-/* ---- end two-phone ---- */
+/* Two phones side by side (step 2.1) */
+.duo { display: flex; gap: 16px; justify-content: center; align-items: flex-start; }
+.duo-col { display: flex; flex-direction: column; align-items: center; gap: 10px; flex: none; }
+.sms-thread { display: flex; flex-direction: column; gap: 8px; background: #fff; }
+.sms-from { font-size: 11px; color: #8a8a8e; text-align: center; }
+.sms-bubble { align-self: flex-start; max-width: 88%; background: #e9e9eb; color: #1c1c1e; border-radius: 16px; padding: 8px 12px; font-size: 13.5px; line-height: 1.4; animation: fadeUp .35s ease both; }
+.sms-bubble small { display: block; margin-top: 4px; font-size: 11px; color: #6b6b70; }
+.sms-bubble.ok { background: #d6f5df; }
+.ml-app.msg { background: #34c759; }
 .left-ui { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
 .left-desc {
   position: sticky; bottom: 0; z-index: 3; flex: none;
@@ -1059,6 +1056,7 @@ body.exec .cx-mini .lg { grid-template-columns: 92px 1fr; }
   display: flex; align-items: center; gap: 10px; background: #2E844A; color: #fff; border-radius: 12px;
   padding: 9px 16px; box-shadow: 0 6px 16px rgba(0,0,0,.22); animation: toastIn .4s ease both;
 }
+.lx-toast.error { background: #BA0517; pointer-events: none; animation: none; }
 .lx-toast b { display: block; font-size: 13px; }
 .lx-toast small { display: block; font-size: 11.5px; opacity: .92; }
 .lx-ti { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #fff; display: grid; place-items: center; flex: none; }
