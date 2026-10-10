@@ -489,7 +489,6 @@ window.Screens = (function () {
     const c = o.contacted;
     const acts = `<div class="tm-acts">
         <button class="sbtn ${o.acked ? "neutral" : "brand"} xs" ${o.tap === "ack" ? 'data-tap="ack"' : ""}>${o.acked ? "\u2713 Acknowledged" : "Acknowledge alert"}</button>
-        <button class="sbtn neutral xs" ${o.tap === "call" ? 'data-tap="call"' : ""}>${PHONE} ${o.called ? "Called \u00b7 2 min" : "Call franchise"}</button>
       </div>`;
     return `<div class="m-app">
         <div class="m-head"><i>${SVG.back}</i><b>${TLOGO} Tableau Mobile</b><i>${SVG.gear}</i></div>
@@ -890,7 +889,7 @@ window.Screens = (function () {
           <div class="m-body sms-thread">
             <div class="sms-from">Text message \u00b7 Today 8:02 AM</div>
             <div class="sms-bubble">${SMS_TEXT}<small>JOB-CA-11902 \u00b7 Dana Whitfield \u00b7 (916) 555-0187</small></div>
-            ${o.resolved ? `<div class="sms-from">8:10 AM</div><div class="sms-bubble ok">Resolved: JOB-CA-11902 customer contacted at 8:06 AM. Thanks for the quick call.</div>` : ""}
+            ${o.resolved ? `<div class="sms-from">8:10 AM</div><div class="sms-bubble ok">PuroClean SLA: JOB-CA-11902 resolved. Your customer contact was logged at 8:06 AM. No further action needed.</div>` : ""}
           </div></div>`;
     const rd = !o.rd
       ? lock("8:02", o.sent ? `<div class="notif" ${o.tap === "open" ? 'data-tap="open"' : ""}><div class="nt-h">${mailApp}<span>MAIL \u00b7 now</span></div><b>SLA alert: JOB-CA-11902</b><p>PuroClean Sacramento North \u00b7 not Contacted 34 min after Received/Accepted. Owner texted. Open in Tableau \u203a</p></div>` : "")
