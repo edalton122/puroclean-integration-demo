@@ -491,5 +491,17 @@ window.Console = (function () {
     };
   }
 
-  return { init, reset, tab, caption, narrate, graph, node, edge, packet, burst, ambient, tag, ring, transform, extra, setClock, log, payload, json, lineage, monitor, clock, baseGraph, esc };
+  /* Mark a console graph lane (sys / proc / exp) with a state class (err / ok / ""). */
+  function lane(kind, state) {
+    const svg = document.querySelector(".cx-graph");
+    if (!svg) return;
+    const rects = svg.querySelectorAll(`.cx-lane.${kind}`);
+    const texts = svg.querySelectorAll(`.cx-lane-label.${kind}`);
+    [...rects, ...texts].forEach((el) => {
+      el.classList.remove("err", "ok");
+      if (state) el.classList.add(state);
+    });
+  }
+
+  return { init, reset, tab, caption, narrate, graph, node, edge, packet, burst, ambient, tag, ring, transform, extra, setClock, log, payload, json, lineage, monitor, clock, baseGraph, esc, lane };
 })();

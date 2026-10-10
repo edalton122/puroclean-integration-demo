@@ -66,7 +66,7 @@
   /* Leading persona for each chapter. */
   const CHAPTER_PERSONA = { "1": "pm", "2": "rd", "3": "cj", "4": "cj", "5": "it", "6": "it", "7": "it", "8": "cj" };
   /* Steps whose persona differs from their chapter's lead. */
-  const STEP_PERSONA = { "3.1": "pm", "4.2": "rd" };
+  const STEP_PERSONA = { "3.1": "pm", "4.2": "rd", "8.1": "rd" };
   const stepPersona = (s) => STEP_PERSONA[s.id] || CHAPTER_PERSONA[s.act];
   const PERSONA_LABELS = { pm: "Franchise Project Manager", rd: "Regional Director", cj: "CJ Bailey", it: "Nick Hindle" };
   const PERSONA_COLORS = { pm: "#C50A1D", rd: "#0176D3", cj: "#032D60", it: "#54698D" };
@@ -425,19 +425,19 @@
       { id: "bridge", t: "Tableau Bridge", s: "Live queries to 11:11", d: "Runs inside the 11:11 network so Tableau Cloud can query the private SQL Server live, without extracts." },
       { id: "sem", t: "Certified data sources", s: "One definition per KPI", d: "One published, certified definition per KPI from the Data Collection sheet, so every dashboard agrees." },
       { id: "rls", t: "Row-level security", s: "By region", d: "One dashboard for CJ and the RDs, each seeing their own region through an entitlement table." },
-      { id: "dash", t: "Dashboards + Pulse", s: "Drill-down and digests", d: "Network to job in three clicks, with benchmarks, data health and Pulse digests." },
+      { id: "dash", t: "Dashboards + digests", s: "Drill-down and morning digests", d: "Network to job in three clicks, with benchmarks, data health and Tableau morning digests." },
     ] },
   ];
 
   const ANSWERS = [
     { q: "Will franchises have to change anything?", a: "No. They keep Dash, PSA, Albi or JobSite. MuleSoft reads changes on a 5-minute cycle; the franchise sees nothing different." },
-    { q: "Will we know before the customer complains?", a: "Yes. A missed SLA triggers an alert in seconds, routed to the right RD by region, with a link to the job in Tableau Mobile." },
+    { q: "Will we know before the customer complains?", a: "Yes. A missed SLA texts the franchise owner and alerts the RD in seconds, automatically, routed by region. The RD opens the job in Tableau Mobile from the alert." },
     { q: "Can we trust the numbers?", a: "Yes. Duplicates are merged automatically. Bad records are held with a reason, not loaded silently, and the SLA clock keeps running while they\u2019re held." },
     { q: "Can everyone see what matters, at their level?", a: "Yes. One dashboard, row-level security, and three clicks from the network to one job. CJ can ask Tableau Agent and save a new view \u2014 no IT ticket." },
     { q: "Will it hold at 900 locations and new platforms?", a: "Yes. CloudHub 2.0 replicas and Anypoint MQ handle the load. Adding a franchise is configuration; adding a platform is a new System API from an Exchange template." },
     { q: "What happens when something breaks?", a: "MuleSoft retries, then pauses. The watermark holds the position. When the source recovers, it catches up in order. Nothing is lost, and CJ sees it before anyone reports it." },
-    { q: "Is it secure, and does it depend on one person?", a: "Secure, yes: API Manager applies four policies to every inbound call. Dependent on one person, no: everything is documented in Exchange, and monitoring and alerts mean no single point of failure." },
-    { q: "Will leaders actually use the data every day?", a: "Yes. Pulse sends CJ a morning digest of what changed. He follows an insight to the dashboard, clicks a state, and Explain Data shows the driver." },
+    { q: "Is it secure, and can the team share the load?", a: "Secure, yes: API Manager applies four policies to every inbound call. Shared load, yes: everything is documented in Exchange with runbooks, so any team member can own a piece and no one is a single point of contact." },
+    { q: "Will leaders actually use the data every day?", a: "Yes. Jordan gets a Tableau morning digest of how the West Region is tracking. He follows an insight to the dashboard and sees exactly which franchise drove the change." },
   ];
 
   /* One proof line per step, keyed by step id. The recap pulls only the steps
@@ -448,7 +448,7 @@
     "1.3": "The record landed in the 11:11 lake and the SLA clock started",
     "1.4": "Near-real-time and daily lanes, side by side",
     "1.5": "The same job across four platforms, one language",
-    "2.1": "A missed SLA reached Jordan in seconds, with the job in Tableau Mobile",
+    "2.1": "The franchise owner was texted automatically; Jordan had the job in Tableau Mobile in seconds",
     "3.1": "Duplicates merged; a bad record held with a reason, not loaded silently",
     "3.2": "Data health became CJ\u2019s own KPI",
     "4.1": "Network to one job in three clicks",
@@ -463,7 +463,7 @@
     "6.2": "The alert, the trace and the recovery, end to end",
     "7.1": "Four policies on every inbound call; a malformed payload blocked",
     "7.2": "Everything documented in the Exchange catalog",
-    "8.1": "Pulse brought the morning digest to CJ",
+    "8.1": "Jordan\u2019s Tableau morning digest flagged Fresno East before anyone called",
     "8.2": "Explain Data traced the Ohio jump to Dayton North",
     "8.3": "What the trusted foundation makes possible next",
   };
@@ -471,9 +471,9 @@
   /* One outcome per person, with a fuller line for the full run. */
   const WRAP_OUTCOME = {
     pm: { short: "Kept working in Dash. Nothing to change.", full: "Kept working in Dash. Nothing to change, at any scale." },
-    rd: { short: "Knew about a missed SLA first, from his phone.", full: "Knew first, and sees his own region against the whole network." },
-    cj: { short: "Trusted numbers, network to one job, a morning digest.", full: "Trusted numbers, self-service answers, and the reason behind every move." },
-    it: { short: "Scales, recovers and is secured, with no single point of failure.", full: "Scales by configuration, recovers on its own, and stays secure and documented." },
+    rd: { short: "Knew first, and starts each day with his region\u2019s trend.", full: "Knew first, and sees his own region against the whole network." },
+    cj: { short: "Trusted numbers, network to one job, alerted the moment a connection breaks.", full: "Trusted numbers, self-service answers, and the reason behind every move." },
+    it: { short: "Scales, recovers, is secured, and the team shares the load.", full: "Scales by configuration, recovers on its own, stays secure, and no single point of contact." },
   };
 
   /* The understood problem each chapter answers, so every moment ties back to a pain. */
@@ -484,7 +484,7 @@
     "4": "No way to go from the whole network down to a single job.",
     "5": "Every new platform or location means another hand-built feed.",
     "6": "When a vendor\u2019s system fails, data is lost and no one notices.",
-    "7": "The integration lives in one person\u2019s head, reviewed by no one.",
+    "7": "Growth needs shared ownership and redundancy, not a single point of contact.",
     "8": "Leaders have to go hunting for the numbers, so they don\u2019t.",
   };
 
@@ -504,11 +504,12 @@
       /* What each persona does in each chapter they appear in. */
       const BEATS = {
         pm: { "1": { a: "Job created in Dash",         b: "MuleSoft picks it up \u00b7 4 min",   s: true  } },
-        rd: { "2": { a: "SLA alert \u00b7 seconds",    b: "Job link in Tableau Mobile",            s: true  },
-              "4": { a: "West region view",             b: "Subscribe + data-driven alert",         s: false } },
+        rd: { "2": { a: "SLA alert \u00b7 seconds",    b: "Franchise texted \u00b7 Tableau Mobile",  s: true  },
+              "4": { a: "West region view",             b: "Subscribe + data-driven alert",         s: false },
+              "8": { a: "Tableau digest (West)",        b: "Fresno East \u25bc30% \u00b7 open in Tableau", s: true  } },
         cj: { "3": { a: "Certified data source",       b: "DQ warning \u00b7 data health KPI",     s: true  },
               "4": { a: "Network map \u00b7 Tableau Agent", b: "Self-service web authoring",        s: true  },
-              "8": { a: "Pulse digest",                 b: "Explain Data on Ohio",                  s: true  } },
+              "8": { a: "Tableau digest (Ohio)",        b: "Explain Data on Ohio",                  s: false } },
         it: { "5": { a: "Anypoint Monitoring",         b: "50 \u2192 900 locations \u00b7 storm surge", s: true },
               "6": { a: "PSA outage \u00b7 2:14 PM",   b: "Recovery \u00b7 2:31 PM",               s: true  },
               "7": { a: "API Manager \u00b7 4 policies", b: "Exchange catalog \u00b7 9 assets",     s: true  } },
@@ -588,6 +589,8 @@
           <div class="hv2-cast-h">Meet the people in the story</div>
           <div class="hv2-cast">${castCards}</div>
         </div>
+
+        <div class="hv2-legend">On each screen: left is what people see (Dash, Tableau dashboards, phones). Right is MuleSoft, the integration doing the work.</div>
 
         <div class="hv2-journey">
           <div class="hv2-jh">

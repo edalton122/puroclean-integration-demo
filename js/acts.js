@@ -62,8 +62,8 @@ window.Acts = (function () {
     { id: "4",     n: "4", title: "See it",       question: "Can everyone see what matters, at their level?", tip: "Network to one job in three clicks; row-level security; Tableau Agent authoring" },
     { id: "5",     n: "5", title: "Scale",        question: "Will it hold at 900 locations and new platforms?", tip: "CloudHub 2.0 replicas, Anypoint MQ, config-driven onboarding, Exchange template" },
     { id: "6",     n: "6", title: "Recovery",     question: "What happens when something breaks?",            tip: "Retries, circuit-breaker, watermark catch-up, monitoring alerts in seconds" },
-    { id: "7",     n: "7", title: "Security",     question: "Is it secure, and does it depend on one person?", tip: "API Manager policies, Trust Center certs, Exchange-documented runbooks" },
-    { id: "8",     n: "8", title: "See it daily", question: "Will leaders actually use the data every day?",  tip: "Pulse digest, metric insights, Explain Data – the dashboard comes to CJ" },
+    { id: "7",     n: "7", title: "Security",     question: "Is it secure, and can the team share the load?", tip: "API Manager policies, Trust Center certs, Exchange-documented runbooks, shared ownership" },
+    { id: "8",     n: "8", title: "See it daily", question: "Will leaders actually use the data every day?",  tip: "Tableau morning digest, metric insights, Explain Data \u2013 the dashboard comes to the leader" },
     { id: "arch",  n: "",  title: "Architecture", question: "",                                               tip: "End-to-end reference architecture" },
     { id: "wrap",  n: "",  title: "Recap",        question: "",                                               tip: "The whole story in one view" },
     { id: "close", n: "",  title: "Next Steps",   question: "",                                               tip: "Wave 1 scope and answers to the eight questions" },
@@ -113,6 +113,30 @@ window.Acts = (function () {
       <table><thead><tr><th>PuroLogic date</th>${vk.map((k) => `<th class="${k === active ? "on" : ""}">${V[k].name}</th>`).join("")}<th>Canonical</th></tr></thead>
       <tbody>${rows.map(([l, f]) => `<tr class="${f === "started" ? "key" : ""}"><td>${l}</td>${vk.map((k) => `<td class="${k === active ? "on" : ""}"><code>${C.esc(V[k].fields[f])}</code></td>`).join("")}<td><code class="canon">${f}</code></td></tr>`).join("")}</tbody></table></div>`;
   };
+
+  /* Auto-animation: four platforms' loss codes converge on MuleSoft → "Water". ~4 s, no click. */
+  async function rosettaAll(t) {
+    const vk = ["dash", "psa", "albi", "jobsite"];
+    for (const k of vk) {
+      const code = V[k].fields.loss_type;
+      C.extra({ title: "Every platform \u2192 one record", rows: [
+        ["Dash (PuroLogic)",  V.dash.fields.loss_type,    k === "dash" ? "\u2192 \u201cWater\u201d" : ""],
+        ["PSA",               V.psa.fields.loss_type,     k === "psa"  ? "\u2192 \u201cWater\u201d" : ""],
+        ["Albi",              V.albi.fields.loss_type,    k === "albi" ? "\u2192 \u201cWater\u201d" : ""],
+        ["JobSite",           V.jobsite.fields.loss_type, k === "jobsite" ? "\u2192 \u201cWater\u201d" : ""],
+        ["PuroLogic (canonical)", '"Water"', "one standard value"],
+      ] });
+      await new Promise((res) => setTimeout(res, 800));
+    }
+    /* Final state: all four shown together */
+    C.extra({ title: "Every platform \u2192 one record", rows: [
+      ["Dash (PuroLogic)",  V.dash.fields.loss_type,    '\u2192 "Water"'],
+      ["PSA",               V.psa.fields.loss_type,     '\u2192 "Water"'],
+      ["Albi",              V.albi.fields.loss_type,    '\u2192 "Water"'],
+      ["JobSite",           V.jobsite.fields.loss_type, '\u2192 "Water"'],
+      ["PuroLogic (canonical)", '"Water"', "one standard value"],
+    ] });
+  }
 
   const slaGraph = () => ({
     w: 1000, h: 380,
@@ -186,9 +210,9 @@ window.Acts = (function () {
     w: 1000, h: 220,
     nodes: [
       { id: "views", label: "11:11 curated views", sub: "refreshed by MuleSoft", x: 20, y: 80, w: 180, h: 60, kind: "store" },
-      { id: "sem", label: "Pulse metric", sub: "Open water jobs", x: 250, y: 80, w: 170, h: 60, kind: "proc" },
-      { id: "ins", label: "Pulse insights", sub: "trend \u00b7 unexpected values \u00b7 drivers", x: 470, y: 80, w: 190, h: 60, kind: "viz" },
-      { id: "dig", label: "CJ's digest", sub: "email \u00b7 Tableau Mobile", x: 720, y: 80, w: 170, h: 60, kind: "src" },
+      { id: "sem", label: "Tableau metric", sub: "Jobs by franchise, West Region", x: 250, y: 80, w: 170, h: 60, kind: "proc" },
+      { id: "ins", label: "Tableau insights", sub: "trend \u00b7 unexpected values \u00b7 drivers", x: 470, y: 80, w: 190, h: 60, kind: "viz" },
+      { id: "dig", label: "Jordan\u2019s digest", sub: "email \u00b7 Tableau Mobile \u00b7 7:30 AM PT", x: 720, y: 80, w: 170, h: 60, kind: "src" },
     ],
     edges: [["views", "sem"], ["sem", "ins"], ["ins", "dig"]],
   });
@@ -264,7 +288,7 @@ window.Acts = (function () {
         C.ambient(x.t, POLLS, { every: 520 });
         C.clock([{ l: "Polls today", n: 308, v: "{n}", s: "4 SPAR platforms" }, { l: "SLA lane", v: "every 5 min", s: "4 SLA milestones (illustrative)" }, { l: "Connections", v: "5", s: "4 SPAR + FranConnect", state: "ok" }, { l: "Before MuleSoft", v: "Dash every ~2 hrs", s: "for comparison" }]);
         await N("job-sync-papi \u00b7 scheduler */5 \u00b7 4 SPAR System APIs \u00b7 GET ?updated_since={watermark}", "MuleSoft checks every platform for changes");
-        C.caption("The franchise PM fills in the new job the way they always do. Pick Water as the loss type.");
+        C.caption("This is Dash, your PuroLogic job page, the app Alex already uses every day. Pick Water as the loss type.");
         await x.tap("loss");
         x.left(S.jobApp({ isNew: true, dates: logged, flash: "loss", actions: [{ label: "Save", tap: "save" }], clock: "6:21 AM" }));
         C.ring("dash"); C.tag("dash", "loss_type \"H2O\"", "");
@@ -326,6 +350,8 @@ window.Acts = (function () {
         app(null, ["loss", "accepted", "franchise"]);
         C.node("proc", "ok", undefined);
         C.clock([{ l: "Fields mapped", n: 6, v: "{n} / 6", state: "ok" }, { l: "Timezone", v: "America/Chicago \u2192 UTC" }, { l: "Enrichment", v: "KS-0412 \u00b7 Central" }, { l: "Since the poll", n: 27, v: "{n} s", state: "run" }]);
+        /* Auto-play Rosetta animation: all four platforms' loss codes converge on one value */
+        await rosettaAll(x.t);
       },
     },
     {
@@ -355,7 +381,7 @@ window.Acts = (function () {
           { lvl: "ok", raw: "poll 6:25:00 \u2192 curated 6:25:41 (41 s) \u00b7 accepted 6:24:00 \u2192 curated 1m 41s", exec: "In the lake 41 seconds after MuleSoft picked it up" },
         ], x.t);
         app("path", ["address", "accepted"]);
-        C.caption("Click Contacted, the next step on the path. Its 30-minute clock is now running on the corporate side too.");
+        C.caption("Click Contacted, the next date due on the Dates tab. Its 30-minute clock is now running on the corporate side too.");
         await x.tap("f-path");
         app(null, ["address", "accepted"]);
         C.clock([{ l: "Poll to lake", n: 41, v: "{n} s", state: "ok" }, { l: "Accept to lake", v: "1m 41s", s: "always inside ~5.5 min" }, { l: "SLA timer", v: "Contacted due 6:54", s: "30 min (illustrative)", state: "run" }, { l: "Write mode", v: "upsert", s: "no duplicates" }]);
@@ -379,7 +405,7 @@ window.Acts = (function () {
         C.tag("batch", "idle \u00b7 next run 02:00", "", { stay: true });
         C.clock([{ l: "SLA timer", v: "Contacted due 6:54", state: "run", s: "30 min (illustrative)" }, { l: "SLA lane", v: "every 5 min" }, { l: "Daily lane", v: "2:00 AM" }]);
         await N("job-sync-papi \u00b7 SLA lane \u00b7 cron */5 \u00b7 4 milestones \u00b7 watermark 12:40:00Z", "The fast lane checks the four SLA milestones every 5 minutes");
-        C.caption("Click Email to contact the customer from the job.");
+        C.caption("Click Send Email to contact the customer from the Notes tab.");
         await x.tap("email");
         app({ composer: "pick", tap: "tpl" });
         C.caption("Pick the \u201cInitial contact\u201d template.");
@@ -391,7 +417,7 @@ window.Acts = (function () {
         C.caption("Ready to go. Click Send.");
         await x.tap("send");
         x.left(S.jobApp({ dates: datesUpTo("contacted"), activity: { sent: true }, flash: "contacted", clock: "6:41 AM" }));
-        C.caption("Sending the email logs it on the timeline and sets Contacted. That change is what MuleSoft picks up.");
+        C.caption("Sending the email adds it to the job\u2019s Notes and sets Contacted. That change is what MuleSoft picks up.");
         await C.log([{ lvl: "info", at: "06:41:12", raw: "Dash \u00b7 activity EMAIL logged on D-889214 \u00b7 contacted_at = 12:41:12Z (set by the email, not typed)", exec: "The email is logged and Contacted is set automatically" }], x.t);
         C.ring("m3");
         await C.packet(["m3", "fast", "rule", "lake1"], x.t, { onHop: async (b) => { if (b === "rule") C.tag("rule", "17 min \u2264 30 \u2713", "ok"); } });
@@ -439,48 +465,53 @@ window.Acts = (function () {
 
     /* ---------- Chapter 2: Know first */
     {
-      id: "2.1", act: "2", short: true, title: "A missed SLA reaches the RD in time",
-      desc: "At 10:02 AM Central, a Sacramento job passes 30 minutes without a customer contact (illustrative SLA). The West regional director gets an email alert, opens it in Tableau Mobile, and can call the franchise while the customer is still waiting.", why: "Today this shows up in tomorrow's report. Here, the RD knows in seconds \u2014 not hours.",
+      id: "2.1", act: "2", short: true, title: "Franchise owner texted \u00b7 RD has the job in Tableau Mobile",
+      desc: "At 10:02 AM, a Sacramento job passes 30 minutes without a customer contact. Nick already built a text: the franchise owner gets an SMS automatically. The West RD gets an alert, acknowledges it, and opens the job in Tableau Mobile \u2014 all while the customer is still waiting.", why: "Today this shows up in tomorrow\u2019s report. Here, both the owner and the RD know in seconds \u2014 not hours.",
       powered: ["MuleSoft notification-api", "FranConnect region mapping", "Tableau Mobile"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
-        x.left(S.slaAlert(false));
+        x.left(S.franchiseSms({ empty: true }));
         const g = C.baseGraph();
         g.nodes.forEach((n) => { if (n.id === "notify") n.kind = "exp"; });
         C.graph(g); C.tab("flow"); C.setClock("10:02:00");
-        C.caption("A scheduled SLA check finds a Sacramento job past 30 minutes. The notification layer routes it by region.");
+        C.caption("A scheduled SLA check finds a Sacramento job past 30 minutes. Nick already built a text \u2014 the franchise owner is notified automatically.");
         C.ambient(x.t, POLLS, { every: 650 });
         await C.packet(["s-psa", "proc"], x.t);
         C.tag("proc", "CONTACT_30 \u2717 34 min", "err");
         await N("sla-check \u00b7 every minute \u00b7 JOB-CA-11902 \u00b7 received_accepted 15:28Z \u00b7 contacted NULL at +34m (latest PSA poll) \u2192 BREACH", "A Sacramento job missed the 30-minute contact SLA");
         await C.packet(["fran", "s-fran", "proc"], x.t, { kind: "ref", dur: 420 });
-        C.tag("s-fran", "CA-0219 \u2192 West \u2192 RD", "");
-        await N("route \u00b7 franchise CA-0219 \u2192 region West \u2192 Regional Director (FranConnect) \u00b7 recipient and channel illustrative", "Routed to the West Region RD");
+        C.tag("s-fran", "CA-0219 \u2192 West \u2192 owner + RD", "");
+        await N("route \u00b7 franchise CA-0219 \u2192 owner SMS + region West \u2192 Regional Director (FranConnect) \u00b7 recipient and channel illustrative", "Routed to the franchise owner and the West RD");
         await C.packet(["proc", "notify"], x.t, { kind: "err", finalState: "err" });
-        C.tag("notify", "email \u00b7 sent", "err");
-        x.left(S.slaAlert(true));
-        await N("notification-api \u00b7 POST /alerts \u00b7 channel email \u00b7 202 Accepted \u00b7 412 ms", "The RD gets an email alert");
+        C.tag("notify", "SMS + alert \u00b7 sent", "err");
+        x.left(S.franchiseSms({ sms: true }));
+        C.extra({ title: "Delivery rules", rows: [
+          ["Owner SMS", "Always \u00b7 SLA CONTACT_30 fired", "immediate"],
+          ["RD alert", "CONTACT_30 + region routing (FranConnect)", "immediate"],
+          ["VP escalation", "If RD does not acknowledge in 15 min", "conditional"],
+        ] });
+        await N("notification-api \u00b7 POST /alerts \u00b7 sms to owner + email to rd.west \u00b7 202 Accepted \u00b7 412 ms", "The franchise owner gets a text; the RD gets an alert");
         C.caption("Tap the alert to open the job in Tableau Mobile.");
         await x.tap("open");
         C.node("notify", "ok");
-        x.left(S.tableauMobile({ tap: "ack" }));
-        await N("link \u2192 Tableau Cloud \u00b7 Network Operations \u203a JOB-CA-11902 \u00b7 row-level security: West", "The RD opens the job in Tableau \u2014 on their phone, in Tableau Mobile");
-        C.clock([{ l: "Detected", v: "+34 min" }, { l: "Alert sent in", n: 0.4, dec: 1, v: "{n} s", state: "ok" }, { l: "Routed to", v: "RD, West" }]);
-        C.caption("Tap Acknowledge so the alert doesn\u2019t escalate any further.");
+        x.left(S.franchiseSms({ sms: true, rdOpen: true }));
+        await N("link \u2192 Tableau Cloud \u00b7 Network Operations \u203a JOB-CA-11902 \u00b7 row-level security: West", "The RD opens the job in Tableau Mobile from the alert");
+        C.clock([{ l: "Detected", v: "+34 min" }, { l: "Alert sent in", n: 0.4, dec: 1, v: "{n} s", state: "ok" }, { l: "Routed to", v: "Owner + RD" }]);
+        C.caption("Tap Acknowledge so the alert doesn\u2019t escalate to the VP.");
         await x.tap("ack");
-        x.left(S.tableauMobile({ acked: true, tap: "call" }));
+        x.left(S.franchiseSms({ sms: true, rdAcked: true }));
         await C.packet(["notify", "proc"], x.t, { kind: "res", dur: 380 });
         C.tag("notify", "acknowledged \u00b7 rd.west", "ok");
-        await N("notification-api \u00b7 PATCH /alerts/A-20417 status=acknowledged by rd.west \u00b7 escalation to the VP of Operations cancelled (illustrative rule)", "Acknowledged: the alert stops escalating");
+        await N("notification-api \u00b7 PATCH /alerts/A-20417 status=acknowledged by rd.west \u00b7 escalation to the VP of Operations cancelled", "Acknowledged: the alert stops escalating");
         C.caption("Tap Call franchise. The RD calls Sacramento North while the customer is still waiting.");
         await x.tap("call");
-        x.left(S.tableauMobile({ acked: true, called: true, clock: "8:06" }));
+        x.left(S.franchiseSms({ sms: true, rdCalled: true }));
         await C.log([{ lvl: "info", at: "10:06:00", raw: "PSA \u00b7 JOB-CA-11902 \u00b7 franchise logs the customer call \u00b7 ContactDT = 16:06Z", exec: "After the RD's call, the franchise contacts the customer" }], x.t);
         C.setClock("10:10:00");
         await C.packet(["psa", "s-psa", "proc"], x.t, { dur: 420 });
         C.tag("proc", "CONTACT_30 closed \u00b7 38 min", "warn");
-        x.left(S.tableauMobile({ acked: true, called: true, contacted: true, clock: "8:10" }));
-        await N("job-sync-papi \u00b7 10:10 PSA poll \u00b7 contacted 16:06Z \u2192 SLA CONTACT_30 closed late at 38 min \u00b7 alert A-20417 resolved \u00b7 Tableau updates live", "The next poll picks up the contact; the alert resolves itself");
+        x.left(S.franchiseSms({ sms: true, rdCalled: true, resolved: true }));
+        await N("job-sync-papi \u00b7 10:10 PSA poll \u00b7 contacted 16:06Z \u2192 SLA CONTACT_30 closed late at 38 min \u00b7 alert A-20417 resolved \u00b7 Tableau updates live", "The next poll picks up the contact; the alert resolves itself. The owner gets a confirmation text.");
         C.clock([{ l: "Detected", v: "+34 min" }, { l: "Alert sent in", n: 0.4, dec: 1, v: "{n} s", state: "ok" }, { l: "Acknowledged", v: "1 min", state: "ok" }, { l: "Customer contacted", v: "+38 min", state: "warn", s: "4 min after the alert" }]);
       },
     },
@@ -735,8 +766,8 @@ window.Acts = (function () {
         await x.tap("down");
         x.left(S.tableau("lineage", { up: true, down: true }));
         C.ring("tab", "new");
-        C.tag("tab", "6 workbooks \u00b7 3 Pulse metrics", "ok", { stay: true, dy: 70 });
-        await N("tableau catalog \u00b7 impact analysis \u00b7 curated.job_milestone \u2192 6 workbooks, 3 Pulse metrics \u00b7 owners listed", "Everything that would be affected if this source changed");
+        C.tag("tab", "6 workbooks \u00b7 3 Tableau metrics", "ok", { stay: true, dy: 70 });
+        await N("tableau catalog \u00b7 impact analysis \u00b7 curated.job_milestone \u2192 6 workbooks, 3 Tableau metrics \u00b7 owners listed", "Everything that would be affected if this source changed");
         C.caption("From CJ's KPI, through Tableau and MuleSoft, back to each platform's field and API, and forward to everything that uses it.");
       },
     },
@@ -929,8 +960,8 @@ window.Acts = (function () {
 
     /* ---------- Chapter 6: Recovery */
     {
-      id: "6.1", act: "6", short: true, title: "PSA goes down",
-      desc: "PSA, one of the job platforms, starts failing. MuleSoft catches it on the first failed poll, retries, then pauses PSA polling. New jobs simply wait in PSA, and the watermark marks exactly where to pick up.", why: "The problem shows on CJ's dashboard before anyone has to report missing data.",
+      id: "6.1", act: "6", short: true, title: "PSA goes down \u00b7 CJ and on-call alerted instantly",
+      desc: "PSA, one of the job platforms, starts failing at 2:14 PM. MuleSoft catches it on the first failed poll, retries, then pauses PSA polling. An instant alert fires to CJ and the on-call engineer. New jobs wait in PSA, and the watermark marks exactly where to pick up.", why: "Today if a feed stops, nobody\u2019s told. Here, CJ and on-call know within seconds.",
       powered: ["Anypoint Monitoring", "Functional Monitoring", "Visualizer", "Retries + circuit-breaker pattern"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
@@ -955,8 +986,15 @@ window.Acts = (function () {
         }
         C.node("s-psa", "err"); C.edge("psa", "s-psa", "err");
         await N("psa-sapi \u00b7 3 retries 10 s apart, still 503 \u2192 circuit-breaker pattern OPEN \u00b7 PSA polls paused, probe every 60 s \u00b7 watermark held at 14:13:00Z", "PSA calls paused; MuleSoft knows exactly where to resume");
+        C.lane("sys", "err");
         C.node("mon", "err"); C.ring("mon", "err");
         C.tag("s-psa", "watermark held \u00b7 0 lost", "warn", { stay: true, dy: 74 });
+        C.extra({ title: "Alert sent to CJ and on-call: psa-sapi (System layer) failing since 2:14 PM", rows: [
+          ["Alert channel", "Email \u00b7 Anypoint Monitoring"],
+          ["Triggered by", "psa-sapi \u00b7 circuit-breaker OPEN \u00b7 3 \u00d7 503"],
+          ["Notified", "CJ Bailey (VP) \u00b7 Integration on-call"],
+          ["Jobs lost", "0 \u00b7 watermark held at 14:13:00Z"],
+        ] });
         C.clock([{ l: "Functional monitor", v: "PSA failing", state: "err" }, { l: "PSA polls", v: "paused since 2:14", state: "warn" }, { l: "Watermark", v: `held at ${O.watermark}` }, { l: "Lost", n: 0, v: "{n}", state: "ok" }, { l: "Franchises on PSA", n: O.franchises, v: "{n}" }]);
         x.left(S.tableau("health-amber", { tapTile: true }));
         C.caption("PSA is red. Nothing is lost: the jobs wait in PSA. Click the amber Integrations working tile.");
@@ -1077,8 +1115,8 @@ window.Acts = (function () {
       },
     },
     {
-      id: "7.2", act: "7", short: false, title: "Keeping it running doesn't depend on one person",
-      desc: "The whole connection layer is documented, versioned and monitored on one platform, with a runbook for each kind of failure.", why: "The knowledge stays with PuroClean, not in any one person's head.",
+      id: "7.2", act: "7", short: false, title: "Shared ownership: documented, monitored, runbooked",
+      desc: "The whole connection layer is documented, versioned and monitored on one platform, with a runbook for each kind of failure and an owner for each API.", why: "Any team member can own a piece. The knowledge stays with PuroClean, not any one person.",
       powered: ["Anypoint Exchange", "Anypoint Monitoring"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
@@ -1112,62 +1150,62 @@ window.Acts = (function () {
 
     /* ---------- Chapter 8: See it daily */
     {
-      id: "8.1", act: "8", short: true, title: "Tableau Pulse: the dashboard comes to CJ",
-      desc: "Each morning, Tableau Pulse sends CJ a short digest of the metrics that changed, like Wednesday's jump in open water jobs in Ohio. He follows the insight to the metric's detail page and sees exactly which metros drove the spike.", why: "CJ hears about what matters without having to go looking for it.",
-      powered: ["Tableau Pulse"],
+      id: "8.1", act: "8", short: true, title: "Jordan\u2019s West digest: Fresno East is slipping",
+      desc: "Wednesday, 7:30 AM Pacific. Jordan\u2019s Tableau morning digest shows West Region jobs are up about 20% on last year, but Fresno East is down about 30%. He taps the card, taps Fresno East in the detail view, and opens in Tableau to see what\u2019s behind it.", why: "Jordan spots a slipping location before anyone calls. The data came to him \u2014 he didn\u2019t have to go looking.",
+      powered: ["Tableau Cloud", "Tableau Bridge", "11:11 curated views"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
         x.left(S.pulse({ blankSum: true }));
         C.graph(pulseGraph()); C.tab("flow"); C.setClock("07:30:00");
-        C.caption("Wednesday, 7:30 AM. Pulse watches the metrics CJ follows and flags what changed.");
+        C.caption("Wednesday, 7:30 AM PT. Tableau watches the metrics Jordan follows and flags what changed.");
         await C.packet(["views", "sem"], x.t);
-        C.tag("sem", "61 open \u00b7 Ohio", "");
-        await N("pulse \u00b7 metric open_water_jobs \u00b7 grain daily \u00b7 dimensions state, metro, franchise", "Pulse reads the metric");
+        C.tag("sem", "West jobs \u00b7 +20% YoY", "");
+        await N("tableau \u00b7 metric jobs_by_franchise_west \u00b7 grain weekly \u00b7 compare to prior year \u00b7 RLS: West Region", "Tableau reads Jordan\u2019s West Region metrics");
         await C.packet(["sem", "ins"], x.t);
-        C.tag("ins", "+38% vs 4-wk avg", "warn", { stay: true });
-        await N("pulse \u00b7 insight: unexpected value \u00b7 61 vs expected range 38\u201352 \u00b7 top contributors Columbus +9, Dayton +6", "An unusual jump in Ohio water jobs");
+        C.tag("ins", "Fresno East \u25bc30% \u00b7 unexpected", "warn", { stay: true });
+        await N("tableau \u00b7 insight: unexpected low \u00b7 Fresno East (CA-0714) down 30% vs prior year \u00b7 West up 20% overall", "Fresno East is slipping while the rest of the West is up");
         await C.packet(["ins", "dig"], x.t, { kind: "res" });
-        C.tag("dig", "delivered 7:30 AM", "ok", { stay: true });
-        await N("pulse \u00b7 digest \u2192 CJ \u00b7 email + Tableau Mobile \u00b7 7:30 AM", "The digest lands in CJ's inbox and on CJ's phone");
-        C.caption("Pulse writes CJ a plain-language summary of what changed.");
+        C.tag("dig", "delivered 7:30 AM PT", "ok", { stay: true });
+        await N("tableau \u00b7 digest \u2192 Jordan \u00b7 email + Tableau Mobile \u00b7 7:30 AM PT", "The digest lands in Jordan\u2019s inbox");
+        C.caption("Tableau writes Jordan a summary of what changed in his region.");
         await typeIn(x, ".pz-sumt", S.PULSE_SUM, { html: true, ms: 14, chunk: 2 });
         x.left(S.pulse({ tap: true }));
-        C.caption("Tap the Open water jobs card in CJ\u2019s digest.");
+        C.caption("Tap the West Region jobs card in Jordan\u2019s digest.");
         await x.tap("card");
-        x.left(S.pulseDetail({ tap: "dayton" }));
+        x.left(S.pulseDetail({ tap: "fresno" }));
         C.ring("ins");
-        C.extra(linCard("Pulse metric definition", [
-          ["Metric", "Open water jobs", "on a certified data source"],
-          ["Insight", "unexpected value vs the range Pulse learns from history", "built in"],
-          ["Delivered", "daily digest to CJ (email, Tableau Mobile)", "7:30 AM"],
+        C.extra(linCard("Tableau metric \u00b7 how it\u2019s measured", [
+          ["Metric", "Jobs by franchise, West Region", "on a certified data source"],
+          ["Insight", "unexpected low vs prior-year average \u00b7 Tableau learns the range", "built in"],
+          ["Delivered", "morning digest to Jordan (email, Tableau Mobile)", "7:30 AM PT"],
         ]));
-        await N("CJ follows the insight to the metric detail page \u00b7 top contributors by metro: Columbus +9, Dayton +6, Cincinnati +2", "CJ sees exactly which metros drove the spike");
-        C.clock([{ l: "Digest", v: "7:30 AM" }, { l: "Ohio open water", n: 61, v: "{n}", state: "warn" }, { l: "Expected range", v: "38\u201352" }, { l: "Top driver", v: "Columbus +9" }]);
-        C.caption("Tap Dayton to see what\u2019s behind its jump.");
-        await x.tap("dayton");
-        x.left(S.pulseDetail({ dayton: true, tap: "open" }));
+        await N("Jordan follows the insight to the metric detail page \u00b7 West up 20% overall \u00b7 Fresno East (CA-0714) down 30%", "Jordan sees which franchise is slipping");
+        C.clock([{ l: "Digest", v: "7:30 AM PT" }, { l: "West Region", v: "+20% vs last year", state: "ok" }, { l: "Fresno East", v: "\u221230% \u00b7 unexpected", state: "warn" }, { l: "Reporting", v: "62 / 63 franchises" }]);
+        C.caption("Tap Fresno East to see what\u2019s behind its drop.");
+        await x.tap("fresno");
+        x.left(S.pulseDetail({ fresno: true, tap: "open" }));
         await C.packet(["views", "sem", "ins"], x.t, { kind: "q", dur: 380 });
-        C.tag("views", "OH-0731 \u00b7 first sync Tue", "new", { stay: true });
-        await N("pulse \u00b7 breakdown metro = Dayton \u2192 franchise \u00b7 OH-0731 Dayton North +5 \u00b7 connected Tuesday through MuleSoft (chapter 5)", "Most of Dayton's jump is the franchise connected on Tuesday");
+        C.tag("views", "CA-0714 \u00b7 Fresno East \u00b7 \u221230%", "warn", { stay: true });
+        await N("tableau \u00b7 breakdown franchise = CA-0714 Fresno East \u00b7 12 jobs last 30 days vs 17 same period last year \u00b7 1 franchise connected Tuesday (reporting now 62/63)", "Fresno East has fewer jobs than this time last year \u2014 Jordan can call to find out why");
         C.caption("Tap Open in Tableau to dig in on the full dashboard.");
         await x.tap("open");
-        x.left(S.tableau("network", { clock: "7:32 AM" }));
+        x.left(S.tableau("rd", { clock: "7:32 AM" }));
         C.tag("dig", "opened in Tableau", "ok", { stay: true });
-        await N("deep link \u2192 Tableau Cloud \u00b7 Network Operations dashboard", "CJ lands on the dashboard, ready to ask why");
+        await N("deep link \u2192 Tableau Cloud \u00b7 Network Operations dashboard \u00b7 West Region (row-level security)", "Jordan lands on his region\u2019s dashboard, ready to call Fresno East");
       },
     },
     {
-      id: "8.2", act: "8", short: false, title: "Explain Data: why did Ohio jump?",
-      desc: "CJ goes from Pulse straight into the network dashboard and clicks Ohio on the map. Explain Data shows that the spike is driven by Columbus and Dayton. Clicking Dayton shows that most of its jump is Dayton North, the franchise that connected on Tuesday.", why: "The insight chain is complete: the dashboard flagged it, Pulse surfaced it, Explain Data traced it back to a single franchise connection.",
+      id: "8.2", act: "8", short: false, title: "Explain Data: why did Ohio jump? (CJ\u2019s view)",
+      desc: "CJ opens the network dashboard and clicks Ohio on the map. Explain Data shows that the spike is driven by Columbus and Dayton. Clicking Dayton shows that most of its jump is Dayton North, the franchise that connected on Tuesday.", why: "The insight chain is complete: the dashboard flagged it, Tableau surfaced it, Explain Data traced it back to a single franchise connection.",
       powered: ["Tableau Explain Data"],
       async run(x) {
         const N = (a, b) => C.narrate(a, b, x.t);
         x.left(S.tableau("network", { tapState: "OH", clock: "7:32 AM" }));
         const g = tabGraph(); g.compact = true;
         C.graph(g); C.tab("flow"); C.setClock("07:32:00");
-        C.caption("CJ follows the Pulse insight into the dashboard. Click Ohio to ask why it jumped.");
+        C.caption("CJ follows the Tableau digest insight into the dashboard. Click Ohio to ask why it jumped.");
         C.ambient(x.t, [["mule", "views"]], { every: 900 });
-        await N("CJ taps 'Open in Tableau' from the Pulse digest \u00b7 Network Operations dashboard opens \u00b7 Ohio highlighted", "CJ lands on the dashboard with Ohio highlighted");
+        await N("CJ taps 'Open in Tableau' from the Tableau digest \u00b7 Network Operations dashboard opens \u00b7 Ohio highlighted", "CJ lands on the dashboard with Ohio highlighted");
         await x.tap("OH");
         x.left(S.tableau("explain-data", { tapDayton: true }));
         C.caption("Explain Data ranks what drove Ohio's number. Click Dayton to see which franchise.");

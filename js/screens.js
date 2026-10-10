@@ -1,5 +1,5 @@
 /* Left pane: what each person sees. Every function returns an HTML string.
-   Shells: "vendor" is a neutral stand-in for a franchise's job platform (not the vendor's real UI),
+   Shells: "vendor" is drawn after DASH Enterprise (Dash/PuroLogic) or a simulated stand-in for other job platforms (not the vendor's real UI),
    "admin" is an illustrative PuroClean admin console, "tableau" is Tableau Cloud. */
 window.Screens = (function () {
   const D = window.PC;
@@ -51,6 +51,19 @@ window.Screens = (function () {
         ? `<span class="lx-brand"><span class="dx-logo">DASH<small>ENTERPRISE</small></span>${opt.tag ? `<em>${esc(opt.tag)}</em>` : ""}</span>`
         : `<span class="lx-brand"><span class="vx-mark">${esc(app[0])}</span><b>${esc(app)}</b>${opt.tag ? `<em>${esc(opt.tag)}</em>` : ""}</span>`;
     const search = kind === "tableau" ? "Search views, metrics and data sources" : kind === "anypoint" ? "Search Anypoint Platform" : "Search...";
+    if (opt.skin === "dash") {
+      return `<div class="lx vendor dash">
+        <div class="dx-top">
+          <span class="lx-brand"><span class="dx-logo">DASH<small>ENTERPRISE</small></span><em>PuroLogic</em></span>
+          <div class="dx-jobsearch"><span class="dx-joblbl">Jobs <i>\u25be</i></span><input class="dx-jsearch" placeholder="Search jobs\u2026" readonly/></div>
+          <span class="lx-illus">Illustrative UI</span>
+          <span class="dx-welcome">Welcome, Alex &nbsp;|&nbsp; <a>Logout</a></span>
+        </div>
+        <div class="dx-nav">${(tabs || []).map((t) => `<span class="dx-ni ${t === active ? "on" : ""}">${esc(t)} ${["Home", "Administration", "Dashboards"].includes(t) ? "<i>\u25be</i>" : ""}</span>`).join("")}</div>
+        <div class="dx-lastviews"><b>Last Views:</b> D-889214, Whitfield, Dana</div>
+        <div class="lx-body">${opt.toast || ""}${body}</div>
+      </div>`;
+    }
     return `<div class="lx ${kind}${opt.skin ? " " + opt.skin : ""}">
       <div class="lx-gh">
         ${brand}
@@ -64,8 +77,8 @@ window.Screens = (function () {
   }
 
   /* Dash is drawn after Next Gear's DASH Enterprise: menu bar, job tab row, light-blue buttons. Simulated, not the vendor's UI. */
-  const DASH_NAV = ["Home", "Jobs", "Calendar", "Dashboards", "Administration"];
-  const dashTabs = (active) => `<div class="dx-tabs">${["Dates", "Documents", "Estimates", "Invoices", "Notes", "Photos"].map((t) => `<span class="${t === active ? "on" : ""}">${t}</span>`).join("")}</div>`;
+  const DASH_NAV = ["Home", "Administration", "Dashboards", "Calendar"];
+  const dashTabs = (active) => `<div class="dx-tabs">${["Dates", "Documents", "Checklist", "Estimates", "Invoices", "Job Tasks", "Notes", "Photos"].map((t) => `<span class="${t === active ? "on" : ""}">${t}</span>`).join("")}</div>`;
 
   const toast = (kind, title, sub) =>
     `<div class="lx-toast ${kind}"><span class="lx-ti">${kind === "success" ? SVG.check : "!"}</span><div><b>${esc(title)}</b>${sub ? `<small>${esc(sub)}</small>` : ""}</div></div>`;
@@ -88,7 +101,7 @@ window.Screens = (function () {
   const bldgSvg = '<img src="assets/icons/building.svg" alt="" class="oi-img"/>';
   const secSvg = '<img src="assets/icons/security.svg" alt="" class="oi-img"/>';
 
-  /* ------------------------------------------------------------ franchise job record (neutral stand-in for the vendor app) */
+  /* ------------------------------------------------------------ DASH Enterprise / franchise job record */
   const PATH_FIELDS = ["date_of_loss", "dispatch", "received_accepted", "contacted", "inspected", "started", "target_completion"];
 
   const GUIDE = {
@@ -181,7 +194,7 @@ window.Screens = (function () {
 
   /* Four franchises' own job apps side by side: the same moment, four labels, one PuroLogic Date. */
   const PF_LOOK = {
-    dash: { c: "#23313a", a: "#4fae95", ref: "job_no" },
+    dash: { c: "#0a2744", a: "#5ba4d4", ref: "job_no" },
     psa: { c: "#1d4f91", a: "#7fb2ef", ref: "JobNumber" },
     albi: { c: "#4b2f8f", a: "#b9a3ef", ref: "projectId" },
     jobsite: { c: "#b4501f", a: "#ffc49d", ref: "id" },
@@ -219,6 +232,7 @@ window.Screens = (function () {
     </div>`;
   }
 
+  /* DASH Enterprise Job Slideboard (PuroLogic). Simulated after publicly available DASH docs. */
   function jobApp(st = {}) {
     const vKey = st.vendor || "dash";
     const v = D.vendors[vKey];
@@ -227,8 +241,108 @@ window.Screens = (function () {
     const ref = v.payload.job_no || v.payload.JobNumber || v.payload.projectId || v.payload.id;
     const mapped = st.mapped || [];
     const spot = (k, cls = "") => `class="${cls} ${mapped.includes(k) ? "mapped" : ""} ${st.flash === k ? "flash" : ""}" ${st.tapF === k ? `data-tap="f-${k}"` : ""}`;
+
+    if (vKey === "dash") {
+      /* DASH Enterprise Job Slideboard layout */
+      const PATH_FIELDS_ORDERED = ["date_of_loss", "dispatch", "received_accepted", "contacted", "inspected", "started", "target_completion"];
+      const dateFields = D.milestones
+        .filter((m) => PATH_FIELDS_ORDERED.includes(m.field))
+        .map((m) => {
+          const lbl = (v.labels && v.labels[m.field]) || m.label;
+          const val = set[m.field];
+          const fk = m.field === "received_accepted" ? "accepted" : m.field;
+          /* "path" tap targets data-tap="f-path" on the first unfilled date field */
+          const isNextEmpty = st.tapF === "path" && !set[m.field] && PATH_FIELDS_ORDERED.slice(0, PATH_FIELDS_ORDERED.indexOf(m.field)).every((f) => set[f]);
+          const isTap = st.tapF === fk || isNextEmpty;
+          const tapAttr = isNextEmpty ? "f-path" : `f-${fk}`;
+          const flashCls = (st.flash === m.field || st.flash === fk) ? "flash" : "";
+          const mapCls = mapped.includes(fk) || mapped.includes(m.field) ? "mapped" : "";
+          const fval = val ? esc(val) : '<span class="dx-empty">\u2014</span>';
+          return `<div class="dx-df ${flashCls} ${mapCls}" ${isTap ? `data-tap="${tapAttr}"` : ""}><label>${esc(lbl)}</label><div class="dx-di">${fval}</div></div>`;
+        });
+
+      const leftDates = dateFields.slice(0, 3).join("");
+      const rightDates = dateFields.slice(3).join("");
+
+      const lossVal = st.pickLoss
+        ? `<span class="dx-sel" data-tap="f-loss">Select loss type <i>\u25be</i><div class="dx-menu">${["Water", "Fire", "Mold", "Biohazard"].map((k) => `<span ${k === "Water" ? 'data-tap="loss"' : ""}>${icon(k)} ${k}</span>`).join("")}</div></span>`
+        : st.noLoss ? '<span class="dx-empty">\u2014 None \u2014</span>'
+        : `<span class="${mapped.includes("loss") ? "mapped" : ""}" ${st.tapF === "loss" ? 'data-tap="f-loss"' : ""}>${icon(J.loss)} ${J.loss}</span>`;
+
+      const statusLabel = set.received_accepted ? "Pending Sale" : set.dispatch ? "Dispatched" : "";
+      const jobTitle = st.isNew ? "New Job" : ref;
+      const customerName = "Whitfield, Dana";
+
+      /* Action buttons */
+      const actionBtns = (st.actions || []).map((a) => `<button class="dx-btn ${a.kind === "ghost" ? "sec" : "pri"}" ${a.tap ? `data-tap="${a.tap}"` : ""}>${esc(a.label)}</button>`).join("")
+        || `<button class="dx-btn sec" ${st.tapF === "save2" ? 'data-tap="save2"' : ""}>Save</button><button class="dx-btn pri">Accept job</button>`;
+
+      /* Notes tab content */
+      const notesRows = [
+        { dt: "02/16/2027 6:11 AM", type: "System", note: "Job created from Dash sync", by: "MuleSoft" },
+        { dt: "02/16/2027 6:24 AM", type: "System", note: "Received/Accepted logged", by: "MuleSoft" },
+        { dt: "02/16/2027 6:35 AM", type: "Note", note: "Customer confirmed inspection window 9–11 AM", by: "Alex" },
+        ...(st.activity && st.activity.sent ? [{ dt: "02/16/2027 6:41 AM", type: "Email", note: `Initial contact template to ${CUSTOMER.name}. Contacted set 6:41\u202fAM.`, by: "Alex" }] : []),
+      ];
+
+      const activeTab = st.activity ? "Notes" : "Dates";
+      const body = `
+        <div class="dx-sb">
+          <div class="dx-sbh">
+            <div class="dx-sbid"><b>${jobTitle}</b> &nbsp; ${customerName} &nbsp; ${statusLabel ? `<span class="dx-status">${statusLabel}</span>` : ""}</div>
+            <div class="dx-sbactions">${actionBtns}</div>
+          </div>
+          <div class="dx-quads">
+            <div class="dx-quad"><div class="dx-qh">Job Information <span class="dx-pencil">\u270e</span></div>
+              <div class="dx-qf"><label>Office</label><span ${spot("franchise", "")}>PuroClean ${esc(st.franchise || D.franchise.name)}</span></div>
+              <div class="dx-qf"><label>Loss Type</label>${lossVal}</div>
+              <div class="dx-qf"><label>Category</label><span>${J.category.split(" \u00b7 ")[0]}</span></div>
+              <div class="dx-qf"><label>Loss Date</label><span>${set.date_of_loss || "\u2014"}</span></div>
+            </div>
+            <div class="dx-quad"><div class="dx-qh">Claim Information</div>
+              <div class="dx-qf"><label>Carrier</label><span>${J.carrier}</span></div>
+              <div class="dx-qf"><label>Claim #</label><span>${J.claim}</span></div>
+              <div class="dx-qf"><label>Type</label><span>Water \u00b7 Cat 2</span></div>
+            </div>
+            <div class="dx-quad"><div class="dx-qh">Customer / Loss Address</div>
+              <div class="dx-qf"><label>Customer</label><span ${spot("address", "")}>Dana Whitfield</span></div>
+              <div class="dx-qf"><label>Address</label><span>2417 N Rock Rd, Wichita KS</span></div>
+            </div>
+            <div class="dx-quad"><div class="dx-qh">Participants</div>
+              <div class="dx-qf"><label>PM</label><span>Alex (internal)</span></div>
+              <div class="dx-qf"><label>Franchise</label><span>PuroClean Wichita East</span></div>
+            </div>
+          </div>
+          ${dashTabs(activeTab)}
+          ${activeTab === "Dates"
+            ? `<div class="dx-dates"><div class="dx-dc">${leftDates}</div><div class="dx-dc">${rightDates}</div></div>`
+            : `<div class="dx-notes">
+                <div class="dx-note-acts">
+                  <button class="dx-btn sec">Add Note</button>
+                  <button class="dx-btn sec" ${st.activity && !st.activity.sent ? 'data-tap="email"' : ""}>Send Email</button>
+                  <button class="dx-btn sec">Log Call</button>
+                </div>
+                <table class="dx-nt"><thead><tr><th>Date/Time</th><th>Type</th><th>Note</th><th>Entered By</th></tr></thead>
+                <tbody>${notesRows.map((r) => `<tr><td class="mut">${r.dt}</td><td>${r.type}</td><td>${r.note}</td><td>${r.by}</td></tr>`).join("")}</tbody></table>
+                ${st.activity && (st.activity.composer === "pick" || st.activity.composer === "filled") ? `
+                  <div class="dx-modal"><div class="dx-modal-h">Send Email <span class="dx-modal-close" style="float:right;cursor:pointer">&#x2715;</span></div>
+                    <div class="dx-modal-b">
+                      <div class="dx-mf"><label>Template</label>${st.activity.composer === "pick" ? `<span class="dx-sel" data-tap="tpl">Select template <i>\u25be</i><div class="dx-menu"><span data-tap="tpl">Initial contact</span><span>Estimate ready</span></div></span>` : `<span>\u2713 Initial contact</span>`}</div>
+                      <div class="dx-mf"><label>To</label><span class="ecmp-to">${CUSTOMER.email}</span></div>
+                      <div class="dx-mf"><label>Subject</label><span class="ecmp-subj">${st.activity.composer === "filled" ? EMAIL_TPL.subject : ""}</span></div>
+                      <div class="dx-mf body"><label>Body</label><div class="ecmp-body">${st.activity.composer === "filled" ? EMAIL_TPL.body : ""}</div></div>
+                      ${st.activity.composer === "filled" ? `<button class="dx-btn pri" data-tap="send">Send</button>` : ""}
+                    </div>
+                  </div>` : ""}
+                ${st.activity && st.activity.sent ? `<div class="dx-toast ok">\u2713 Email sent \u00b7 Contacted set to 6:41 AM</div>` : ""}
+              </div>`}
+        </div>`;
+      return frame(st.role || "pm", lx(v.name, DASH_NAV, "Home", body, { skin: "dash" }), { clock: st.clock || "6:21 AM" });
+    }
+
+    /* Non-Dash vendor (PSA, Albi, JobSite) — keep original layout */
     const fields = D.milestones
-      .filter((m) => PATH_FIELDS.includes(m.field))
+      .filter((m) => ["date_of_loss", "dispatch", "received_accepted", "contacted", "inspected", "started", "target_completion"].includes(m.field))
       .map((m) => {
         const lbl = (v.labels && v.labels[m.field]) || m.label;
         const val = set[m.field];
@@ -252,30 +366,33 @@ window.Screens = (function () {
         <div><small>Category</small><b>${J.category.split(" \u00b7 ")[0]}</b></div>
         <div ${spot("address")}><small>Address</small><b>${esc(st.address || J.address.split(",")[0])}</b></div>
       </div>
-      ${vKey === "dash" ? dashTabs(st.activity ? "Notes" : "Dates") : ""}
-      ${path(set, vKey, st.flash, st.tapF === "path" ? "f-path" : null)}
-      ${st.activity ? activityCard(st.activity) : card("Job dates", `<div class="lx-fields">${fields}</div>`, { right: `${J.carrier} \u00b7 ${J.claim}` })}
-      ${st.activity ? composer(st.activity) : ""}
-      ${st.activity && st.activity.sent ? `<div class="sf-toast">${SVG.check}<span>Email was sent. <small>Contacted set to 6:41 AM</small></span></div>` : ""}`;
-    return frame(st.role || "pm", lx(v.name, vKey === "dash" ? DASH_NAV : ["Jobs", "Schedule", "Estimates"], "Jobs", body, { kind: "vendor", skin: vKey === "dash" ? "dash" : "", tag: "simulated", avatar: "PM" }), { clock: st.clock || "6:21 AM" });
+      ${card("Job dates", `<div class="lx-fields">${fields}</div>`, { right: `${J.carrier} \u00b7 ${J.claim}` })}`;
+    return frame(st.role || "pm", lx(v.name, ["Jobs", "Schedule", "Estimates"], "Jobs", body, { kind: "vendor", tag: "simulated", avatar: "PM" }), { clock: st.clock || "6:21 AM" });
   }
 
-  /* Recent changes on a Dash multi-location account, as the franchise sees them. */
+  /* DASH Enterprise job list grid (PuroLogic) — as the franchise sees it for a multi-location account. */
   function dashJobs(o = {}) {
     const edit = !o.saved;
     const rows = [
-      ["D-889305", "/01 Derby", "2417 N Rock Rd", "Water", "Created 10:11 AM"],
-      ["D-889301", "/01 Derby", "1180 S Webb Rd", "\u2014", "Created 10:12 AM"],
-      ["D-889297", "/03 Andover", "905 E Central Ave", "Fire", edit ? '<span class="lx-inl">Inspected <b>10:13 AM</b> \u270e</span>' : "Inspected set 10:13 AM"],
+      { id: "D-889305", loc: "/01 Derby",   addr: "2417 N Rock Rd",  loss: "Water", last: "Created 10:11 AM" },
+      { id: "D-889301", loc: "/01 Derby",   addr: "1180 S Webb Rd",  loss: "\u2014",  last: "Created 10:12 AM" },
+      { id: "D-889297", loc: "/03 Andover", addr: "905 E Central Ave", loss: "Fire",  last: edit ? '<span class="dx-inl">Inspected <b>10:13 AM</b> \u270e</span>' : "Inspected set 10:13 AM" },
     ];
-    const bar = edit ? `<div class="lx-inlbar"><span>1 item edited</span>${btn("Cancel")}${btn("Save", o.tap ? "inline-save" : null, "brand")}</div>` : "";
+    const bar = edit ? `<div class="dx-inlbar"><span>1 item edited inline</span><button class="dx-btn sec">Cancel</button><button class="dx-btn pri" ${o.tap ? 'data-tap="inline-save"' : ""}>Save</button></div>` : "";
     const body = `
-      ${pageHead("#5f7480", houseSvg, "Dash jobs", "Recently changed", btn("New job"), "Account DASH-M-0412 \u00b7 3 locations")}
-      ${card("3 jobs \u00b7 sorted by last modified", `<table class="lx-dt"><thead><tr><th>Job</th><th>Location</th><th>Address</th><th>Loss type</th><th>Last change</th></tr></thead><tbody>${rows
-        .map((r) => `<tr><td class="lnk">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td class="mut">${r[4]}</td></tr>`)
-        .join("")}</tbody></table>${bar}`)}
-      <p class="lx-note">D-889305 repeats the address, date of loss and claim of D-889214, logged earlier at the main office. D-889301 was saved without a loss type.</p>`;
-    return frame("sync", lx("Dash", DASH_NAV, "Jobs", body, { kind: "vendor", skin: "dash", tag: "simulated", avatar: "PM" }), { clock: o.clock || "10:15 AM" });
+      <div class="dx-sb">
+        <div class="dx-sbh">
+          <div class="dx-sbid"><b>Jobs \u00b7 DASH-M-0412</b> &nbsp; <span class="dx-status">3 locations \u00b7 Recently changed</span></div>
+          <div class="dx-sbactions"><button class="dx-btn pri">New Job</button></div>
+        </div>
+        <div class="dx-grid">
+          <div class="dx-gh-bar"><span>Job</span><span>Location</span><span>Address</span><span>Loss Type</span><span>Last Change</span></div>
+          ${rows.map((r) => `<div class="dx-gr"><span class="lnk">${r.id}</span><span>${r.loc}</span><span>${r.addr}</span><span>${r.loss}</span><span class="mut">${r.last}</span></div>`).join("")}
+          ${bar}
+        </div>
+        <p class="lx-note">D-889305 repeats the address, date of loss and claim of D-889214, logged earlier at the main office. D-889301 was saved without a loss type.</p>
+      </div>`;
+    return frame("sync", lx("Dash", DASH_NAV, "Home", body, { skin: "dash" }), { clock: o.clock || "10:15 AM" });
   }
 
   /* ------------------------------------------------------------ PuroClean integration admin (illustrative) */
@@ -382,6 +499,7 @@ window.Screens = (function () {
             <div class="tm-row sla"><span>Contact SLA</span><b class="err">${c ? "38 min &nbsp;·&nbsp; late, now contacted" : "34 min &nbsp;·&nbsp; MISSED (30 min)"}</b></div>
             <div class="tm-row"><span>Received/Accepted</span><b>7:28 AM PT</b></div>
             <div class="tm-row"><span>Contacted</span>${c ? "<b>8:06 AM PT</b>" : '<b class="mut">— (not yet)</b>'}</div>
+            <div class="tm-row ok"><span>Franchise texted</span><b>10:02 AM \u00b7 delivered</b></div>
           </div>
           ${acts}
           <div class="tm-ml"><div class="tm-mlh">Milestones</div>
@@ -396,43 +514,43 @@ window.Screens = (function () {
     );
   }
 
-  /* ------------------------------------------------------------ Tableau Pulse metric detail */
+  /* ------------------------------------------------------------ Tableau metric detail (Jordan's West digest) */
   function pulseDetail(o = {}) {
-    const ohio = [41, 44, 42, 45, 43, 46, 44, 45, 47, 46, 52, 57, 61];
-    const avg = 44.2;
-    const W = 230, H = 64, P = 4, mn = 36, mx = 64;
-    const X = (i) => P + (i * (W - 2 * P)) / (ohio.length - 1);
+    /* West Region jobs vs prior year — 13 weekly periods */
+    const west = [88, 90, 91, 93, 92, 95, 96, 98, 99, 100, 101, 103, 105];
+    const priorYr = 87.4;
+    const W = 230, H = 64, P = 4, mn = 80, mx = 112;
+    const X = (i) => P + (i * (W - 2 * P)) / (west.length - 1);
     const Y = (v) => H - P - ((v - mn) / (mx - mn)) * (H - 2 * P);
-    const line = ohio.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(" ");
+    const line = west.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(" ");
     const chart = `<svg class="pz-chart" viewBox="0 0 ${W} ${H}">
-      <rect x="${X(9)}" y="0" width="${W - X(9)}" height="${H}" fill="#fdecec"/>
-      <line x1="0" x2="${W}" y1="${Y(avg)}" y2="${Y(avg)}" stroke="#8a8a8a" stroke-dasharray="3 3"/>
-      <text x="4" y="${Y(avg) - 4}" class="pz-ax">4-wk avg 44</text>
+      <line x1="0" x2="${W}" y1="${Y(priorYr)}" y2="${Y(priorYr)}" stroke="#8a8a8a" stroke-dasharray="3 3"/>
+      <text x="4" y="${Y(priorYr) - 4}" class="pz-ax">Prior year avg</text>
       <polygon points="${X(0)},${H} ${line} ${X(12)},${H}" fill="#0176D3" opacity=".12"/>
       <polyline points="${line}" fill="none" stroke="#0176D3" stroke-width="2.4" class="draw"/>
-      <circle cx="${X(12)}" cy="${Y(61)}" r="4" fill="#C23934" stroke="#fff" stroke-width="2"/></svg>`;
-    const contribs = [
-      { metro: "Columbus", delta: "+9", note: "seasonal increase" },
-      { metro: "Dayton", delta: "+6", note: "OH-0731 connected Tuesday · first 23 jobs" },
-      { metro: "Cincinnati", delta: "+2", note: "" },
+      <circle cx="${X(12)}" cy="${Y(105)}" r="4" fill="#2E844A" stroke="#fff" stroke-width="2"/></svg>`;
+    const franchises = [
+      { name: "Sacramento North", id: "CA-0712", delta: "+18%", note: "" },
+      { name: "San Jose East",     id: "CA-0715", delta: "+12%", note: "" },
+      { name: "Fresno East",       id: "CA-0714", delta: "\u221230%", warn: true, note: "CA-0714 \u00b7 12 jobs last 30 days vs 17 same period last year" },
     ];
     return phone(
-      "cjPhone",
+      "rdPhone",
       `<div class="m-app">
-        ${mHead("Tableau Pulse")}
+        ${mHead("Tableau")}
         <div class="m-body pz">
-          <div class="pz-back"><i>${SVG.back}</i><span>Open water jobs · Ohio</span></div>
+          <div class="pz-back"><i>${SVG.back}</i><span>Jobs by franchise \u00b7 West Region</span></div>
           <div class="pz-metric-h">
-            <div class="pz-mv">61</div>
-            <div class="pz-md up">&#9650; 38% vs 4-week avg · unexpected</div>
-            <div class="pz-ms">Expected range: 38–52 (based on 12 weeks)</div>
+            <div class="pz-mv">105</div>
+            <div class="pz-md ok">&#9650; ~20% vs last year</div>
+            <div class="pz-ms">Exception: Fresno East CA-0714 \u25bc~30%</div>
           </div>
           ${chart}
-          <div class="pz-sec">Top contributors this week</div>
-          ${contribs.map((c) => {
-            const d = c.metro === "Dayton";
-            const open = d && o.dayton;
-            return `<div class="pz-contrib ${open ? "open" : ""}" ${d && o.tap === "dayton" ? 'data-tap="dayton"' : ""}><div class="pz-ck">${c.metro}${d && !o.dayton ? " <span class=\"pz-more\">Details \u203a</span>" : ""}</div><div class="pz-cd warn">${c.delta} vs expected</div>${open ? '<div class="pz-cn">OH-0731 Dayton North connected Tuesday (MuleSoft) \u00b7 its first 23 open jobs now count \u00b7 without it, Dayton is +1</div>' : c.note && !d ? `<div class="pz-cn">${c.note}</div>` : ""}</div>`;
+          <div class="pz-sec">Franchise breakdown</div>
+          ${franchises.map((f) => {
+            const isFresno = f.id === "CA-0714";
+            const open = isFresno && o.fresno;
+            return `<div class="pz-contrib ${open ? "open" : ""}" ${isFresno && o.tap === "fresno" ? 'data-tap="fresno"' : ""}><div class="pz-ck">${f.name} <span class="pz-id">${f.id}</span>${isFresno && !o.fresno ? " <span class=\"pz-more\">Details \u203a</span>" : ""}</div><div class="pz-cd ${f.warn ? "warn" : "ok"}">${f.delta} vs last year</div>${open ? `<div class="pz-cn">${f.note}</div>` : ""}</div>`;
           }).join("")}
           <div class="pz-follow"><button class="sbtn neutral xs">\u2713 Following</button> <button class="sbtn brand xs" ${o.tap === "open" ? 'data-tap="open"' : ""}>Open in Tableau</button></div>
         </div></div>`,
@@ -759,6 +877,87 @@ window.Screens = (function () {
     );
   }
 
+  /* ------------------------------------------------------------ Two-phone SMS layout (step 2.1) */
+  function franchiseSms(o = {}) {
+    /* Left phone: franchise owner's SMS thread */
+    const ownerThread = `<div class="ph-lock"><div class="ph-time">10:02</div><div class="ph-date">Tuesday, February 16</div>
+      <div class="sms-thread">
+        <div class="sms-from">PuroLogic Alerts</div>
+        ${o.sms ? `<div class="sms-bubble in"><b>SLA Alert \u00b7 JOB-CA-11902</b><br/>A customer at PuroClean Sacramento North has not been contacted after 34 min (SLA: 30 min). Please reach out as soon as possible. <em>(illustrative \u00b7 channel configured by Nick)</em></div>
+        <div class="sms-meta">Delivered 10:02 AM</div>
+        ${o.resolved ? '<div class="sms-bubble in ok"><b>\u2713 Resolved \u00b7 JOB-CA-11902</b><br/>Customer contacted at 10:06 AM. Alert closed. Thank you.</div><div class="sms-meta ok">Delivered 10:10 AM</div>' : ""}` : ""}
+      </div></div>`;
+
+    /* Right phone: Jordan\u2019s alert / Tableau Mobile */
+    const rdContent = !o.sms
+      ? `<div class="ph-lock"><div class="ph-time">8:02</div><div class="ph-date">Tuesday, February 16</div>
+          <div class="notif" data-tap="open"><div class="nt-h">${mailApp}<span>MAIL \u00b7 now</span></div>
+          <b>SLA alert: JOB-CA-11902</b>
+          <p>PuroClean Sacramento North \u00b7 not Contacted 34 min after Received/Accepted (7:28 AM). SLA 30 min <em>(illustrative)</em>. Open in Tableau \u203a</p></div></div>`
+      : o.rdOpen
+        ? `<div class="m-app">
+            <div class="m-head"><i>${SVG.back}</i><b>${TLOGO} Tableau Mobile</b><i>${SVG.gear}</i></div>
+            <div class="m-body tm">
+              <div class="tm-banner">Network Ops \u00b7 West Region</div>
+              <div class="tm-job">
+                <div class="tm-row"><span>Job</span><b>JOB-CA-11902</b></div>
+                <div class="tm-row"><span>Franchise</span><b>Sacramento North</b></div>
+                <div class="tm-row sla"><span>Contact SLA</span><b class="err">34 min \u00b7 MISSED (30 min)</b></div>
+                <div class="tm-row ok"><span>Franchise texted</span><b>10:02 AM \u00b7 delivered</b></div>
+              </div>
+              <div class="tm-acts">
+                <button class="sbtn brand xs" data-tap="ack">Acknowledge alert</button>
+                <button class="sbtn neutral xs" data-tap="call">${PHONE} Call franchise</button>
+              </div>
+            </div></div>`
+        : o.rdAcked
+          ? `<div class="m-app">
+              <div class="m-head"><i>${SVG.back}</i><b>${TLOGO} Tableau Mobile</b><i>${SVG.gear}</i></div>
+              <div class="m-body tm">
+                <div class="tm-banner">Network Ops \u00b7 West Region</div>
+                <div class="tm-job">
+                  <div class="tm-row"><span>Job</span><b>JOB-CA-11902</b></div>
+                  <div class="tm-row"><span>Franchise</span><b>Sacramento North</b></div>
+                  <div class="tm-row sla"><span>Contact SLA</span><b class="err">34 min \u00b7 MISSED</b></div>
+                  <div class="tm-row ok"><span>Franchise texted</span><b>10:02 AM \u00b7 delivered</b></div>
+                </div>
+                <div class="tm-acts">
+                  <button class="sbtn neutral xs">\u2713 Acknowledged</button>
+                  <button class="sbtn brand xs" data-tap="call">${PHONE} Call franchise</button>
+                </div>
+              </div></div>`
+          : o.rdCalled
+            ? `<div class="m-app">
+                <div class="m-head"><i>${SVG.back}</i><b>${TLOGO} Tableau Mobile</b><i>${SVG.gear}</i></div>
+                <div class="m-body tm">
+                  <div class="tm-banner">Network Ops \u00b7 West Region</div>
+                  <div class="tm-job">
+                    <div class="tm-row"><span>Job</span><b>JOB-CA-11902</b></div>
+                    <div class="tm-row"><span>Franchise</span><b>Sacramento North</b></div>
+                    <div class="tm-row sla"><span>Contact SLA</span><b class="${o.resolved ? "warn" : "err"}">${o.resolved ? "38 min \u00b7 late, now contacted" : "34 min \u00b7 MISSED"}</b></div>
+                    <div class="tm-row ok"><span>Franchise texted</span><b>10:02 AM \u00b7 delivered</b></div>
+                    ${o.resolved ? '<div class="tm-row ok"><span>Alert</span><b>\u2713 Resolved \u00b7 auto</b></div>' : ""}
+                  </div>
+                  <div class="tm-acts">
+                    <button class="sbtn neutral xs">\u2713 Acknowledged</button>
+                    <button class="sbtn neutral xs">${PHONE} Called \u00b7 2 min</button>
+                  </div>
+                </div></div>`
+            : `<div class="ph-lock"><div class="ph-time">8:02</div><div class="ph-date">Tuesday, February 16</div>
+                <div class="notif" data-tap="open"><div class="nt-h">${mailApp}<span>MAIL \u00b7 now</span></div>
+                <b>SLA alert: JOB-CA-11902</b>
+                <p>PuroClean Sacramento North \u00b7 not Contacted 34 min. Open in Tableau \u203a</p></div></div>`;
+
+    return `<div class="duo">
+      <div class="duo-col">
+        ${frame("ownerPhone", ownerThread)}
+      </div>
+      <div class="duo-col">
+        ${frame("rdPhone", rdContent)}
+      </div>
+    </div>`;
+  }
+
   function failAlert(open, o = {}) {
     const O = D.outage;
     return phone(
@@ -786,42 +985,42 @@ window.Screens = (function () {
     saved: "\u2713 Saved \u2022 \u201cWest franchise contact speed\u201d \u2022 published on certified data source",
   };
   const SHARE = { to: "RD, Central (rd.central)", msg: "11 Wichita East jobs held for missing loss type. Can you follow up with the franchise today?" };
-  const PULSE_SUM = "Open water jobs in Ohio are <b>up 38%</b> against the 4-week average, driven by Columbus and Dayton (Dayton includes a franchise connected Tuesday). Your other metrics are on track.";
+  const PULSE_SUM = "Jobs across the West Region are <b>up about 20%</b> vs last year \u2014 strong. Fresno East (CA-0714) is the exception: down about 30% over the same period. Worth a call.";
   function pulse(o = {}) {
-    const ohio = [41, 44, 42, 45, 43, 46, 44, 45, 47, 46, 52, 57, 61];
-    const avg = 44.2;
-    const W = 230, H = 64, P = 4, mn = 36, mx = 64;
-    const X = (i) => P + (i * (W - 2 * P)) / (ohio.length - 1);
+    /* West Region jobs vs prior year — 13 weekly periods */
+    const west = [88, 90, 91, 93, 92, 95, 96, 98, 99, 100, 101, 103, 105];
+    const priorYr = 87.4;
+    const W = 230, H = 64, P = 4, mn = 80, mx = 112;
+    const X = (i) => P + (i * (W - 2 * P)) / (west.length - 1);
     const Y = (v) => H - P - ((v - mn) / (mx - mn)) * (H - 2 * P);
-    const line = ohio.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(" ");
+    const line = west.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(" ");
     const chart = `<svg class="pz-chart" viewBox="0 0 ${W} ${H}">
-      <rect x="${X(9)}" y="0" width="${W - X(9)}" height="${H}" fill="#fdecec"/>
-      <line x1="0" x2="${W}" y1="${Y(avg)}" y2="${Y(avg)}" stroke="#8a8a8a" stroke-dasharray="3 3"/>
-      <text x="4" y="${Y(avg) - 4}" class="pz-ax">4-wk avg 44</text>
+      <line x1="0" x2="${W}" y1="${Y(priorYr)}" y2="${Y(priorYr)}" stroke="#8a8a8a" stroke-dasharray="3 3"/>
+      <text x="4" y="${Y(priorYr) - 4}" class="pz-ax">Prior year avg</text>
       <polygon points="${X(0)},${H} ${line} ${X(12)},${H}" fill="#0176D3" opacity=".12"/>
       <polyline points="${line}" fill="none" stroke="#0176D3" stroke-width="2.4" class="draw"/>
-      <circle cx="${X(12)}" cy="${Y(61)}" r="4" fill="#C23934" stroke="#fff" stroke-width="2"/></svg>`;
+      <circle cx="${X(12)}" cy="${Y(105)}" r="4" fill="#2E844A" stroke="#fff" stroke-width="2"/></svg>`;
     return phone(
-      "cjPhone",
-      `<div class="m-app">${mHead("Tableau Pulse")}
+      "rdPhone",
+      `<div class="m-app">${mHead("Tableau")}
         <div class="m-body pz">
-          <div class="pz-hi"><b>Good morning, CJ</b><small>Wednesday digest \u00b7 3 metrics you follow</small></div>
+          <div class="pz-hi"><b>Good morning, Jordan</b><small>Wednesday digest \u00b7 West Region</small></div>
           <div class="pz-sum"><div class="pz-sk"><i>\u2726</i> Insights summary</div><p class="pz-sumt">${o.blankSum ? "" : PULSE_SUM}</p></div>
           <div class="pz-card hot" ${o.tap ? 'data-tap="card"' : ""}>
-            <div class="pz-k">Open water jobs <span>Ohio \u00b7 daily</span></div>
-            <div class="pz-v">61 <span class="pz-d up">\u25b2 38% vs 4-wk avg</span></div>
+            <div class="pz-k">Jobs by franchise <span>West Region \u00b7 vs last year</span></div>
+            <div class="pz-v">105 <span class="pz-d ok">\u25b2 ~20% vs last year</span></div>
             ${chart}
-            <div class="pz-ins"><b>Above expected range (38\u201352)</b> Columbus +9 \u00b7 Dayton +6 \u00b7 Cincinnati +2</div>
+            <div class="pz-ins"><b>Exception: Fresno East (CA-0714)</b> \u25bc~30% vs last year \u00b7 worth a call</div>
           </div>
-          <div class="pz-card"><div class="pz-k">On-time completion <span>Network</span></div><div class="pz-v sm">82% <span class="pz-d ok">\u25cf On track</span></div>${spark([76, 77, 77, 78, 78, 79, 79, 80, 80, 81, 81, 82, 82], { c: "#0176D3", w: 230, h: 22 })}</div>
-          <div class="pz-card"><div class="pz-k">Integrations working <span>MuleSoft</span></div><div class="pz-v sm">5 / 5 <span class="pz-d ok">\u25cf All syncing</span></div></div>
+          <div class="pz-card"><div class="pz-k">On-time completion <span>West Region</span></div><div class="pz-v sm">84% <span class="pz-d ok">\u25cf On track</span></div>${spark([77, 78, 78, 79, 79, 80, 80, 81, 81, 82, 82, 83, 84], { c: "#0176D3", w: 230, h: 22 })}</div>
+          <div class="pz-card"><div class="pz-k">Franchises reporting <span>West</span></div><div class="pz-v sm">62 / 63 <span class="pz-d ok">\u25cf One connected this week</span></div></div>
         </div></div>`,
       "7:30"
     );
   }
 
   /* ------------------------------------------------------------ Tableau Cloud views */
-  const OPS_TABS = ["Home", "Explore", "Favorites", "Pulse", "Data Guide"];
+  const OPS_TABS = ["Home", "Explore", "Favorites", "Metrics", "Data Guide"];
   const SHEETS = ["Overview", "Regions", "Jobs", "Benchmarks", "Data Health"];
   const T10 = { Water: "#4e79a7", Fire: "#e15759", Mold: "#59a14f", Biohazard: "#f28e2b" };
   const BLUE = ["#dce9f5", "#b5cfe8", "#87b0d8", "#5a8fc4", "#346fa9", "#1d4c80"];
@@ -1056,12 +1255,14 @@ window.Screens = (function () {
             <td class="stg"><span class="pg"><span style="width:${((si / STAGES.length) * 100).toFixed(0)}%"></span></span>${j.stage}</td></tr>`;
         })
         .join("");
+      const locRows = (K.wichita.locations || []).map((l) => `<tr><td><b>${l.id}</b></td><td>${l.name}</td><td>${l.owner}</td><td class="num">${l.jobs}</td><td class="num">${money(l.est)}</td></tr>`).join("");
       return tabShell("Network Operations", ["All franchises", "Kansas", "Water + Fire", "Wichita area"], `${bans([
           { k: "Open water + fire jobs", v: String(K.wichita.jobs), d: "+2 vs last week", s: [7, 8, 8, 8, 9, 9, 9, 10, 9, 10, 10, 9, 11] },
           { k: "Estimated value", v: money(K.wichita.est), d: "+$9.6K vs last week", s: [61, 63, 64, 66, 65, 68, 70, 71, 72, 74, 72, 70.8, 80.4] },
           { k: "Franchises", v: "2", d: "Wichita East, West" },
           { k: "Avg job age", v: "2.3 days", d: "\u22120.8 since Nov", tone: "good", s: [3.1, 3.0, 3.0, 2.9, 2.8, 2.8, 2.7, 2.6, 2.6, 2.5, 2.4, 2.4, 2.3] },
         ])}
+        ${sheet("By franchise location", `<table class="tv-table"><thead><tr><th>Location</th><th>Name</th><th>Owner</th><th class="num">Jobs</th><th class="num">Est. value</th></tr></thead><tbody>${locRows}</tbody></table>`, { right: "All open water + fire" })}
         ${sheet(`Wichita area \u00b7 open jobs \u00b7 top 5 of ${K.wichita.jobs}`, `<table class="tv-table"><thead><tr><th>Job</th><th>Franchise</th><th>Loss</th><th>Estimate</th><th>Current milestone (of 18)</th></tr></thead><tbody>${rows}</tbody></table>`, { right: opt.tap ? `Click ${D.job.id}` : "Sorted by last update" })}`,
         { sheet: "Jobs", filters: [["State", "Kansas", true], ["Loss type", "Water, Fire", true], ["Metro", "Wichita", true]] });
     }
@@ -1140,7 +1341,7 @@ window.Screens = (function () {
         ${opt.down ? "" : `<div class="tg-i"><small>Definition <em>(illustrative)</em></small><span>Completed jobs where Majority Completion \u2264 Target Completion, \u00f7 completed jobs</span></div>`}
         <div class="tg-i ${opt.tapUp ? "tg-tap" : ""} ${opt.up ? "open" : ""}" ${opt.tapUp ? 'data-tap="up"' : ""}><small>Upstream table</small><span><code>curated.job_milestone</code> \u00b7 11:11 SQL Server \u00b7 live via Bridge${opt.up ? "" : " \u203a"}</span>
           ${opt.up ? `<span class="tg-x">Columns used: <code>majority_completion</code>, <code>target_completion</code><br/>Written by MuleSoft job-sync-papi \u00b7 last write 1:58 PM</span>` : ""}</div>
-        <div class="tg-i ${opt.tapDown ? "tg-tap" : ""} ${opt.down ? "open" : ""}" ${opt.tapDown ? 'data-tap="down"' : ""}><small>Downstream</small><span>6 workbooks \u00b7 3 Pulse metrics \u00b7 owners${opt.down ? "" : " \u203a"}</span>
+        <div class="tg-i ${opt.tapDown ? "tg-tap" : ""} ${opt.down ? "open" : ""}" ${opt.tapDown ? 'data-tap="down"' : ""}><small>Downstream</small><span>6 workbooks \u00b7 3 Tableau metrics \u00b7 owners${opt.down ? "" : " \u203a"}</span>
           ${opt.down ? `<span class="tg-x">Network Operations \u00b7 Franchise benchmarking \u00b7 Data Health \u00b7 Regional scorecard \u00b7 +2<br/>Contact their owners from Catalog before changing the source</span>` : ""}</div>
         <div class="tg-i"><small>Owner</small><span>PuroClean (owner to be agreed)</span></div></div>`;
       return tabShell("Network Operations", ["All franchises"], `${bans(D.kpis, { tapLineage: opt.tap, hl: opt.tap ? null : "On-time completion" })}

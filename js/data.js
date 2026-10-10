@@ -25,6 +25,7 @@ window.PC = (function () {
     it: { label: "Nick Hindle", sub: "CIO, Head of Growth", color: "#54698D", device: "laptop" },
     oncall: { label: "Integration on-call", sub: "PuroClean IT or partner managed service (TBD)", color: "#373536", device: "phone" },
     cjPhone: { label: "CJ Bailey", sub: "VP, Software Management", color: "#00346D", device: "phone" },
+    ownerPhone: { label: "Franchise Owner", sub: "PuroClean Sacramento North", color: "#C50A1D", device: "phone" },
     corp: { label: "PuroClean corporate", sub: "Integration administration (illustrative)", color: "#373536", device: "laptop" },
     platform: { label: "Platform review", sub: "PuroClean IT + Salesforce", color: "#373536", device: "laptop" },
     sync: { label: "Franchise Project Manager", sub: "PuroClean Wichita East \u00b7 Derby office", color: "#C50A1D", device: "tablet" },
@@ -165,6 +166,10 @@ window.PC = (function () {
     ],
     wichita: {
       jobs: 11, est: 80400,
+      locations: [
+        { id: "KS-0412", name: "Wichita East", owner: "Maria T.", jobs: 7, est: 58050 },
+        { id: "KS-0418", name: "Wichita West", owner: "Derek H.", jobs: 4, est: 22350 },
+      ],
       list: [
         { id: "JOB-KS-24817", fr: "Wichita East", loss: "Water", est: 8450, stage: "Estimate Sent" },
         { id: "JOB-KS-24809", fr: "Wichita East", loss: "Fire", est: 21300, stage: "Into Production" },
@@ -255,8 +260,8 @@ window.PC = (function () {
       role: "Regional Director",
       org: "PuroClean Corporate \u00b7 West Region",
       question: "Will I know before my customer complains?",
-      need: "Live SLA alerts routed by region, in Tableau Mobile",
-      chapters: ["2", "4"],
+      need: "Live SLA alerts routed by region, and a morning digest of how my region is trending",
+      chapters: ["2", "4", "8"],
       color: "#0176D3",
       initials: "RD",
       img: "assets/personas/persona-rd.png",
@@ -296,7 +301,7 @@ window.PC = (function () {
       "Corporate sees the work without anyone exporting a spreadsheet",
     ] },
     "2:rd": { matters: [
-      "Hear about a missed SLA before the customer or carrier calls",
+      "The franchise owner is texted automatically — I don't have to send it",
       "Only the alerts for my region, not the whole network",
       "Get to the job details from my phone, wherever I am",
     ] },
@@ -333,7 +338,12 @@ window.PC = (function () {
     "7:it": { matters: [
       "Security policies applied consistently, without code changes",
       "Pass PuroClean\u2019s own security review",
-      "Keeping it running doesn\u2019t depend on one person",
+      "The team can share the load \u2014 no single point of contact",
+    ] },
+    "8:rd": { q: "Will I actually see my region\u2019s trends, not just react to alerts?", matters: [
+      "See how my region is tracking against last year, every morning",
+      "Spot a slipping location early enough to call and help",
+      "Know which franchise just connected and why the number moved",
     ] },
     "8:cj": { matters: [
       "Insights come to me, instead of me going to find them",
@@ -350,7 +360,7 @@ window.PC = (function () {
     { time: "2:00 PM",  label: "CJ's network view", chapter: "4", persona: "cj" },
     { time: "2:14 PM",  label: "PSA outage",        chapter: "6", persona: "it" },
     { time: "2:31 PM",  label: "Recovered",         chapter: "6", persona: "it" },
-    { time: "Wed 7:30 AM", label: "Pulse digest",   chapter: "8", persona: "cj" },
+    { time: "Wed 7:30 AM", label: "Tableau digest",  chapter: "8", persona: "rd" },
   ];
 
   return { meta, roles, franchise, job, milestones, vendors, canonical, openJobs, west, kansas, kpis, kpisWest, benchmark, scale, outage, security, scope, personas, vignettes, journeyRibbon };

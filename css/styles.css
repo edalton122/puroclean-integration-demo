@@ -390,6 +390,11 @@ svg text { font-family: "Source Sans 3", -apple-system, Helvetica, Arial, sans-s
 .cx-lane-label.sys { fill: #7fd3d0; }
 .cx-lane-label.proc { fill: #8cc6f0; }
 .cx-lane-label.exp { fill: #cfa8f5; }
+/* Lane error/ok override states (set by C.lane()) */
+.cx-lane.err { fill: rgba(194, 57, 52, .09); stroke: rgba(194, 57, 52, .55); }
+.cx-lane.ok  { fill: rgba(46, 132, 74, .08); stroke: rgba(46, 132, 74, .40); }
+.cx-lane-label.err { fill: #c23934; }
+.cx-lane-label.ok  { fill: #2e844a; }
 .cx-legend .lg { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin: 0 5px -1px 12px; }
 .cx-legend .lg:first-child { margin-left: 0; }
 .cx-legend .lg.sys { background: #4fb3b0; }
@@ -642,6 +647,19 @@ body.exec .cx-mini .lg { grid-template-columns: 92px 1fr; }
 .presenter small { color: #ccc; margin-bottom: 10px; }
 
 /* ------------------------------------------------------------ left pane: UI + "what's happening" line */
+/* ---- Two-phone side-by-side layout ---- */
+.duo { display: flex; gap: 20px; justify-content: center; align-items: flex-start; width: 100%; }
+.duo-col { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 0 0 auto; }
+.duo .device.phone { width: 292px; }
+/* SMS thread styles */
+.sms-thread { padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; background: #f7f7f7; min-height: 160px; }
+.sms-from { font-size: 11px; font-weight: 700; color: #888; text-align: center; padding-bottom: 4px; border-bottom: 1px solid #e0e0e0; margin-bottom: 4px; }
+.sms-bubble { background: #e9e9ea; color: #1c1c1e; border-radius: 14px; padding: 8px 12px; font-size: 13px; line-height: 1.45; max-width: 90%; }
+.sms-bubble.in { align-self: flex-start; }
+.sms-bubble.ok { background: #d1f0db; }
+.sms-meta { font-size: 10px; color: #888; padding-left: 12px; margin-top: -4px; }
+.sms-meta.ok { color: #2e844a; }
+/* ---- end two-phone ---- */
 .left-ui { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
 .left-desc {
   position: sticky; bottom: 0; z-index: 3; flex: none;
@@ -711,23 +729,103 @@ body.exec .cx-mini .lg { grid-template-columns: 92px 1fr; }
 .lx.vendor .lx-card { border-radius: 6px; }
 .lx.vendor .sbtn, .lx.vendor .sbtn-group, .lx.vendor .lx-oi { border-radius: 6px; }
 
-/* Dash: a light header with the DASH wordmark over a blue menu bar, a job tab row and light-blue buttons */
-.lx.vendor.dash { --sf: #2b6cb0; --sf-d: #1f5890; background: #f1f4f8; }
-.lx.vendor.dash .lx-gh { height: 34px; background: #fff; border-bottom: 1px solid #d5dce5; color: #44546a; }
-.lx.vendor.dash .lx-search { display: none; }
-.lx.vendor.dash .lx-ghi { margin-left: auto; color: #6b7a8c; }
-.lx.vendor.dash .lx-brand em { color: #6b7a8c; border-color: #cbd5e1; }
-.lx.vendor.dash .lx-av { background: #2b4f81; }
-.lx.vendor.dash .lx-nav { background: #2b4f81; height: 28px; }
-.lx.vendor.dash .lx-tab { height: 28px; color: #e3ebf6; font-size: 12px; }
-.lx.vendor.dash .lx-tab.on { color: #fff; background: rgba(255,255,255,.16); border-bottom-color: #7cc4f0; }
-.lx.vendor.dash .sbtn.brand { background: #4aa8de; border-color: #4aa8de; }
-.lx.vendor.dash .sbtn.brand:hover { background: #3a95cb; }
-.dx-logo { display: flex; flex-direction: column; line-height: 1; font-weight: 800; font-size: 16px; letter-spacing: .6px; color: #1d5fa8; }
-.dx-logo small { font-size: 6.5px; letter-spacing: 1.4px; font-weight: 700; color: #6b7a8c; margin-top: 1px; }
-.dx-tabs { display: flex; gap: 2px; margin: 0 2px; border-bottom: 2px solid #4aa8de; font-size: 11px; overflow: hidden; }
-.dx-tabs span { padding: 3px 8px; color: #5a6878; background: #e3e9f0; border: 1px solid #cfd7e0; border-bottom: 0; border-radius: 3px 3px 0 0; white-space: nowrap; }
-.dx-tabs span.on { background: #4aa8de; border-color: #4aa8de; color: #fff; font-weight: 600; }
+/* ============================================================ DASH Enterprise (PuroLogic) skin ============================================================ */
+/* Top-level wrapper — replaces the generic .lx.vendor.dash structure */
+.lx.vendor.dash { background: #f0f3f7; font-family: Arial, "Helvetica Neue", sans-serif; font-size: 12px; color: #222; }
+
+/* White top bar with DASH ENTERPRISE wordmark */
+.dx-top { display: flex; align-items: center; gap: 10px; background: #fff; border-bottom: 1px solid #c8d2dc; padding: 0 10px; height: 36px; }
+.dx-jobsearch { display: flex; align-items: center; gap: 0; border: 1px solid #bdc8d4; border-radius: 2px; overflow: hidden; }
+.dx-joblbl { padding: 0 6px; font-size: 11.5px; font-weight: 700; color: #0a2744; background: #e6ecf2; border-right: 1px solid #bdc8d4; white-space: nowrap; cursor: default; }
+.dx-jsearch { border: 0; font: inherit; font-size: 11.5px; padding: 3px 7px; width: 130px; background: #fff; color: #444; outline: none; }
+.dx-welcome { font-size: 11.5px; color: #5a6878; margin-left: auto; white-space: nowrap; }
+.dx-welcome a { color: #0a2744; text-decoration: underline; cursor: pointer; }
+.lx-illus { font-size: 10px; color: #888; white-space: nowrap; }
+
+/* Navy menu bar */
+.dx-nav { display: flex; background: #0a2744; padding: 0 4px; height: 27px; }
+.dx-ni { padding: 0 10px; color: #c5d5e8; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 3px; cursor: pointer; border-bottom: 2px solid transparent; }
+.dx-ni.on, .dx-ni:hover { color: #fff; border-bottom-color: #5ba4d4; }
+.dx-ni i { font-style: normal; font-size: 9px; opacity: .8; }
+
+/* Last Views grey strip */
+.dx-lastviews { background: #e8ecf0; border-bottom: 1px solid #cdd5dc; padding: 3px 12px; font-size: 11px; color: #5a6878; }
+.dx-lastviews b { font-weight: 700; color: #44546a; margin-right: 6px; }
+
+/* DASH wordmark */
+.dx-logo { display: flex; flex-direction: column; line-height: 1; font-weight: 800; font-size: 16px; letter-spacing: .8px; color: #0a2744; }
+.dx-logo small { font-size: 6px; letter-spacing: 1.6px; font-weight: 700; color: #5a6878; margin-top: 1px; }
+.lx.vendor.dash .lx-brand em { font-style: normal; font-size: 11px; color: #5ba4d4; margin-left: 6px; font-weight: 600; border: 0; padding: 0; }
+
+/* Tab row */
+.dx-tabs { display: flex; gap: 1px; border-bottom: 2px solid #5ba4d4; font-size: 11px; overflow: hidden; margin: 0; }
+.dx-tabs span { padding: 4px 9px; color: #5a6878; background: #dde5ef; border: 1px solid #c8d2dc; border-bottom: 0; border-radius: 3px 3px 0 0; white-space: nowrap; cursor: pointer; }
+.dx-tabs span.on { background: #5ba4d4; border-color: #5ba4d4; color: #fff; font-weight: 700; }
+
+/* Light-blue DASH buttons */
+.dx-btn { font: inherit; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 2px; cursor: pointer; border: 1px solid; }
+.dx-btn.pri { background: #5ba4d4; border-color: #4a8fc0; color: #fff; }
+.dx-btn.pri:hover { background: #4a8fc0; }
+.dx-btn.sec { background: #fff; border-color: #9ab0c8; color: #0a2744; }
+.dx-btn.sec:hover { background: #eef2f6; }
+
+/* Slideboard: title row + quadrants */
+.dx-sb { padding: 6px 8px 8px; display: flex; flex-direction: column; gap: 6px; }
+.dx-sbh { display: flex; align-items: center; gap: 8px; padding-bottom: 6px; border-bottom: 1px solid #cdd5dc; }
+.dx-sbid { font-size: 14px; font-weight: 700; color: #0a2744; display: flex; align-items: center; gap: 8px; flex: 1; }
+.dx-status { background: #d6e6f5; color: #0a2744; font-size: 11px; font-weight: 700; border-radius: 3px; padding: 1px 7px; }
+.dx-sbactions { display: flex; gap: 5px; }
+.dx-quads { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.dx-quad { background: #fff; border: 1px solid #cdd5dc; border-radius: 2px; padding: 0; }
+.dx-qh { background: #dde5ef; padding: 4px 8px; font-size: 11.5px; font-weight: 700; color: #0a2744; border-bottom: 1px solid #cdd5dc; }
+.dx-pencil { font-style: normal; color: #5ba4d4; margin-left: 4px; cursor: pointer; }
+.dx-qf { display: flex; gap: 6px; padding: 3px 8px; font-size: 11.5px; border-bottom: 1px solid #f0f3f7; }
+.dx-qf label { color: #6b7a8c; min-width: 80px; font-weight: 700; }
+.dx-qf span { color: #222; }
+.dx-qf .dx-empty { color: #999; font-style: italic; }
+.dx-qf .dx-sel { color: #5ba4d4; cursor: pointer; position: relative; }
+.dx-qf .dx-menu { position: absolute; z-index: 10; background: #fff; border: 1px solid #c8d2dc; box-shadow: 0 4px 12px rgba(0,0,0,.15); border-radius: 3px; min-width: 130px; top: 100%; left: 0; }
+.dx-qf .dx-menu span { display: block; padding: 5px 12px; font-size: 12px; color: #0a2744; cursor: pointer; }
+.dx-qf .dx-menu span:hover { background: #eef4fb; }
+
+/* Dates tab two-column grid */
+.dx-dates { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; padding: 6px 8px; background: #fff; border: 1px solid #cdd5dc; margin-top: 4px; }
+.dx-dc { display: flex; flex-direction: column; }
+.dx-df { display: flex; align-items: center; gap: 6px; padding: 4px 0; border-bottom: 1px solid #f0f3f7; font-size: 11.5px; }
+.dx-df label { color: #6b7a8c; min-width: 110px; font-weight: 700; }
+.dx-di { color: #222; background: #f7f9fb; border: 1px solid #c8d2dc; border-radius: 2px; padding: 2px 6px; min-width: 80px; }
+.dx-df .dx-empty { color: #999; font-style: italic; }
+.dx-df.flash { background: #fff3cd; border-radius: 3px; }
+.dx-df.mapped .dx-di { background: #eefbf0; border-color: #5cb85c; color: #2a6e2a; font-weight: 700; }
+
+/* Notes tab */
+.dx-notes { background: #fff; border: 1px solid #cdd5dc; margin-top: 4px; padding: 6px 8px; }
+.dx-note-acts { display: flex; gap: 5px; margin-bottom: 8px; }
+.dx-nt { width: 100%; border-collapse: collapse; font-size: 11px; }
+.dx-nt th { background: #dde5ef; color: #44546a; font-weight: 700; text-align: left; padding: 4px 7px; border: 1px solid #cdd5dc; }
+.dx-nt td { padding: 3px 7px; border: 1px solid #e5ebf0; vertical-align: top; }
+.dx-nt tr:nth-child(even) td { background: #f7f9fb; }
+
+/* Send Email modal */
+.dx-modal { background: #fff; border: 1px solid #c8d2dc; border-radius: 3px; box-shadow: 0 8px 24px rgba(0,0,0,.18); margin-top: 8px; }
+.dx-modal-h { background: #0a2744; color: #fff; padding: 7px 12px; font-size: 13px; font-weight: 700; border-radius: 3px 3px 0 0; }
+.dx-modal-b { padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.dx-mf { display: flex; gap: 8px; font-size: 12px; align-items: flex-start; }
+.dx-mf label { font-weight: 700; color: #6b7a8c; min-width: 60px; padding-top: 2px; }
+.dx-mf.body { align-items: flex-start; }
+.ecmp-to, .ecmp-subj { color: #222; }
+.ecmp-body { color: #333; font-size: 11.5px; line-height: 1.5; white-space: pre-wrap; }
+
+/* DASH grid (dashJobs) */
+.dx-grid { background: #fff; border: 1px solid #cdd5dc; border-radius: 2px; overflow: hidden; }
+.dx-gh-bar { display: grid; grid-template-columns: 90px 90px 1fr 80px 140px; background: #dde5ef; color: #44546a; font-weight: 700; font-size: 11px; padding: 4px 8px; gap: 8px; }
+.dx-gr { display: grid; grid-template-columns: 90px 90px 1fr 80px 140px; font-size: 11.5px; padding: 4px 8px; gap: 8px; border-bottom: 1px solid #e8ecf0; }
+.dx-gr:nth-child(even) { background: #f7f9fb; }
+.dx-inlbar { display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #fff8dc; border-top: 1px solid #e8d87a; font-size: 11.5px; }
+.dx-inlbar span { flex: 1; color: #5a4800; }
+.dx-inl { color: #5ba4d4; font-weight: 700; }
+.dx-toast.ok { background: #d4edda; border: 1px solid #5cb85c; color: #2a6e2a; border-radius: 2px; padding: 6px 10px; font-size: 12px; font-weight: 700; margin-top: 6px; }
+/* ============================================================ end DASH Enterprise ============================================================ */
 
 .lx.admin { --sf: #00346D; --sf-d: #002650; background: #f3f4f6; }
 .lx.admin .lx-logo { height: 16px; }
@@ -1987,6 +2085,7 @@ polyline.draw { stroke-dasharray: 600; stroke-dashoffset: 600; animation: draw 1
 .cast-qlbl { display: block; font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #9E9E9E; margin-bottom: 2px; }
 
 /* ---- Journey section ---- */
+.hv2-legend { background: #f0f4ff; border: 1px solid #c2d0f0; border-radius: 8px; padding: 9px 16px; font-size: 13px; color: #334; line-height: 1.5; margin: 0 0 14px; }
 .hv2-journey {
   flex: 1;
   padding: 11px 36px 6px;
