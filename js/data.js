@@ -164,17 +164,25 @@ window.PC = (function () {
       { k: "Mold", v: 5, c: "#59a14f" },
       { k: "Biohazard", v: 2, c: "#f28e2b" },
     ],
+    metros: [
+      { k: "Kansas City", v: 17, locs: 4 },
+      { k: "Wichita", v: 14, locs: 4 },
+      { k: "Topeka", v: 9, locs: 1 },
+      { k: "Other", v: 7, locs: 3 },
+    ],
     wichita: {
       jobs: 11, est: 80400,
       locations: [
-        { id: "KS-0412", name: "Wichita East", owner: "Maria T.", jobs: 7, est: 58050 },
-        { id: "KS-0418", name: "Wichita West", owner: "Derek H.", jobs: 4, est: 22350 },
+        { id: "KS-0412", name: "Wichita East", owner: "Maria T.", jobs: 4, est: 51200 },
+        { id: "KS-0418", name: "Wichita West", owner: "Derek H.", jobs: 3, est: 16900 },
+        { id: "KS-0427", name: "Wichita North", owner: "Tanya R.", jobs: 2, est: 7600 },
+        { id: "KS-0433", name: "Wichita South", owner: "Luis M.", jobs: 2, est: 4700 },
       ],
       list: [
         { id: "JOB-KS-24817", fr: "Wichita East", loss: "Water", est: 8450, stage: "Estimate Sent" },
         { id: "JOB-KS-24809", fr: "Wichita East", loss: "Fire", est: 21300, stage: "Into Production" },
         { id: "JOB-KS-24795", fr: "Wichita West", loss: "Water", est: 6100, stage: "Inspected" },
-        { id: "JOB-KS-24790", fr: "Wichita West", loss: "Water", est: 4750, stage: "Work Authorization" },
+        { id: "JOB-KS-24790", fr: "Wichita North", loss: "Water", est: 4750, stage: "Work Authorization" },
         { id: "JOB-KS-24788", fr: "Wichita East", loss: "Fire", est: 14900, stage: "Estimate Approved" },
       ],
     },

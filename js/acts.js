@@ -612,10 +612,11 @@ window.Acts = (function () {
     /* ---------- Chapter 4: See it */
     {
       id: "4.1", act: "4", short: true, title: "Network to one job",
-      desc: "CJ starts at the whole network and clicks down through Kansas and Wichita to a single job and its milestone history. Each click is a live query: SLA milestones are minutes old, everything else is as of the 2:00 AM batch.", why: "Today the SLA report takes CJ two minutes and an RD two hours, and there's no network view at all. Here, anyone with access goes from the network to one job in three clicks.",
+      desc: "CJ starts at the whole network and clicks down through Kansas and Wichita, sees which franchise location each job belongs to, and opens a single job and its milestone history. Each click is a live query: SLA milestones are minutes old, everything else is as of the 2:00 AM batch.", why: "Today the SLA report takes CJ two minutes and an RD two hours, and there's no network view at all. Here, anyone with access goes from the network to one job in three clicks.",
       powered: ["Tableau Cloud", "Certified data sources", "Live via Tableau Bridge"],
       async run(x) {
         x.left(S.tableau("network", { tap: true }));
+        x.reveal(".g-map");
         C.graph(tabGraph()); C.tab("flow"); C.setClock("14:00:00");
         C.caption("Every click is a live query to the 11:11 curated views, through Tableau Bridge.");
         C.ambient(x.t, [["mule", "views"]], { every: 900, kind: "poll" });
@@ -625,11 +626,12 @@ window.Acts = (function () {
         clk(288, 51);
         await x.tap("KS");
         x.left(S.tableau("kansas", { tap: true }));
+        x.reveal(".g-map");
         await query(x, Q, { rows: "4 rows", ms: "142 ms", sql: "\u2026 WHERE state = 'KS' GROUP BY loss_type \u2192 4 rows \u00b7 142 ms", exec: "Kansas: 47 open jobs by loss type" });
         clk(142, 4);
         await x.tap("Water");
         x.left(S.tableau("wichita", { tap: true }));
-        await query(x, Q, { rows: "11 rows", ms: "97 ms", sql: "\u2026 WHERE metro = 'Wichita' AND loss_type IN ('Water','Fire') \u2192 11 rows \u00b7 $80.4K", exec: "Wichita area: 11 water and fire jobs, $80.4K estimated" });
+        await query(x, Q, { rows: "11 rows", ms: "97 ms", sql: "\u2026 WHERE metro = 'Wichita' AND loss_type IN ('Water','Fire') GROUP BY franchise_id \u2192 4 locations \u00b7 11 jobs \u00b7 $80.4K", exec: "Wichita area: 4 franchise locations, 11 water and fire jobs, $80.4K estimated" });
         clk(97, 11);
         await x.tap("job");
         x.left(S.tableau("job"));

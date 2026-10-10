@@ -1040,7 +1040,7 @@ window.Screens = (function () {
         const top = k ? `${k.byLoss[0].k} (${k.byLoss[0].v})` : "Water";
         const rows = st === "OH"
           ? [["State", s.n], ["Open jobs", v], ["Open water jobs", "61"], ["Expected", "38\u201352"]]
-          : [["State", s.n], ["Open jobs", v], ["Top loss type", top], ["Franchises", st === "KS" ? 6 : "\u2014"]];
+          : [["State", s.n], ["Open jobs", v], ["Top loss type", top], ["Franchise locations", st === "KS" ? D.kansas.metros.reduce((a, m) => a + m.locs, 0) : "\u2014"]];
         const hint = st === "OH" ? "Click to Explain Data \u203a" : "Click to drill down \u203a";
         tip = `<div class="tv-tip" style="left:${(((lx - vx + r + 14) / W) * 100).toFixed(1)}%;top:${(((ly - vy) / H) * 100).toFixed(1)}%">
           ${rows.map(([a, b]) => `<div><span>${a}</span><b>${b}</b></div>`).join("")}
@@ -1168,12 +1168,8 @@ window.Screens = (function () {
         </div>`, { clock: opt.clock });
     }
     if (view === "kansas") {
-      const metros = [
-        { k: "Kansas City", v: 17 },
-        { k: "Wichita", v: 14, c: "#346fa9" },
-        { k: "Topeka", v: 9 },
-        { k: "Other", v: 7 },
-      ];
+      const metroRows = K.metros.map((m) => `<tr class="${m.k === "Wichita" ? "sel" : ""}"><td>${m.k}</td><td class="num">${m.locs}</td><td class="num">${m.v}</td></tr>`).join("");
+      const nLocs = K.metros.reduce((a, m) => a + m.locs, 0);
       return tabShell("Network Operations", ["All franchises", "Kansas"], `${bans([
           { k: "Open jobs \u00b7 Kansas", v: "47", d: "+3 vs last week", s: [38, 40, 39, 41, 42, 41, 43, 44, 43, 45, 44, 44, 47] },
           { k: "Water jobs", v: "31", d: "66% of open", s: [22, 23, 23, 24, 25, 24, 26, 27, 27, 28, 29, 30, 31], sc: T10.Water },
@@ -1184,7 +1180,7 @@ window.Screens = (function () {
           ${sheet("Open jobs by state", stateMap({ sel: "KS", tip: "KS" }), { right: "Kansas selected" })}
           <div class="tv-col">
             ${sheet(`Kansas \u00b7 open jobs by loss type`, hbars(K.byLoss.map((x) => ({ k: x.k, v: x.v, c: x.c, ico: icon(x.k), tap: opt.tap && (x.k === "Water" || x.k === "Fire") ? "Water" : null }))), { right: opt.tap ? "Select Water + Fire" : "" })}
-            ${sheet("By metro area", hbars(metros))}
+            ${sheet("By metro area", `<table class="tv-table tv-metro"><thead><tr><th>Metro</th><th class="num">Locations</th><th class="num">Open jobs</th></tr></thead><tbody>${metroRows}</tbody></table>`, { right: `${nLocs} franchise locations` })}
           </div>
         </div>`, { filters: [["State", "Kansas", true], ["Loss type", "All"], ["Period", "Last 13 weeks"]] });
     }
@@ -1199,14 +1195,15 @@ window.Screens = (function () {
             <td class="stg"><span class="pg"><span style="width:${((si / STAGES.length) * 100).toFixed(0)}%"></span></span>${j.stage}</td></tr>`;
         })
         .join("");
-      const locRows = (K.wichita.locations || []).map((l) => `<tr><td><b>${l.id}</b></td><td>${l.name}</td><td>${l.owner}</td><td class="num">${l.jobs}</td><td class="num">${money(l.est)}</td></tr>`).join("");
+      const locs = K.wichita.locations;
+      const locRows = locs.map((l) => `<tr class="${l.id === D.franchise.id ? "sel" : ""}"><td><b>${l.id}</b></td><td>${l.name}</td><td>${l.owner}</td><td class="num">${l.jobs}</td><td class="num">${money(l.est)}</td></tr>`).join("");
       return tabShell("Network Operations", ["All franchises", "Kansas", "Water + Fire", "Wichita area"], `${bans([
           { k: "Open water + fire jobs", v: String(K.wichita.jobs), d: "+2 vs last week", s: [7, 8, 8, 8, 9, 9, 9, 10, 9, 10, 10, 9, 11] },
           { k: "Estimated value", v: money(K.wichita.est), d: "+$9.6K vs last week", s: [61, 63, 64, 66, 65, 68, 70, 71, 72, 74, 72, 70.8, 80.4] },
-          { k: "Franchises", v: "2", d: "Wichita East, West" },
+          { k: "Franchise locations", v: String(locs.length), d: "East, West, North, South" },
           { k: "Avg job age", v: "2.3 days", d: "\u22120.8 since Nov", tone: "good", s: [3.1, 3.0, 3.0, 2.9, 2.8, 2.8, 2.7, 2.6, 2.6, 2.5, 2.4, 2.4, 2.3] },
         ])}
-        ${sheet("By franchise location", `<table class="tv-table"><thead><tr><th>Location</th><th>Name</th><th>Owner</th><th class="num">Jobs</th><th class="num">Est. value</th></tr></thead><tbody>${locRows}</tbody></table>`, { right: "All open water + fire" })}
+        ${sheet("By franchise location", `<table class="tv-table"><thead><tr><th>Location</th><th>Name</th><th>Owner</th><th class="num">Jobs</th><th class="num">Est. value</th></tr></thead><tbody>${locRows}</tbody></table>`, { right: `${locs.length} locations in the Wichita metro` })}
         ${sheet(`Wichita area \u00b7 open jobs \u00b7 top 5 of ${K.wichita.jobs}`, `<table class="tv-table"><thead><tr><th>Job</th><th>Franchise</th><th>Loss</th><th>Estimate</th><th>Current milestone (of 18)</th></tr></thead><tbody>${rows}</tbody></table>`, { right: opt.tap ? `Click ${D.job.id}` : "Sorted by last update" })}`,
         { sheet: "Jobs", filters: [["State", "Kansas", true], ["Loss type", "Water, Fire", true], ["Metro", "Wichita", true]] });
     }

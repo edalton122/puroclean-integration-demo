@@ -1199,6 +1199,9 @@ body.exec .cx-mini .lg { grid-template-columns: 92px 1fr; }
 .tv-table td { padding: 5px 6px; border-bottom: 1px solid #f0f0f0; white-space: nowrap; }
 .tv-table tbody tr:nth-child(even) td { background: #fbfbfb; }
 .tv-table .dot { margin-left: 0; }
+.tv-table .num { text-align: right; }
+.tv-table tbody tr.sel td { background: #e8f1fa; font-weight: 600; }
+.tv-metro td { padding: 3px 6px; }
 .tv-table td.est { position: relative; min-width: 88px; }
 .tv-table .db { position: absolute; left: 6px; top: 5px; bottom: 5px; max-width: calc(100% - 12px); background: #dce9f5; border-radius: 1px; }
 .tv-table td.est b { position: relative; }

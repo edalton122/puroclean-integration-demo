@@ -319,7 +319,13 @@
         left(html) { if (Run.alive(t)) { leftUI.innerHTML = html; applyPulse(); } },
         tap: (names) => tap(names, t),
         sleep: (ms) => Run.sleep(ms, t),
-        reveal(sel) { const el = Run.alive(t) && leftUI.querySelector(sel); if (el) revealTarget(el, "smooth"); },
+        reveal(sel) {
+          const el = Run.alive(t) && leftUI.querySelector(sel);
+          if (!el) return;
+          revealTarget(el, "smooth");
+          /* Runs after applyPulse's own settle pass so the tap-target scroll doesn't undo this one. */
+          setTimeout(() => { if (el.isConnected && Run.alive(t)) revealTarget(el, "auto"); }, 700);
+        },
       };
       await s.run(ctx);
       if (Run.alive(t)) {
